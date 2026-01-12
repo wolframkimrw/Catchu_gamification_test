@@ -23,6 +23,46 @@ const gameCards: GameCard[] = [
     caption: "오늘의 추천",
   },
   {
+    id: 5,
+    title: "치킨 월드컵",
+    type: "WORLD_CUP",
+    thumbnail:
+      "https://images.unsplash.com/photo-1604908177225-00f8e8f35012?w=800&q=80&auto=format&fit=crop",
+    topic: { id: 1, name: "치킨" },
+    badge: "NEW",
+    caption: "오늘의 치킨",
+  },
+  {
+    id: 6,
+    title: "커피 월드컵",
+    type: "WORLD_CUP",
+    thumbnail:
+      "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&q=80&auto=format&fit=crop",
+    topic: { id: 3, name: "카페" },
+    badge: "NEW",
+    caption: "취향 찾기",
+  },
+  {
+    id: 7,
+    title: "야식 월드컵",
+    type: "WORLD_CUP",
+    thumbnail:
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80&auto=format&fit=crop",
+    topic: { id: 4, name: "야식" },
+    badge: "HOT",
+    caption: "오늘 밤 선택",
+  },
+  {
+    id: 8,
+    title: "간식 월드컵",
+    type: "WORLD_CUP",
+    thumbnail:
+      "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=800&q=80&auto=format&fit=crop",
+    topic: { id: 5, name: "간식" },
+    badge: "NEW",
+    caption: "달콤한 승부",
+  },
+  {
     id: 2,
     title: "2025 금전운 테스트",
     type: "FORTUNE_TEST",
@@ -98,10 +138,19 @@ export function WorldcupListPage() {
   }, []);
 
   const catalogGames = useMemo(() => {
-    if (apiGames.length > 0) {
-      return apiGames;
+    if (apiGames.length === 0) {
+      return gameCards;
     }
-    return gameCards;
+    const merged = new Map<number, Game | GameCard>();
+    apiGames.forEach((game) => {
+      merged.set(game.id, game);
+    });
+    gameCards.forEach((game) => {
+      if (!merged.has(game.id)) {
+        merged.set(game.id, game);
+      }
+    });
+    return Array.from(merged.values());
   }, [apiGames]);
 
   const worldcupGames = catalogGames.filter((game) => game.type === "WORLD_CUP");
@@ -240,7 +289,7 @@ export function WorldcupListPage() {
 
         <section className="section list">
           <div className="category-page">
-            <div ref={worldcupRef}>
+            <div ref={worldcupRef} className="worldcup-rail">
               <CategorySection
                 title="월드컵"
                 variant="big"
@@ -315,14 +364,13 @@ function CategorySection({
       <div className="cat-header">
         <h3>{title}</h3>
       </div>
-      <div className={`cat-grid ${variant} ${variant === "small" ? "h-rail" : ""}`}>
-        {variant === "small" ? (
-          <div className="h-rail-track">
-            {hasGames
-              ? games.map((game) => {
-                  const meta = getMeta(game);
-                  const content = (
-                    <>
+      <div className={`cat-grid ${variant} h-rail`}>
+        <div className="h-rail-track">
+          {hasGames
+            ? games.map((game) => {
+                const meta = getMeta(game);
+                const content = (
+                  <>
                       <div className="cat-thumb">
                         {game.thumbnail ? (
                           <img src={game.thumbnail} alt={game.title} />
@@ -356,85 +404,25 @@ function CategorySection({
                     </Link>
                   );
 
-                  return (
-                    <div key={game.id} className="h-rail-item">
-                      {cardNode}
-                    </div>
-                  );
-                })
-              : (
-                <div className="h-rail-item">
-                  <div className="cat-card placeholder">
-                    <div className="cat-thumb">
-                      <div className="cat-thumb-placeholder">준비중</div>
-                    </div>
-                    <div className="cat-body">
-                      <div className="cat-title">{fallbackLabel}</div>
-                    </div>
+                return (
+                  <div key={game.id} className="h-rail-item">
+                    {cardNode}
+                  </div>
+                );
+              })
+            : (
+              <div className="h-rail-item">
+                <div className="cat-card placeholder">
+                  <div className="cat-thumb">
+                    <div className="cat-thumb-placeholder">준비중</div>
+                  </div>
+                  <div className="cat-body">
+                    <div className="cat-title">{fallbackLabel}</div>
                   </div>
                 </div>
-              )}
-          </div>
-        ) : (
-          <>
-            {hasGames
-              ? games.map((game) => {
-                  const meta = getMeta(game);
-                  const content = (
-                    <>
-                      <div className="cat-thumb">
-                        {game.thumbnail ? (
-                          <img src={game.thumbnail} alt={game.title} />
-                        ) : (
-                          <div className="cat-thumb-placeholder">준비중</div>
-                        )}
-                      </div>
-                      <div className="cat-body">
-                        <div className="cat-meta">
-                          {meta.badge ? (
-                            <span
-                              className={`badge ${
-                                meta.badge === "HOT" ? "badge-hot" : "badge-new"
-                              }`}
-                            >
-                              {meta.badge}
-                            </span>
-                          ) : null}
-                          {meta.caption ? <span>{meta.caption}</span> : null}
-                        </div>
-                        <div className="cat-title">{game.title}</div>
-                      </div>
-                    </>
-                  );
-
-                  const cardNode = !onCardClick ? (
-                    <div className="cat-card disabled">{content}</div>
-                  ) : (
-                    <Link to={onCardClick(game)} className="cat-card">
-                      {content}
-                    </Link>
-                  );
-
-                  return (
-                    <div key={game.id} className="h-rail-item">
-                      {cardNode}
-                    </div>
-                  );
-                })
-              : (
-                <div className="h-rail-item">
-                  <div className="cat-card placeholder">
-                    <div className="cat-thumb">
-                      <div className="cat-thumb-placeholder">준비중</div>
-                    </div>
-                    <div className="cat-body">
-                      <div className="cat-title">{fallbackLabel}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-          </>
-        )}
+              </div>
+            )}
+        </div>
       </div>
     </section>
   );

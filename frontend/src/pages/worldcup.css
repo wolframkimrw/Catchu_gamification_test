@@ -463,6 +463,11 @@
   min-width: 7.2rem;
 }
 
+.worldcup-rail .h-rail .h-rail-item {
+  max-width: 10.8rem;
+  min-width: 10.8rem;
+}
+
 .h-rail .cat-card {
   width: 100%;
 }

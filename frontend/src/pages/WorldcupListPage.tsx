@@ -1,5 +1,6 @@
 // src/pages/WorldcupListPage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import "../pages/worldcup.css";
 import type { Game } from "../api/games";
@@ -182,46 +183,48 @@ export function WorldcupListPage() {
 
       <div className="wc-content">
         <section className="section categories">
-          <div className="wc-tabs h-rail">
-            <button
-              type="button"
-              className={`wc-tab ${activeTab === "worldcup" ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab("worldcup");
-                worldcupRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                });
-              }}
-            >
-              월드컵
-            </button>
-            <button
-              type="button"
-              className={`wc-tab ${activeTab === "fortune" ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab("fortune");
-                fortuneRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                });
-              }}
-            >
-              운게임
-            </button>
-            <button
-              type="button"
-              className={`wc-tab ${activeTab === "psycho" ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab("psycho");
-                psychoRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                });
-              }}
-            >
-              심리테스트
-            </button>
+          <div className="wc-tabs h-rail" style={{ "--gap": "0.5rem" } as CSSProperties}>
+            <div className="h-rail-track">
+              <button
+                type="button"
+                className={`wc-tab ${activeTab === "worldcup" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("worldcup");
+                  worldcupRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                월드컵
+              </button>
+              <button
+                type="button"
+                className={`wc-tab ${activeTab === "fortune" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("fortune");
+                  fortuneRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                운게임
+              </button>
+              <button
+                type="button"
+                className={`wc-tab ${activeTab === "psycho" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("psycho");
+                  psychoRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                심리테스트
+              </button>
+            </div>
           </div>
         </section>
 
@@ -257,15 +260,15 @@ export function WorldcupListPage() {
                 getMeta={getCardMeta}
               />
             </div>
-            <div ref={psychoRef}>
-            <CategorySection
-              title="심리테스트"
-              variant="small"
-              games={resolvedPsychoGames}
-              fallbackLabel="심리테스트 준비중"
-              onCardClick={null}
-              getMeta={getCardMeta}
-            />
+            <div ref={psychoRef} className="psy-section">
+              <CategorySection
+                title="심리테스트"
+                variant="small"
+                games={resolvedPsychoGames}
+                fallbackLabel="심리테스트 준비중"
+                onCardClick={null}
+                getMeta={getCardMeta}
+              />
             </div>
           </div>
 
@@ -313,62 +316,125 @@ function CategorySection({
         <h3>{title}</h3>
       </div>
       <div className={`cat-grid ${variant} ${variant === "small" ? "h-rail" : ""}`}>
-        {hasGames
-          ? games.map((game) => {
-              const meta = getMeta(game);
-              const content = (
-                <>
-                  <div className="cat-thumb">
-                    {game.thumbnail ? (
-                      <img src={game.thumbnail} alt={game.title} />
-                    ) : (
-                      <div className="cat-thumb-placeholder">준비중</div>
-                    )}
-                  </div>
-                  <div className="cat-body">
-                    <div className="cat-meta">
-                      {meta.badge ? (
-                        <span
-                          className={`badge ${
-                            meta.badge === "HOT" ? "badge-hot" : "badge-new"
-                          }`}
-                        >
-                          {meta.badge}
-                        </span>
-                      ) : null}
-                      {meta.caption ? <span>{meta.caption}</span> : null}
+        {variant === "small" ? (
+          <div className="h-rail-track">
+            {hasGames
+              ? games.map((game) => {
+                  const meta = getMeta(game);
+                  const content = (
+                    <>
+                      <div className="cat-thumb">
+                        {game.thumbnail ? (
+                          <img src={game.thumbnail} alt={game.title} />
+                        ) : (
+                          <div className="cat-thumb-placeholder">준비중</div>
+                        )}
+                      </div>
+                      <div className="cat-body">
+                        <div className="cat-meta">
+                          {meta.badge ? (
+                            <span
+                              className={`badge ${
+                                meta.badge === "HOT" ? "badge-hot" : "badge-new"
+                              }`}
+                            >
+                              {meta.badge}
+                            </span>
+                          ) : null}
+                          {meta.caption ? <span>{meta.caption}</span> : null}
+                        </div>
+                        <div className="cat-title">{game.title}</div>
+                      </div>
+                    </>
+                  );
+
+                  const cardNode = !onCardClick ? (
+                    <div className="cat-card disabled">{content}</div>
+                  ) : (
+                    <Link to={onCardClick(game)} className="cat-card">
+                      {content}
+                    </Link>
+                  );
+
+                  return (
+                    <div key={game.id} className="h-rail-item">
+                      {cardNode}
                     </div>
-                    <div className="cat-title">{game.title}</div>
+                  );
+                })
+              : (
+                <div className="h-rail-item">
+                  <div className="cat-card placeholder">
+                    <div className="cat-thumb">
+                      <div className="cat-thumb-placeholder">준비중</div>
+                    </div>
+                    <div className="cat-body">
+                      <div className="cat-title">{fallbackLabel}</div>
+                    </div>
                   </div>
-                </>
-              );
+                </div>
+              )}
+          </div>
+        ) : (
+          <>
+            {hasGames
+              ? games.map((game) => {
+                  const meta = getMeta(game);
+                  const content = (
+                    <>
+                      <div className="cat-thumb">
+                        {game.thumbnail ? (
+                          <img src={game.thumbnail} alt={game.title} />
+                        ) : (
+                          <div className="cat-thumb-placeholder">준비중</div>
+                        )}
+                      </div>
+                      <div className="cat-body">
+                        <div className="cat-meta">
+                          {meta.badge ? (
+                            <span
+                              className={`badge ${
+                                meta.badge === "HOT" ? "badge-hot" : "badge-new"
+                              }`}
+                            >
+                              {meta.badge}
+                            </span>
+                          ) : null}
+                          {meta.caption ? <span>{meta.caption}</span> : null}
+                        </div>
+                        <div className="cat-title">{game.title}</div>
+                      </div>
+                    </>
+                  );
 
-              const cardNode = !onCardClick ? (
-                <div className="cat-card disabled">{content}</div>
-              ) : (
-                <Link to={onCardClick(game)} className="cat-card">
-                  {content}
-                </Link>
-              );
+                  const cardNode = !onCardClick ? (
+                    <div className="cat-card disabled">{content}</div>
+                  ) : (
+                    <Link to={onCardClick(game)} className="cat-card">
+                      {content}
+                    </Link>
+                  );
 
-              return (
-                <div key={game.id} className="h-rail-item">
-                  {cardNode}
+                  return (
+                    <div key={game.id} className="h-rail-item">
+                      {cardNode}
+                    </div>
+                  );
+                })
+              : (
+                <div className="h-rail-item">
+                  <div className="cat-card placeholder">
+                    <div className="cat-thumb">
+                      <div className="cat-thumb-placeholder">준비중</div>
+                    </div>
+                    <div className="cat-body">
+                      <div className="cat-title">{fallbackLabel}</div>
+                    </div>
+                  </div>
                 </div>
-              );
-            })
-          : (
-            <div className="h-rail-item">
-              <div className="cat-card placeholder">
-                <div className="cat-thumb">
-                  <div className="cat-thumb-placeholder">준비중</div>
-                </div>
-                <div className="cat-body">
-                  <div className="cat-title">{fallbackLabel}</div>
-                </div>
-              </div>
-            </div>
-          )}
+              )}
+          </>
+        )}
       </div>
     </section>
   );

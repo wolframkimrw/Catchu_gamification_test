@@ -1093,6 +1093,7 @@
   font-size: 14px;
   padding: 12px;
   text-align: center;
+  pointer-events: none;
 }
 
 .arena-full-card.selecting {
@@ -1101,15 +1102,51 @@
 }
 
 .arena-play.selecting .arena-full-card.selecting {
-  transform: translateX(var(--selected-shift, 0)) scale(1.08);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(420px, 92vw);
   z-index: 2;
   opacity: 1;
 }
 
+.arena-play.selecting .arena-full-card.selecting[data-pos="top"] {
+  animation: winner-from-top 900ms ease forwards;
+}
+
+.arena-play.selecting .arena-full-card.selecting[data-pos="bottom"] {
+  animation: winner-from-bottom 900ms ease forwards;
+}
+
 .arena-full-card.exiting {
   opacity: 0;
-  transform: translateX(var(--slide-dir, -160px)) scale(0.9);
+  transform: translateY(200px) scale(0.9);
+  transition-duration: 180ms;
   pointer-events: none;
+}
+
+@keyframes winner-from-top {
+  0% {
+    transform: translate(-50%, -50%) translateY(-180px) scale(1);
+  }
+  60% {
+    transform: translate(-50%, -50%) translateY(-20px) scale(1.03);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes winner-from-bottom {
+  0% {
+    transform: translate(-50%, -50%) translateY(180px) scale(1);
+  }
+  60% {
+    transform: translate(-50%, -50%) translateY(20px) scale(1.03);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
 }
 
 .arena-result {
@@ -1147,6 +1184,7 @@
   background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 50%),
     rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.16);
+  position: relative;
 }
 
 .result-media img,

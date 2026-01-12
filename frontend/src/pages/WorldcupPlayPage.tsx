@@ -6,6 +6,7 @@ import { ApiError } from "../api/http";
 import { fetchGameDetail } from "../api/games";
 import type { GameDetailData, GameItem } from "../api/games";
 import { GameStartScreen } from "../components/GameStartScreen";
+import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../data/localWorldcup";
 
 type PageState =
   | { status: "loading" }
@@ -18,6 +19,7 @@ export function WorldcupPlayPage() {
     const idNumber = Number(gameId);
     return Number.isFinite(idNumber) ? idNumber : null;
   }, [gameId]);
+  const isLocalGame = parsedGameId === LOCAL_WORLDCUP_ID;
 
   const [state, setState] = useState<PageState>({ status: "loading" });
   const [started, setStarted] = useState(false);
@@ -31,6 +33,10 @@ export function WorldcupPlayPage() {
     if (parsedGameId === null) {
       return;
     }
+    if (isLocalGame) {
+      setState({ status: "success", data: getLocalWorldcupDetail() });
+      return;
+    }
     fetchGameDetail(parsedGameId)
       .then((data) => setState({ status: "success", data }))
       .catch((err: unknown) => {
@@ -40,7 +46,7 @@ export function WorldcupPlayPage() {
           "게임 정보를 불러오지 못했습니다.";
         setState({ status: "error", message });
       });
-  }, [parsedGameId]);
+  }, [isLocalGame, parsedGameId]);
 
   if (parsedGameId === null) {
     return <div className="state-box">잘못된 게임 ID 입니다.</div>;

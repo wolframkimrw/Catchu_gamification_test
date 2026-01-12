@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import "../pages/worldcup.css";
 import type { Game } from "../api/games";
 import { fetchGamesList } from "../api/games";
+import { LOCAL_WORLDCUP_GAME } from "../data/localWorldcup";
 
 
 const categories = [
@@ -39,7 +40,10 @@ export function WorldcupListPage() {
 
   const catalogGames = useMemo(() => apiGames, [apiGames]);
 
-  const worldcupGames = worldcupApiGames;
+  const worldcupGames = useMemo(
+    () => [LOCAL_WORLDCUP_GAME, ...worldcupApiGames],
+    [worldcupApiGames]
+  );
   const fortuneGames = catalogGames.filter(
     (game) => game.type === "FORTUNE_TEST"
   );

@@ -5,6 +5,7 @@ import "../pages/worldcup.css";
 import { ApiError } from "../api/http";
 import { fetchGameDetail } from "../api/games";
 import type { GameDetailData, GameItem } from "../api/games";
+import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../data/localWorldcup";
 
 type PageState =
   | { status: "loading" }
@@ -18,6 +19,7 @@ export function WorldcupArenaPage() {
     const idNumber = Number(gameId);
     return Number.isFinite(idNumber) ? idNumber : null;
   }, [gameId]);
+  const isLocalGame = parsedGameId === LOCAL_WORLDCUP_ID;
 
   const transitionMs = 1400; // 애니메이션(약 0.9~1.0초) 포함 총 2초 안팎으로 끝나도록 조정
   const [state, setState] = useState<PageState>({ status: "loading" });
@@ -38,6 +40,13 @@ export function WorldcupArenaPage() {
     if (parsedGameId === null) {
       return;
     }
+    if (isLocalGame) {
+      const data = getLocalWorldcupDetail();
+      setState({ status: "success", data });
+      const shuffled = [...data.items].sort(() => Math.random() - 0.5);
+      startRound(shuffled, 1);
+      return;
+    }
     fetchGameDetail(parsedGameId)
       .then((data) => {
         setState({ status: "success", data });
@@ -51,7 +60,7 @@ export function WorldcupArenaPage() {
           "게임 정보를 불러오지 못했습니다.";
         setState({ status: "error", message });
       });
-  }, [parsedGameId]);
+  }, [isLocalGame, parsedGameId]);
 
   const startRound = (roundItems: GameItem[], round: number) => {
     if (roundItems.length === 0) {
@@ -118,8 +127,12 @@ export function WorldcupArenaPage() {
   const getMediaUrl = (item: GameItem) => {
     const url = item.file_name;
     if (!url) return null;
-    // file_name이 절대경로일 때만 사용
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    // 절대경로/루트경로 모두 허용
+    if (
+      url.startsWith("http://") ||
+      url.startsWith("https://") ||
+      url.startsWith("/")
+    ) {
       return url;
     }
     return null;
@@ -192,23 +205,15 @@ export function WorldcupArenaPage() {
           {[a, b].map((contestant, idx) => {
             const isSelected = selectedId === contestant.id;
             const isOther = isSelecting && !isSelected;
-            const slideDir = idx === 0 ? "-80px" : "80px";
-            const style: CSSVarStyle = {};
-            if (isOther) {
-              style["--slide-dir"] = slideDir;
-            }
-            if (isSelected) {
-              style["--selected-shift"] = idx === 0 ? "14%" : "-14%";
-            }
             return (
               <button
                 key={contestant.id}
                 className={`arena-full-card ${isSelected ? "selecting" : ""} ${
                   isOther ? "exiting" : ""
                 }`}
+                data-pos={idx === 0 ? "top" : "bottom"}
                 type="button"
                 onClick={() => handleSelect(contestant)}
-                style={style}
               >
                 {(() => {
                   const mediaUrl = getMediaUrl(contestant);

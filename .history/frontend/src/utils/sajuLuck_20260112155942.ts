@@ -21,7 +21,9 @@ export type CalendarType = "SOLAR" | "LUNAR";
 export type GenderType = "male" | "female";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-type ElementType = "목" | "화" | "토" | "금" | "수";
+const ELEMENTS = ["목", "화", "토", "금", "수"] as const;
+
+type ElementType = (typeof ELEMENTS)[number];
 
 export function getWeekdayElement(weekday: number): ElementType {
   const mapping: ElementType[] = ["수", "목", "화", "토", "금", "수", "토"];
@@ -107,7 +109,7 @@ export function getMessageFromScore(score: number): string {
 다만 평소보다 마음과 상황이 쉽게 흔들릴 수 있는 하루입니다.
 이럴 때 중요한 것은 무언가를 더 해내는 것이 아니라, 불필요한 소모를 줄이는 것입니다.
 
-오늘의 핵심은 버티기와 정리입니다.
+LOW 운세의 핵심은 버티기와 정리입니다.
 오늘 하루를 무사히 지나가는 것만으로도 충분히 의미가 있습니다.
 
 오늘은 애쓰지 않아도 괜찮은 날입니다.

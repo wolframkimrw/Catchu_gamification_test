@@ -21,7 +21,9 @@ export type CalendarType = "SOLAR" | "LUNAR";
 export type GenderType = "male" | "female";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-type ElementType = "목" | "화" | "토" | "금" | "수";
+const ELEMENTS = ["목", "화", "토", "금", "수"] as const;
+
+type ElementType = (typeof ELEMENTS)[number];
 
 export function getWeekdayElement(weekday: number): ElementType {
   const mapping: ElementType[] = ["수", "목", "화", "토", "금", "수", "토"];

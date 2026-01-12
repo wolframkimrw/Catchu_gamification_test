@@ -66,6 +66,60 @@
   margin: 0 0 12px;
 }
 
+.saju-result {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.saju-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.saju-group-label {
+  margin: 0;
+  font-weight: 700;
+  color: #3a2a22;
+}
+
+.saju-group-value {
+  margin: 0;
+  color: #5e4b45;
+  font-size: 16px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.saju-emphasis {
+  font-weight: 800;
+  color: #2b1f1a;
+  font-size: 2.5em;
+}
+
+.saju-common-value {
+  font-size: 16px;
+}
+
+.saju-idiom-value {
+  font-size: 1.7em;
+}
+
+.saju-divider {
+  margin: 0;
+  text-align: left;
+  color: #c9a78d;
+  font-weight: 700;
+}
+
+.saju-line {
+  border: 0;
+  border-top: 1px solid #eadfd4;
+  margin: 0;
+}
+
+
 .saju-form {
   display: grid;
   gap: 14px;
@@ -119,19 +173,6 @@
 .saju-submit {
   margin-top: 12px;
   width: 100%;
-}
-
-.saju-start {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.saju-start-btn {
-  width: 100%;
-  padding: 14px 16px;
-  font-size: 15px;
-  border-radius: 12px;
 }
 
 .saju-submit:disabled {

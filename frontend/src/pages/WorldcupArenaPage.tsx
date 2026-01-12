@@ -51,7 +51,6 @@ export function WorldcupArenaPage() {
           "게임 정보를 불러오지 못했습니다.";
         setState({ status: "error", message });
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parsedGameId]);
 
   const startRound = (roundItems: GameItem[], round: number) => {

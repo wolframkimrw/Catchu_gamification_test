@@ -8,10 +8,19 @@ import {
   type GenderType,
 } from "../utils/sajuLuck";
 
+const TABS = [
+  { key: "today", label: "오늘운세" },
+  { key: "newyear", label: "신년운세" },
+  { key: "zodiac", label: "별자리운세" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
 type LuckResult = ReturnType<typeof calculateLuckFromBirthDate>;
 
 export function SajuLuckPage() {
   const [started, setStarted] = useState(false);
+  // const [activeTab, setActiveTab] = useState<TabKey>("today");
   const [gender, setGender] = useState<GenderType | "">("");
   const [calendarType, setCalendarType] = useState<CalendarType>("SOLAR");
   const [birthDate, setBirthDate] = useState("");
@@ -178,9 +187,10 @@ export function SajuLuckPage() {
                     <p className="saju-group-label">&nbsp;</p>
                     <p className="saju-group-value saju-emphasis">오늘의 운세는...</p>
                     <p className="saju-group-label">&nbsp;</p>
-                    <p className="saju-group-value saju-emphasis saju-idiom-value">
+                    <p className="saju-group-value saju-emphasis">
                       {result.idiom.text} ({result.idiom.reading})
                     </p>
+                    <p className="saju-group-label">&nbsp;</p>
                     <p className="saju-group-value">{result.idiom.meaning}</p>
                     <p className="saju-group-label">&nbsp;</p>
                     <p className="saju-group-value">{result.idiom.message}</p>
@@ -189,8 +199,8 @@ export function SajuLuckPage() {
                   <p className="saju-group-value saju-emphasis">오늘의 운세는...</p>
                 )}
               </div>
-              <hr className="saju-line" />
               <div className="saju-group">
+                <p className="saju-group-label">공통 운세</p>
                 <p className="saju-group-value saju-common-value">{result.message}</p>
               </div>
             </section>

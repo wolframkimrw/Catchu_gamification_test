@@ -21,7 +21,9 @@ export type CalendarType = "SOLAR" | "LUNAR";
 export type GenderType = "male" | "female";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-type ElementType = "목" | "화" | "토" | "금" | "수";
+const ELEMENTS = ["목", "화", "토", "금", "수"] as const;
+
+type ElementType = (typeof ELEMENTS)[number];
 
 export function getWeekdayElement(weekday: number): ElementType {
   const mapping: ElementType[] = ["수", "목", "화", "토", "금", "수", "토"];
@@ -88,26 +90,26 @@ export function getMessageFromScore(score: number): string {
 오늘은 이미 잘 가고 있는 길 위에 있습니다.
 한 걸음만 더 차분히 내디뎌도 충분합니다.`;
   if (score >= 50)
-    return `보통의 흐름 · 선택과 태도가 중요한 단계
+    return `(보통의 흐름 · 선택과 태도가 중요한 단계)
 
 오늘은 운이 나쁘다고 하긴 어렵지만, 그렇다고 모든 것이 술술 풀리는 날도 아닙니다.
 상황 자체보다 ‘어떻게 대응하느냐’가 결과를 크게 바꾸는 하루입니다.
 무리하게 밀어붙이기보다는, 한 번 더 생각하고 점검하는 태도가 필요합니다.
 
-오늘의 운세의 핵심은 균형입니다.
+MID 운세의 핵심은 균형입니다.
 조급해도 손해, 지나치게 움츠러들어도 손해입니다.
 오늘은 “지금 내 위치를 정확히 아는 것”이 가장 큰 운을 부르는 행동입니다.
 
 오늘은 결과보다 방향이 중요한 날입니다.
 서두르지 않아도 괜찮고, 멈춰서 점검해도 충분합니다.`;
   return `🌧 LOW 운세
-조심이 필요한 날 · 회복을 준비하는 단계
+(조심이 필요한 날 · 회복을 준비하는 단계)
 
 오늘은 운이 약하다고 해서 모든 것이 나쁜 날은 아닙니다.
 다만 평소보다 마음과 상황이 쉽게 흔들릴 수 있는 하루입니다.
 이럴 때 중요한 것은 무언가를 더 해내는 것이 아니라, 불필요한 소모를 줄이는 것입니다.
 
-오늘의 핵심은 버티기와 정리입니다.
+LOW 운세의 핵심은 버티기와 정리입니다.
 오늘 하루를 무사히 지나가는 것만으로도 충분히 의미가 있습니다.
 
 오늘은 애쓰지 않아도 괜찮은 날입니다.

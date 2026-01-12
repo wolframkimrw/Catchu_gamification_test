@@ -5,6 +5,7 @@ import "../pages/worldcup.css";
 import { ApiError } from "../api/http";
 import { fetchGameDetail } from "../api/games";
 import type { GameDetailData, GameItem } from "../api/games";
+import { GameStartScreen } from "../components/GameStartScreen";
 
 type PageState =
   | { status: "loading" }
@@ -54,7 +55,6 @@ export function WorldcupPlayPage() {
   }
 
   const { game, items } = state.data;
-  const previewItems = items.slice(0, 4);
   const totalMatches = currentRound.length / 2;
   const a = currentRound[matchIndex * 2];
   const b = currentRound[matchIndex * 2 + 1];
@@ -106,123 +106,101 @@ export function WorldcupPlayPage() {
 
   return (
     <div className="page-section detail-card play-card">
-      <div className="play-summary">
-        <div className="detail-header play-header">
-          <div className="play-media">
-            <img src={game.thumbnail} alt={game.title} />
-          </div>
-          <div className="play-info">
-            <h1 className="detail-title">{game.title}</h1>
-            <div className="play-tags">
-              <span className="play-tag">
-                <span className="play-tag-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="img">
-                    <path
-                      d="M7.5 8.5h9c2.07 0 3.75 1.68 3.75 3.75v3.25a2 2 0 0 1-2 2h-1.1a2 2 0 0 1-1.79-1.1l-.67-1.35H9.31l-.67 1.35A2 2 0 0 1 6.85 17.5H5.75a2 2 0 0 1-2-2v-3.25A3.75 3.75 0 0 1 7.5 8.5Z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M9 12h-2m1-1v2"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="16" cy="11.5" r="0.9" fill="currentColor" />
-                    <circle cx="18.2" cy="13.2" r="0.9" fill="currentColor" />
-                  </svg>
-                </span>
-                {game.type}
-              </span>
-              <span className="play-tag">
-                <span className="play-tag-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="img">
-                    <path
-                      d="M9 3h6m-3 0v3"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                    <circle
-                      cx="12"
-                      cy="13"
-                      r="7"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M12 13l3-2"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
-                예상 시간 2분
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="play-description-section">
-        <p className="play-description">
-          메인에서 바로 시작! 라운드 선택 없이 일단 플레이해요.
-        </p>
-      </div>
-
       {items.length < 2 ? (
         <div className="play-start-section">
           <div className="state-box">후보가 2개 이상 있어야 게임을 시작할 수 있습니다.</div>
         </div>
+      ) : !started && !champion ? (
+        <GameStartScreen
+          title={game.title}
+          description="메인에서 바로 시작! 라운드 선택 없이 일단 플레이해요."
+          tags={[
+            {
+              label: game.type,
+              icon: (
+                <svg viewBox="0 0 24 24" role="img">
+                  <path
+                    d="M7.5 8.5h9c2.07 0 3.75 1.68 3.75 3.75v3.25a2 2 0 0 1-2 2h-1.1a2 2 0 0 1-1.79-1.1l-.67-1.35H9.31l-.67 1.35A2 2 0 0 1 6.85 17.5H5.75a2 2 0 0 1-2-2v-3.25A3.75 3.75 0 0 1 7.5 8.5Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9 12h-2m1-1v2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="16" cy="11.5" r="0.9" fill="currentColor" />
+                  <circle cx="18.2" cy="13.2" r="0.9" fill="currentColor" />
+                </svg>
+              ),
+            },
+            {
+              label: "예상 시간 2분",
+              icon: (
+                <svg viewBox="0 0 24 24" role="img">
+                  <path
+                    d="M9 3h6m-3 0v3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="13"
+                    r="7"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <path
+                    d="M12 13l3-2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              ),
+            },
+          ]}
+          media={<img src={game.thumbnail} alt={game.title} />}
+          buttonLabel="게임 시작"
+          onStart={startGame}
+        />
       ) : (
         <div className="play-start-section">
-          {!started && !champion ? (
-            <div className="play-start-area">
-              <button
-                className="btn btn-primary play-start-btn"
-                type="button"
-                onClick={startGame}
-              >
-                게임 시작
-              </button>
+          <div className="play-round">
+            <div className="round-meta">
+              <span className="badge badge-hot">ROUND {roundNumber || 1}</span>
+              <span className="round-progress">
+                {totalMatches ? `${matchIndex + 1}/${totalMatches} 경기` : "시작 전"}
+              </span>
             </div>
-          ) : (
-            <div className="play-round">
-              <div className="round-meta">
-                <span className="badge badge-hot">ROUND {roundNumber || 1}</span>
-                <span className="round-progress">
-                  {totalMatches ? `${matchIndex + 1}/${totalMatches} 경기` : "시작 전"}
-                </span>
+            {a && b ? (
+              <div className="match-box">
+                {[a, b].map((contestant) => (
+                  <button
+                    key={contestant.id}
+                    className="contestant-card"
+                    type="button"
+                    onClick={() => handleSelect(contestant)}
+                  >
+                    <div className="contestant-name">
+                      {contestant.name || contestant.file_name}
+                    </div>
+                    <div className="contestant-meta">
+                      #{contestant.sort_order + 1}
+                    </div>
+                  </button>
+                ))}
               </div>
-              {a && b ? (
-                <div className="match-box">
-                  {[a, b].map((contestant) => (
-                    <button
-                      key={contestant.id}
-                      className="contestant-card"
-                      type="button"
-                      onClick={() => handleSelect(contestant)}
-                    >
-                      <div className="contestant-name">
-                        {contestant.name || contestant.file_name}
-                      </div>
-                      <div className="contestant-meta">
-                        #{contestant.sort_order + 1}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          )}
-
+            ) : null}
+          </div>
           {champion ? (
             <div className="state-box play-winner">
               <p className="badge badge-hot" style={{ display: "inline-flex" }}>

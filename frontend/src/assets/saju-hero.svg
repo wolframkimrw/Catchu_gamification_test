@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1e9ff"/>
+      <stop offset="1" stop-color="#ffe8f3"/>
+    </linearGradient>
+    <linearGradient id="orb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7a5af8"/>
+      <stop offset="1" stop-color="#ff7ac7"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" rx="48" fill="url(#bg)"/>
+  <circle cx="585" cy="220" r="120" fill="url(#orb)" opacity="0.9"/>
+  <circle cx="585" cy="220" r="75" fill="#ffffff" opacity="0.15"/>
+  <circle cx="585" cy="220" r="40" fill="#ffffff" opacity="0.2"/>
+  <path d="M120 460c120-60 240-60 360 0" stroke="#7a5af8" stroke-width="18" stroke-linecap="round" opacity="0.45"/>
+  <path d="M140 420c90-45 180-45 270 0" stroke="#5a36b2" stroke-width="12" stroke-linecap="round" opacity="0.55"/>
+  <text x="120" y="200" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#1b1c1f">FORTUNE TEST</text>
+  <text x="120" y="250" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#4a4b52">Check your day in 2 minutes</text>
+  <text x="120" y="330" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#5a36b2">Saju Luck</text>
+</svg>

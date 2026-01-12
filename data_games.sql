@@ -1,0 +1,6 @@
+INSERT INTO gaimification_worldcup_topic VALUES(1,'2025-12-08 06:02:57.784419','2025-12-08 06:02:57.784437','라면','ramen',0,1);
+INSERT INTO gaimification_game VALUES(1,'2025-12-08 06:05:18.872284','2025-12-08 08:35:02.714580','라면 월드컵','라면월드컵(로컬db 테스트)','ramen-worldcup','WORLD_CUP','ACTIVE',0,'PUBLIC','https://i.namu.wiki/i/w2vq_oFOmbZdcSk2dTwYykO_-VUTM73K5Eyx07ohJkko0R4U88hyAtbS-vD5w4ClyIsNMS01oTMwrqwnCWptxz8Pu6XHnpb7BuhQ3hbyHf3YLFx2LhoItWeN1Bmmr3ND43-9SorEGM4X670TLbseRg.webp','worldcup/ramen/',NULL,NULL,1,1);
+INSERT INTO gaimification_game_item VALUES(1,'2025-12-08 06:06:02.123968','2025-12-08 06:06:02.123986','진라면 매운맛','jin-hot.jpg','OFFICIAL',0,1,1,0,0,1,1);
+INSERT INTO gaimification_game_item VALUES(2,'2025-12-08 06:06:20.913069','2025-12-08 06:06:20.913086','진라면 순한맛','jin-mild.jpg','OFFICIAL',0,1,1,0,0,1,1);
+INSERT INTO gaimification_game_item VALUES(3,'2025-12-08 06:06:52.272117','2025-12-08 07:45:35.987165','신라면','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLrNj80X2HIto1e5HJSmo9hvvVUBemeCnqzQ&s','OFFICIAL',0,1,1,0,0,1,1);
+INSERT INTO gaimification_game_item VALUES(4,'2025-12-08 06:08:10.010463','2025-12-08 06:08:10.010484','열라면','yul.jpg','USER_UPLOAD',0,1,1,0,0,1,1);

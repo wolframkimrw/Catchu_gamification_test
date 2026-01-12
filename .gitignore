@@ -1,0 +1,62 @@
+# OS
+.DS_Store
+
+# Frontend logs and builds
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+node_modules
+dist
+dist-ssr
+*.local
+
+# Backend/Python 캐시
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# 패키징/빌드 산출물
+.eggs/
+*.egg-info/
+build/
+
+# 테스트/커버리지
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.pytest_cache/
+
+# Django
+db.sqlite3
+local_settings.py
+media/
+staticfiles/
+
+# 환경 변수 파일
+.env
+.env.local
+.env.*.local
+
+# 에디터 설정
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.sh

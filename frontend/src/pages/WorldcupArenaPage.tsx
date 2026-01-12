@@ -1,5 +1,5 @@
 // src/pages/WorldcupArenaPage.tsx
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import "../pages/worldcup.css";
 import { ApiError } from "../api/http";
@@ -13,7 +13,6 @@ type PageState =
   | { status: "success"; data: GameDetailData };
 
 export function WorldcupArenaPage() {
-  type CSSVarStyle = CSSProperties & Record<`--${string}`, string | number>;
   const { gameId } = useParams<{ gameId: string }>();
   const parsedGameId = useMemo(() => {
     const idNumber = Number(gameId);

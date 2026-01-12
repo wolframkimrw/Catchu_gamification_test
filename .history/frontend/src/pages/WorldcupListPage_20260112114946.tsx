@@ -66,17 +66,6 @@ const categories = [
   { label: "스낵테스트", emoji: "🍪" },
 ];
 
-const psychoFallbackGames: GameCard[] = Array.from({ length: 10 }, (_, index) => ({
-  id: 1000 + index,
-  title: `심리테스트 ${index + 1}`,
-  type: "PSYCHO_TEST",
-  thumbnail:
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80&auto=format&fit=crop",
-  topic: null,
-  badge: "NEW",
-  caption: "준비중",
-}));
-
 export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [activeTab, setActiveTab] = useState<"worldcup" | "fortune" | "psycho">(
@@ -111,8 +100,6 @@ export function WorldcupListPage() {
   const psychoGames = catalogGames.filter(
     (game) => game.type === "PSYCHO_TEST"
   );
-  const resolvedPsychoGames =
-    psychoGames.length > 0 ? psychoGames : psychoFallbackGames;
 
   const bannerTarget = useMemo(() => {
     const worldcup = worldcupGames[0];
@@ -182,7 +169,7 @@ export function WorldcupListPage() {
 
       <div className="wc-content">
         <section className="section categories">
-          <div className="wc-tabs h-rail">
+          <div className="wc-tabs">
             <button
               type="button"
               className={`wc-tab ${activeTab === "worldcup" ? "active" : ""}`}
@@ -258,14 +245,22 @@ export function WorldcupListPage() {
               />
             </div>
             <div ref={psychoRef}>
-            <CategorySection
-              title="심리테스트"
-              variant="small"
-              games={resolvedPsychoGames}
-              fallbackLabel="심리테스트 준비중"
-              onCardClick={null}
-              getMeta={getCardMeta}
-            />
+              <CategorySection
+                title="심리테스트"
+                variant="small"
+                games={psychoGames}
+                fallbackLabel="심리테스트 준비중"
+                onCardClick={null}
+                getMeta={getCardMeta}
+              />
+                            <CategorySection
+                title="심리테스트"
+                variant="small"
+                games={psychoGames}
+                fallbackLabel="심리테스트 준비중"
+                onCardClick={null}
+                getMeta={getCardMeta}
+              />
             </div>
           </div>
 
@@ -312,7 +307,7 @@ function CategorySection({
       <div className="cat-header">
         <h3>{title}</h3>
       </div>
-      <div className={`cat-grid ${variant} ${variant === "small" ? "h-rail" : ""}`}>
+      <div className={`cat-grid ${variant}`}>
         {hasGames
           ? games.map((game) => {
               const meta = getMeta(game);
@@ -343,29 +338,30 @@ function CategorySection({
                 </>
               );
 
-              const cardNode = !onCardClick ? (
-                <div className="cat-card disabled">{content}</div>
-              ) : (
-                <Link to={onCardClick(game)} className="cat-card">
+              if (!onCardClick) {
+                return (
+                  <div key={`static-${game.id}`} className="cat-card disabled">
+                    {content}
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={game.id}
+                  to={onCardClick(game)}
+                  className="cat-card"
+                >
                   {content}
                 </Link>
               );
-
-              return (
-                <div key={game.id} className="h-rail-item">
-                  {cardNode}
-                </div>
-              );
             })
           : (
-            <div className="h-rail-item">
-              <div className="cat-card placeholder">
-                <div className="cat-thumb">
-                  <div className="cat-thumb-placeholder">준비중</div>
-                </div>
-                <div className="cat-body">
-                  <div className="cat-title">{fallbackLabel}</div>
-                </div>
+            <div className="cat-card placeholder">
+              <div className="cat-thumb">
+                <div className="cat-thumb-placeholder">준비중</div>
+              </div>
+              <div className="cat-body">
+                <div className="cat-title">{fallbackLabel}</div>
               </div>
             </div>
           )}

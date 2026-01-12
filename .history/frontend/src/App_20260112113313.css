@@ -15,7 +15,7 @@
   max-width: var(--app-max-width);
   min-height: 100vh;
   margin: 0;
-  padding: 0;
+  padding: var(--app-padding-y) var(--app-padding-x) calc(var(--app-padding-y) + 0.5rem);
   background: var(--app-surface);
   border-radius: var(--app-shell-radius);
   box-shadow: var(--app-shell-shadow, none);
@@ -33,7 +33,8 @@
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  padding-top: 0;
+  padding-top: var(--app-header-height);
+  /* 고정 헤더 높이만큼 여백 */
 }
 
 .app-main-full {
@@ -116,7 +117,7 @@
 }
 
 .app-header-fixed {
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;

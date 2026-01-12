@@ -1,5 +1,6 @@
 // src/api/games.ts
-import { ApiResponse, apiClient, requestWithMeta } from "./http";
+import { apiClient, requestWithMeta } from "./http";
+import type { ApiResponse } from "./http";
 
 export interface Topic {
   id: number;

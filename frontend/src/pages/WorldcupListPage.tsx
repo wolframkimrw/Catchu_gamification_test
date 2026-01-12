@@ -7,6 +7,9 @@ import { fetchGamesList } from "../api/games";
 
 type GameCard = Game & { badge?: "HOT" | "NEW"; caption?: string };
 
+const isGameCard = (game: Game | GameCard): game is GameCard =>
+  "badge" in game || "caption" in game;
+
 const gameCards: GameCard[] = [
   {
     id: 1,
@@ -89,6 +92,12 @@ export function WorldcupListPage() {
   }, []);
 
   const highlightCard = apiHighlight || highlight;
+  const highlightBadge = isGameCard(highlightCard)
+    ? highlightCard.badge
+    : undefined;
+  const highlightCaption = isGameCard(highlightCard)
+    ? highlightCard.caption
+    : undefined;
 
   return (
     <div className="page-section">
@@ -116,13 +125,17 @@ export function WorldcupListPage() {
             </div>
             <div className="highlight-info">
               <div className="game-meta">
-                {highlightCard.badge ? (
-                  <span className={`badge ${highlightCard.badge === "HOT" ? "badge-hot" : "badge-new"}`}>
-                    {highlightCard.badge}
+                {highlightBadge ? (
+                  <span
+                    className={`badge ${
+                      highlightBadge === "HOT" ? "badge-hot" : "badge-new"
+                    }`}
+                  >
+                    {highlightBadge}
                   </span>
                 ) : null}
-                {"caption" in highlightCard && highlightCard.caption ? (
-                  <span>{highlightCard.caption}</span>
+                {highlightCaption ? (
+                  <span>{highlightCaption}</span>
                 ) : null}
               </div>
               <h3 className="game-title-link">{highlightCard.title}</h3>

@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import environ
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -64,7 +63,6 @@ CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
     ""
 ).split(",") if os.getenv("CORS_ALLOWED_ORIGINS") else []
-
 CORS_ALLOWED_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'config.urls'

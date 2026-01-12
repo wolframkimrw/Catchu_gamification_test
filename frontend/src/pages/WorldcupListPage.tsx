@@ -1,6 +1,5 @@
 // src/pages/WorldcupListPage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import "../pages/worldcup.css";
 import type { Game } from "../api/games";
@@ -23,9 +22,6 @@ const categories = [
 export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
-  const [activeTab, setActiveTab] = useState<"worldcup" | "fortune" | "psycho">(
-    "worldcup"
-  );
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
   const psychoRef = useRef<HTMLDivElement | null>(null);

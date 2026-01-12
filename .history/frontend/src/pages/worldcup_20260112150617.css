@@ -27,7 +27,7 @@
 }
 
 .section.intro {
-  padding-inline: 0.75rem;
+  padding-inline: 1rem;
 }
 
 .section.list .cat-header,
@@ -48,13 +48,13 @@
   padding-inline: 0;
 }
 
-/* .section.full-bleed .wc-content {
+.section.full-bleed .wc-content {
   padding-inline: 0;
-} */
+}
 
-/* .section {
+.section {
   margin-top: var(--space-3);
-} */
+}
 
 .section:first-child {
   margin-top: 0;

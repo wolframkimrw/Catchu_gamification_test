@@ -145,18 +145,9 @@ export function WorldcupListPage() {
           </div>
         </section> */}
 
-        <section className="section intro">
-          <div className="worldcup-hero">
-            <div>
-              <h2>오늘도 만나서 반가워! 추천 콘텐츠를 즐겨봐 🎵</h2>
-              <p>월드컵 게임과 테스트로 기분 전환해 보세요.</p>
-            </div>
-            <div className="hero-emoji">🐣</div>
-          </div>
-        </section>
-
         <section className="section list">
           <div className="category-page">
+            <div className="worldcup-gap" aria-hidden="true" />
             <div ref={worldcupRef} className="worldcup-rail">
               <CategorySection
                 title="월드컵"
@@ -167,6 +158,15 @@ export function WorldcupListPage() {
                 getMeta={() => ({})}
               />
             </div>
+            <section className="section intro">
+              <div className="worldcup-hero">
+                <div>
+                  <h2>오늘도 만나서 반가워! 추천 콘텐츠를 즐겨봐 🎵</h2>
+                  <p>월드컵 게임과 테스트로 기분 전환해 보세요.</p>
+                </div>
+                <div className="hero-emoji">🐣</div>
+              </div>
+            </section>
             <div ref={fortuneRef}>
               <CategorySection
                 title="운게임 (사주팔자)"

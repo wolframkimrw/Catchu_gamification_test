@@ -182,7 +182,7 @@ export function WorldcupArenaPage() {
               >
                 다시 플레이
               </button>
-              <Link to="/worldcup" className="btn btn-ghost">
+              <Link to="/" className="btn btn-ghost">
                 리스트로
               </Link>
             </div>

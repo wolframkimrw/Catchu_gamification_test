@@ -25,7 +25,7 @@ function Layout() {
 
   return (
     <div className="app-viewport">
-      <div className={`app-shell ${isArena ? "app-shell-full" : ""}`}>
+      <div className="app-shell">
         <header className={`app-header ${isArena ? "" : "app-header-fixed"}`}>
           <div className="app-left">
             <div className="app-logo">캐치유 테스트</div>
@@ -33,7 +33,7 @@ function Layout() {
           </div>
           <div className="app-actions">🔍 ☰</div>
         </header>
-        <main className={isArena ? "app-main-full" : "app-main"}>
+        <main className="app-main">
           <Routes>
             <Route path="/worldcup" element={<WorldcupListPage />} />
             <Route path="/worldcup/:gameId" element={<WorldcupDetailPage />} />

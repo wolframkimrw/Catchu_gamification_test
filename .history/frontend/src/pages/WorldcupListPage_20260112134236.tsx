@@ -22,7 +22,6 @@ const categories = [
 
 export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
-  const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
   const [activeTab, setActiveTab] = useState<"worldcup" | "fortune" | "psycho">(
     "worldcup"
   );
@@ -34,7 +33,6 @@ export function WorldcupListPage() {
     fetchGamesList()
       .then((games) => {
         setApiGames(games);
-        setWorldcupApiGames(games.filter((game) => game.type === "WORLD_CUP"));
       })
       .catch(() => {
         // 실패하면 하드코딩 데이터 사용
@@ -43,7 +41,7 @@ export function WorldcupListPage() {
 
   const catalogGames = useMemo(() => apiGames, [apiGames]);
 
-  const worldcupGames = worldcupApiGames;
+  const worldcupGames = catalogGames.filter((game) => game.type === "WORLD_CUP");
   const fortuneGames = catalogGames.filter(
     (game) => game.type === "FORTUNE_TEST"
   );
@@ -51,8 +49,6 @@ export function WorldcupListPage() {
   const psychoGames = catalogGames.filter(
     (game) => game.type === "PSYCHO_TEST"
   );
-  const resolvedPsychoGames =
-    psychoGames.length > 0 ? psychoGames : psychoFallbackGames;
 
   const bannerTarget = useMemo(() => {
     const worldcup = worldcupGames[0];
@@ -103,7 +99,7 @@ export function WorldcupListPage() {
       </section>
 
       <div className="wc-content">
-        {/* <section className="section categories">
+        <section className="section categories">
           <div className="wc-tabs h-rail" style={{ "--gap": "0.5rem" } as CSSProperties}>
             <div className="h-rail-track">
               <button
@@ -147,7 +143,7 @@ export function WorldcupListPage() {
               </button>
             </div>
           </div>
-        </section> */}
+        </section>
 
         <section className="section intro">
           <div className="worldcup-hero">
@@ -185,7 +181,7 @@ export function WorldcupListPage() {
               <CategorySection
                 title="심리테스트"
                 variant="small"
-                games={resolvedPsychoGames}
+                games={psychoGames}
                 fallbackLabel="심리테스트 준비중"
                 onCardClick={null}
                 getMeta={() => ({})}
@@ -221,7 +217,6 @@ type CategorySectionProps = {
   onCardClick: ((game: Game) => string) | null;
   getMeta: (game: Game) => { badge?: "HOT" | "NEW"; caption?: string };
 };
-
 
 function CategorySection({
   title,
@@ -291,11 +286,3 @@ function CategorySection({
     </section>
   );
 }
-const psychoFallbackGames: Game[] = Array.from({ length: 10 }, (_, index) => ({
-  id: 1000 + index,
-  title: `심리테스트 ${index + 1}`,
-  type: "PSYCHO_TEST",
-  thumbnail:
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80&auto=format&fit=crop",
-  topic: null,
-}));

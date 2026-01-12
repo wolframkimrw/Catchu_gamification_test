@@ -107,7 +107,9 @@ export function WorldcupPlayPage() {
   return (
     <div className="page-section detail-card play-card">
       <div className="detail-header play-header">
-        <img src={game.thumbnail} alt={game.title} />
+        <div className="play-media">
+          <img src={game.thumbnail} alt={game.title} />
+        </div>
         <div className="play-info">
           <p className="badge badge-hot" style={{ display: "inline-flex" }}>
             WORLD CUP
@@ -125,9 +127,6 @@ export function WorldcupPlayPage() {
             <Link to={`/worldcup/${game.id}`} className="btn btn-ghost">
               상세보기
             </Link>
-            <button className="btn btn-primary" type="button" onClick={startGame}>
-              게임 시작
-            </button>
           </div>
         </div>
       </div>
@@ -167,7 +166,15 @@ export function WorldcupPlayPage() {
               </span>
             </div>
             {!started && !champion ? (
-              <div className="state-box">시작 버튼을 눌러 주세요.</div>
+              <div className="state-box play-start-box">
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={startGame}
+                >
+                  게임 시작
+                </button>
+              </div>
             ) : null}
             {started && a && b ? (
               <div className="match-box">

@@ -59,13 +59,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -76,6 +76,10 @@ CORS_ALLOWED_ORIGINS = [
     
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://catchu-gamification-test-[a-z0-9-]+\\.vercel\\.app$",
+]
+
 CORS_ALLOWED_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
@@ -84,6 +88,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
     "https://catchu-gamification-test.vercel.app",
     "https://local.catchu.ngrok.app",
+    "https://catchu-gamification-test-h2xr4z0ge-wolframs-projects-37373fbb.vercel.app",
 ]
 
 ROOT_URLCONF = 'config.urls'

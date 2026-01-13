@@ -1,6 +1,7 @@
 """config/exceptions.py"""
 
 from typing import Any
+import logging
 
 from rest_framework import status
 from rest_framework.exceptions import APIException
@@ -11,6 +12,7 @@ from . import error_codes
 from .response import api_response
 from http import HTTPStatus
 
+logger = logging.getLogger(__name__)
 
 class InvalidSessionException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
@@ -91,6 +93,7 @@ def custom_exception_handler(exc: Exception, context: dict) -> Response:
     api_identifier = _resolve_api_identifier(context)
 
     if drf_response is None:
+        logger.exception("Unhandled exception in API view", exc_info=exc)
         return api_response(
             data=None,
             api=api_identifier,

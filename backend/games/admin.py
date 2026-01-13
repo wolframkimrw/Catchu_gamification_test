@@ -7,8 +7,8 @@ from .models import (
     WorldcupTopic,
     Game,
     GameItem,
-    GameSession,
     GameChoiceLog,
+    WorldcupPickLog,
     GameResult,
     Banner,
     BannerClickLog,
@@ -17,8 +17,8 @@ from .models import (
 admin.site.register(WorldcupTopic)
 admin.site.register(Game)
 admin.site.register(GameItem)
-admin.site.register(GameSession)
 admin.site.register(GameChoiceLog)
+admin.site.register(WorldcupPickLog)
 admin.site.register(GameResult)
 admin.site.register(Banner)
 admin.site.register(BannerClickLog)

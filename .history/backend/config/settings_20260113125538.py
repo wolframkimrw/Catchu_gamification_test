@@ -154,7 +154,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-DEBUG = env.bool("DEBUG", default=True)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -169,5 +168,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
 }
-
-

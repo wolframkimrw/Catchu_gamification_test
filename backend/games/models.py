@@ -190,9 +190,9 @@ class GameItem(TimeStampedModel):
 
 
 # --------------------------------------------------
-# GameSession (게임 플레이 1회)
+# GameChoiceLog (게임 플레이 1회)
 # --------------------------------------------------
-class GameSession(TimeStampedModel):
+class GameChoiceLog(TimeStampedModel):
     game = models.ForeignKey(
         Game,
         on_delete=models.CASCADE,
@@ -230,21 +230,21 @@ class GameSession(TimeStampedModel):
     finished_at = models.DateTimeField(null=True, blank=True, verbose_name="종료 시각")
 
     class Meta:
-        db_table = "gaimification_game_session"
+        db_table = "gaimification_game_choice_log"
         ordering = ["-started_at"]
-        verbose_name = "게임 세션"
-        verbose_name_plural = "게임 세션"
+        verbose_name = "게임 선택 로그"
+        verbose_name_plural = "게임 선택 로그"
 
     def __str__(self) -> str:
         return f"Session #{self.id} for game {self.game_id}"
 
 
 # --------------------------------------------------
-# GameChoiceLog (토너먼트 선택 로그)
+# WorldcupPickLog (토너먼트 선택 로그)
 # --------------------------------------------------
-class GameChoiceLog(models.Model):
+class WorldcupPickLog(models.Model):
     session = models.ForeignKey(
-        GameSession,
+        GameChoiceLog,
         on_delete=models.CASCADE,
         related_name="choices",
         verbose_name="게임 세션",
@@ -285,10 +285,10 @@ class GameChoiceLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성 시각")
 
     class Meta:
-        db_table = "gaimification_game_choice_log"
+        db_table = "gaimification_worldcup_pick_log"
         ordering = ["session_id", "step_index", "id"]
-        verbose_name = "게임 선택 로그"
-        verbose_name_plural = "게임 선택 로그"
+        verbose_name = "월드컵 선택 로그"
+        verbose_name_plural = "월드컵 선택 로그"
 
     def __str__(self) -> str:
         return f"Choice #{self.id} (session {self.session_id})"
@@ -299,7 +299,7 @@ class GameChoiceLog(models.Model):
 # --------------------------------------------------
 class GameResult(models.Model):
     session = models.OneToOneField(
-        GameSession,
+        GameChoiceLog,
         on_delete=models.CASCADE,
         related_name="result",
         verbose_name="게임 세션",
@@ -410,7 +410,7 @@ class BannerClickLog(models.Model):
         verbose_name="게임",
     )
     session = models.ForeignKey(
-        GameSession,
+        GameChoiceLog,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

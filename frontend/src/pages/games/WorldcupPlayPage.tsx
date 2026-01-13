@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
+import { createGameSession } from "../../api/gamesSession";
 import type { GameDetailData, GameItem } from "../../api/games";
 import { GameStartScreen } from "../../components/GameStartScreen";
 import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../../data/localWorldcup";
@@ -88,8 +89,16 @@ export function WorldcupPlayPage() {
     setMatchIndex(0);
   };
 
-  const startGame = () => {
+  const startGame = async () => {
     if (!items.length || parsedGameId === null) return;
+    try {
+      await createGameSession({
+        game_id: parsedGameId,
+        source: "worldcup_play_start",
+      });
+    } catch {
+      // 로그 실패는 게임 진행을 막지 않음
+    }
     window.location.href = `/worldcup/${parsedGameId}/arena`;
   };
 

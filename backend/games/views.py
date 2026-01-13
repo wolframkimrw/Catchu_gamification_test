@@ -44,6 +44,9 @@ import uuid
 # Create your views here.
 
 JSON_BASE_DIR = os.path.join(settings.BASE_DIR, "data", "json")
+FRONTEND_JSON_BASE_DIR = os.path.realpath(
+    os.path.join(settings.BASE_DIR, "..", "frontend", "src", "utils")
+)
 
 
 def _ensure_json_base_dir():
@@ -64,6 +67,14 @@ def _resolve_json_path(path_value: str) -> tuple[str, str]:
     if not abs_path.startswith(base_path + os.sep):
         raise ValidationError({"path": "허용되지 않는 경로입니다."})
     return abs_path, normalized
+
+
+def _resolve_frontend_json_path(normalized: str) -> str:
+    abs_path = os.path.realpath(os.path.join(FRONTEND_JSON_BASE_DIR, normalized))
+    base_path = os.path.realpath(FRONTEND_JSON_BASE_DIR)
+    if not abs_path.startswith(base_path + os.sep):
+        raise ValidationError({"path": "허용되지 않는 경로입니다."})
+    return abs_path
 
 class GameListView(BaseAPIView):
     api_name = "games.list"
@@ -800,4 +811,13 @@ class AdminJsonDetailView(BaseAPIView):
         os.makedirs(os.path.dirname(abs_path), exist_ok=True)
         with open(abs_path, "w", encoding="utf-8") as handle:
             json.dump(content, handle, ensure_ascii=False, indent=2)
+        try:
+            frontend_path = _resolve_frontend_json_path(normalized)
+            os.makedirs(os.path.dirname(frontend_path), exist_ok=True)
+            with open(frontend_path, "w", encoding="utf-8") as handle:
+                json.dump(content, handle, ensure_ascii=False, indent=2)
+        except ValidationError:
+            raise
+        except OSError:
+            pass
         return self.respond(data={"path": normalized})

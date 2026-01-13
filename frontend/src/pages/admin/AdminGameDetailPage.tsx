@@ -15,6 +15,14 @@ import {
 } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
 
+type IdiomEntry = {
+  key: string;
+  text: string;
+  reading: string;
+  meaning: string;
+  message: string;
+};
+
 export function AdminGameDetailPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -35,8 +43,16 @@ export function AdminGameDetailPage() {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
-  const [jsonRows, setJsonRows] = useState<{ key: string; value: string }[]>([]);
   const [isJsonSaving, setIsJsonSaving] = useState(false);
+  const [activeBucket, setActiveBucket] = useState<"high" | "mid" | "low">("high");
+  const [idiomBuckets, setIdiomBuckets] = useState<{
+    high: IdiomEntry[];
+    mid: IdiomEntry[];
+    low: IdiomEntry[];
+  }>({ high: [], mid: [], low: [] });
+  const [activeEntryIndex, setActiveEntryIndex] = useState<number | null>(null);
+  const [isSajuDeleteMode, setIsSajuDeleteMode] = useState(false);
+  const [selectedSajuIndexes, setSelectedSajuIndexes] = useState<number[]>([]);
 
   useEffect(() => {
     if (!gameId) {
@@ -67,18 +83,17 @@ export function AdminGameDetailPage() {
 
   useEffect(() => {
     if (!jsonPath) {
-      setJsonRows([]);
+      setIdiomBuckets({ high: [], mid: [], low: [] });
       return;
     }
     fetchAdminJsonFile(jsonPath)
       .then((data) => {
-        const entries = Object.entries(data.content || {});
-        setJsonRows(
-          entries.map(([key, value]) => ({
-            key,
-            value: JSON.stringify(value, null, 2),
-          }))
-        );
+        const content = (data.content || {}) as Record<string, IdiomEntry[]>;
+        setIdiomBuckets({
+          high: Array.isArray(content.high) ? content.high : [],
+          mid: Array.isArray(content.mid) ? content.mid : [],
+          low: Array.isArray(content.low) ? content.low : [],
+        });
       })
       .catch((err) => {
         if (err instanceof ApiError) {
@@ -221,6 +236,11 @@ export function AdminGameDetailPage() {
     if (!game) {
       return;
     }
+    const editCount =
+      Object.keys(editingItems).length + (showNewItemForm ? 1 : 0) + (isEditingInfo ? 1 : 0);
+    if (editCount > 0 && !window.confirm(`${editCount}개 수정하시겠습니까?`)) {
+      return;
+    }
     setError(null);
     try {
       if (isEditingInfo) {
@@ -298,6 +318,9 @@ export function AdminGameDetailPage() {
       setIsDeleteMode(false);
       return;
     }
+    if (!window.confirm(`${selectedItemIds.length}개 삭제하시겠습니까?`)) {
+      return;
+    }
     try {
       setIsDeletingItems(true);
       await Promise.all(selectedItemIds.map((id) => deleteAdminGameItem(id)));
@@ -322,34 +345,49 @@ export function AdminGameDetailPage() {
     }
   };
 
-  const handleSaveJson = async () => {
+  const handleSaveJson = async (): Promise<boolean> => {
     if (!jsonPath) {
-      return;
+      return false;
+    }
+    const totalCount =
+      idiomBuckets.high.length + idiomBuckets.mid.length + idiomBuckets.low.length;
+    if (totalCount > 0 && !window.confirm(`${totalCount}개 수정하시겠습니까?`)) {
+      return false;
     }
     setError(null);
-    const next: Record<string, unknown> = {};
-    for (const row of jsonRows) {
-      const trimmedKey = row.key.trim();
-      if (!trimmedKey) {
-        setError("키가 비어 있습니다.");
-        return;
-      }
-      try {
-        next[trimmedKey] = row.value ? JSON.parse(row.value) : "";
-      } catch (parseErr) {
-        setError(`값 파싱 실패: ${trimmedKey}`);
-        return;
-      }
-    }
+    const sanitize = (entries: IdiomEntry[]) =>
+      entries
+        .map((entry) => ({
+          key: entry.key.trim(),
+          text: entry.text.trim(),
+          reading: entry.reading.trim(),
+          meaning: entry.meaning.trim(),
+          message: entry.message.trim(),
+        }))
+        .filter(
+          (entry) =>
+            entry.key ||
+            entry.text ||
+            entry.reading ||
+            entry.meaning ||
+            entry.message
+        );
+    const next = {
+      high: sanitize(idiomBuckets.high),
+      mid: sanitize(idiomBuckets.mid),
+      low: sanitize(idiomBuckets.low),
+    };
     try {
       setIsJsonSaving(true);
       await saveAdminJsonFile(jsonPath, next);
+      return true;
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.meta.message || "JSON 저장에 실패했습니다.");
       } else {
         setError("JSON 저장에 실패했습니다.");
       }
+      return false;
     } finally {
       setIsJsonSaving(false);
     }
@@ -383,8 +421,51 @@ export function AdminGameDetailPage() {
     return map[value] || value;
   };
 
+  const currentBucket = idiomBuckets[activeBucket];
+
+  const updateEntry = (index: number, updates: Partial<IdiomEntry>) => {
+    setIdiomBuckets((prev) => {
+      const next = [...prev[activeBucket]];
+      next[index] = { ...next[index], ...updates };
+      return { ...prev, [activeBucket]: next };
+    });
+  };
+
+  const addEntry = () => {
+    setIdiomBuckets((prev) => {
+      const next = [
+        ...prev[activeBucket],
+        { key: "", text: "", reading: "", meaning: "", message: "" },
+      ];
+      setActiveEntryIndex(next.length - 1);
+      return { ...prev, [activeBucket]: next };
+    });
+  };
+
+  const removeEntry = (index: number) => {
+    setIdiomBuckets((prev) => {
+      const next = prev[activeBucket].filter((_, idx) => idx !== index);
+      if (activeEntryIndex === index) {
+        setActiveEntryIndex(null);
+      }
+      return { ...prev, [activeBucket]: next };
+    });
+  };
+
+  const clampTextarea = (element: HTMLTextAreaElement, maxLines: number) => {
+    const computed = window.getComputedStyle(element);
+    const lineHeight = parseFloat(computed.lineHeight || "20");
+    element.style.height = "auto";
+    const maxHeight = lineHeight * maxLines;
+    const nextHeight = Math.min(element.scrollHeight, maxHeight);
+    element.style.height = `${nextHeight}px`;
+  };
+
   const hasPendingChanges =
-    showNewItemForm || Object.keys(editingItems).length > 0 || isEditingInfo || isDeleteMode;
+    showNewItemForm ||
+    Object.keys(editingItems).length > 0 ||
+    isEditingInfo ||
+    isDeleteMode;
 
   if (isLoading) {
     return (
@@ -532,56 +613,187 @@ export function AdminGameDetailPage() {
       </section>
 
       {jsonPath ? (
-        <section className="admin-json-list">
-          {jsonRows.length === 0 ? (
-            <div className="admin-json-empty">표시할 데이터가 없습니다.</div>
-          ) : (
-            jsonRows.map((row, index) => (
-              <div key={`${row.key}-${index}`} className="admin-json-row">
-                <input
-                  type="text"
-                  value={row.key}
-                  placeholder="key"
-                  onChange={(event) =>
-                    setJsonRows((prev) =>
-                      prev.map((item, idx) =>
-                        idx === index ? { ...item, key: event.target.value } : item
-                      )
-                    )
-                  }
-                />
-                <textarea
-                  rows={6}
-                  value={row.value}
-                  placeholder="value (JSON)"
-                  onChange={(event) =>
-                    setJsonRows((prev) =>
-                      prev.map((item, idx) =>
-                        idx === index ? { ...item, value: event.target.value } : item
-                      )
-                    )
-                  }
-                />
-                <button
-                  type="button"
-                  className="danger"
-                  onClick={() =>
-                    setJsonRows((prev) => prev.filter((_, idx) => idx !== index))
-                  }
-                >
-                  삭제
-                </button>
-              </div>
-            ))
-          )}
+        <section className="admin-json-editor">
+          <div className="admin-json-tabs">
+            {(["high", "mid", "low"] as const).map((bucket) => (
+              <button
+                key={bucket}
+                type="button"
+                className={activeBucket === bucket ? "active" : ""}
+                onClick={() => setActiveBucket(bucket)}
+              >
+                {bucket.toUpperCase()}
+              </button>
+            ))}
+          </div>
           <div className="admin-json-actions">
-            <button type="button" onClick={() => setJsonRows((prev) => [...prev, { key: "", value: "" }])}>
-              키 추가
+            <button type="button" onClick={addEntry}>
+              문단 추가
             </button>
-            <button type="button" onClick={handleSaveJson} disabled={isJsonSaving}>
-              {isJsonSaving ? "저장 중..." : "JSON 저장"}
+            <button
+              type="button"
+              className="danger"
+              onClick={() => {
+                setIsSajuDeleteMode(true);
+                setSelectedSajuIndexes([]);
+              }}
+              disabled={isSajuDeleteMode}
+            >
+              삭제
             </button>
           </div>
+          {currentBucket.length === 0 ? (
+            <div className="admin-json-empty">표시할 문단이 없습니다.</div>
+          ) : (
+            <div className="admin-json-list">
+              {currentBucket.map((entry, index) => (
+                <div
+                  key={`${entry.key}-${index}`}
+                  className={`admin-json-item ${
+                    selectedSajuIndexes.includes(index) ? "admin-card-selected admin-card-selected-delete" : ""
+                  }`}
+                  onClick={
+                    isSajuDeleteMode
+                      ? () =>
+                          setSelectedSajuIndexes((prev) =>
+                            prev.includes(index)
+                              ? prev.filter((id) => id !== index)
+                              : [...prev, index]
+                          )
+                      : undefined
+                  }
+                >
+                  {isSajuDeleteMode ? (
+                    <input
+                      type="checkbox"
+                      className="admin-item-checkbox is-delete"
+                      checked={selectedSajuIndexes.includes(index)}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={(event) =>
+                        setSelectedSajuIndexes((prev) =>
+                          event.target.checked
+                            ? [...prev, index]
+                            : prev.filter((id) => id !== index)
+                        )
+                      }
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    className="admin-json-item-button"
+                    onClick={() => !isSajuDeleteMode && setActiveEntryIndex(index)}
+                  >
+                    <div className="admin-json-idiom">
+                      <strong>{entry.text || "사자성어"}</strong>
+                      <span>{entry.reading ? `(${entry.reading})` : ""}</span>
+                    </div>
+                    <div className="admin-json-key">{entry.key}</div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {isSajuDeleteMode ? (
+            <div className="admin-floating-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedSajuIndexes.length === 0) {
+                    setIsSajuDeleteMode(false);
+                    return;
+                  }
+                  if (!window.confirm(`${selectedSajuIndexes.length}개 삭제하시겠습니까?`)) {
+                    return;
+                  }
+                  setIdiomBuckets((prev) => {
+                    const next = prev[activeBucket].filter(
+                      (_, idx) => !selectedSajuIndexes.includes(idx)
+                    );
+                    return { ...prev, [activeBucket]: next };
+                  });
+                  setSelectedSajuIndexes([]);
+                  setIsSajuDeleteMode(false);
+                }}
+              >
+                {selectedSajuIndexes.length}개 삭제
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  setSelectedSajuIndexes([]);
+                  setIsSajuDeleteMode(false);
+                }}
+              >
+                취소
+              </button>
+            </div>
+          ) : null}
+          {activeEntryIndex !== null && !isSajuDeleteMode ? (
+            <div className="admin-json-overlay" role="dialog" aria-modal="true">
+              <div className="admin-json-overlay-backdrop" onClick={() => setActiveEntryIndex(null)} />
+              <div className="admin-json-overlay-card">
+                <div className="admin-json-overlay-header">
+                  <button type="button" className="ghost" onClick={() => setActiveEntryIndex(null)}>
+                    닫기
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={async () => {
+                      const saved = await handleSaveJson();
+                      if (saved) {
+                        setActiveEntryIndex(null);
+                      }
+                    }}
+                  >
+                    완료
+                  </button>
+                </div>
+                <div className="admin-json-edit">
+                  <div className="admin-json-edit-title">
+                    <input
+                      type="text"
+                      placeholder="사자성어"
+                      value={currentBucket[activeEntryIndex].text}
+                      onChange={(event) => updateEntry(activeEntryIndex, { text: event.target.value })}
+                    />
+                    <input
+                      type="text"
+                      placeholder="읽기"
+                      value={currentBucket[activeEntryIndex].reading}
+                      onChange={(event) => updateEntry(activeEntryIndex, { reading: event.target.value })}
+                    />
+                  </div>
+                  <textarea
+                    className="admin-json-edit-meaning"
+                    rows={1}
+                    placeholder="의미"
+                    value={currentBucket[activeEntryIndex].meaning}
+                    onChange={(event) => {
+                      updateEntry(activeEntryIndex, { meaning: event.target.value });
+                      clampTextarea(event.currentTarget, 3);
+                    }}
+                    onFocus={(event) => clampTextarea(event.currentTarget, 3)}
+                  />
+                  <textarea
+                    className="admin-json-edit-message"
+                    rows={10}
+                    placeholder="메시지"
+                    value={currentBucket[activeEntryIndex].message}
+                    onChange={(event) => updateEntry(activeEntryIndex, { message: event.target.value })}
+                  />
+                  <input
+                    type="text"
+                    className="admin-json-edit-key"
+                    placeholder="한자 key"
+                    value={currentBucket[activeEntryIndex].key}
+                    onChange={(event) => updateEntry(activeEntryIndex, { key: event.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : (
         <section className="admin-games-list">
@@ -748,7 +960,7 @@ export function AdminGameDetailPage() {
         ))}
       </section>
       )}
-      {hasPendingChanges ? (
+      {hasPendingChanges && !isSajuDeleteMode ? (
         <div className="admin-floating-actions">
           <button
             type="button"

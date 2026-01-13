@@ -1,4 +1,4 @@
-import idioms from "./idioms.json";
+import idioms from "./fortune/idioms.json";
 
 export type IdiomsData = typeof idioms;
 

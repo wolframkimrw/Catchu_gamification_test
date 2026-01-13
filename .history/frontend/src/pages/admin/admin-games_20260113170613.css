@@ -602,6 +602,7 @@
   font-size: 1rem;
   line-height: 1.6;
   resize: vertical;
+  font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
 
 .admin-json-edit-message {

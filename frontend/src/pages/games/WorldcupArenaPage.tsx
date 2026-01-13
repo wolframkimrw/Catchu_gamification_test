@@ -1,9 +1,11 @@
 // src/pages/WorldcupArenaPage.tsx
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
+import { createGameResult, createWorldcupPickLog } from "../../api/gamesSession";
+import { getStoredGameSessionId, startGameSession } from "../../utils/gameSession";
 import type { GameDetailData, GameItem } from "../../api/games";
 import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../../data/localWorldcup";
 
@@ -32,7 +34,9 @@ export function WorldcupArenaPage() {
   const [nextRound, setNextRound] = useState<GameItem[]>([]);
   const [matchIndex, setMatchIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [sessionId, setSessionId] = useState<number | null>(null);
   const isSelecting = selectedId !== null;
+  const pickIndexRef = useRef(0);
 
   const startRound = useCallback((roundItems: GameItem[], round: number) => {
     if (roundItems.length === 0) {
@@ -50,6 +54,20 @@ export function WorldcupArenaPage() {
     setMatchIndex(0);
   }, []);
 
+  const startNewSession = useCallback(
+    async (source: string) => {
+      if (isLocalGame || parsedGameId === null) {
+        return null;
+      }
+      const nextSessionId = await startGameSession(parsedGameId, source);
+      if (nextSessionId) {
+        setSessionId(nextSessionId);
+      }
+      return nextSessionId;
+    },
+    [isLocalGame, parsedGameId]
+  );
+
   // 아레나 진입 시 화면을 맨 아래로 스크롤 (상단 여백 없이 바로 콘텐츠가 보이도록)
   useEffect(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "auto" });
@@ -60,6 +78,7 @@ export function WorldcupArenaPage() {
       return;
     }
     const shuffled = [...localData.items].sort(() => Math.random() - 0.5);
+    pickIndexRef.current = 0;
     const timer = window.setTimeout(() => startRound(shuffled, 1), 0);
     return () => window.clearTimeout(timer);
   }, [localData, startRound]);
@@ -75,6 +94,7 @@ export function WorldcupArenaPage() {
       .then((data) => {
         setState({ status: "success", data });
         const shuffled = [...data.items].sort(() => Math.random() - 0.5);
+        pickIndexRef.current = 0;
         startRound(shuffled, 1);
       })
       .catch((err: unknown) => {
@@ -86,8 +106,34 @@ export function WorldcupArenaPage() {
       });
   }, [isLocalGame, parsedGameId, startRound]);
 
+  useEffect(() => {
+    if (isLocalGame || parsedGameId === null) {
+      return;
+    }
+    const stored = getStoredGameSessionId(parsedGameId);
+    if (stored) {
+      setSessionId(stored);
+    }
+  }, [isLocalGame, parsedGameId]);
+
   const handleSelect = (winner: GameItem) => {
     setSelectedId(winner.id);
+    const left = a;
+    const right = b;
+    if (!isLocalGame && sessionId && left && right && parsedGameId !== null) {
+      const stepIndex = pickIndexRef.current;
+      pickIndexRef.current += 1;
+      void createWorldcupPickLog({
+        choice_id: sessionId,
+        game_id: parsedGameId,
+        left_item_id: left.id,
+        right_item_id: right.id,
+        selected_item_id: winner.id,
+        step_index: stepIndex,
+      }).catch(() => {
+        // 선택 로그 실패는 진행을 막지 않음
+      });
+    }
     const total = currentRound.length / 2;
     const next = [...nextRound, winner];
     const isLastMatch = matchIndex + 1 >= total;
@@ -115,13 +161,36 @@ export function WorldcupArenaPage() {
     }
   };
 
-  if (parsedGameId === null) {
-    return <div className="arena-shell">잘못된 게임 ID 입니다.</div>;
-  }
-
   const resolvedState: PageState = localData
     ? { status: "success", data: localData }
     : state;
+
+  const resolvedGame = resolvedState.status === "success" ? resolvedState.data.game : null;
+
+  useEffect(() => {
+    if (!champion || isLocalGame || parsedGameId === null || !sessionId) {
+      return;
+    }
+    const resultTitle = resolvedGame?.title
+      ? `${resolvedGame.title} 우승`
+      : "월드컵 우승";
+    void createGameResult({
+      choice_id: sessionId,
+      game_id: parsedGameId,
+      winner_item_id: champion.id,
+      result_title: resultTitle,
+      result_code: "WORLD_CUP",
+      result_payload: {
+        round: roundNumber,
+      },
+    }).catch(() => {
+      // 결과 로그 실패는 진행을 막지 않음
+    });
+  }, [champion, isLocalGame, parsedGameId, resolvedGame, roundNumber, sessionId]);
+
+  if (parsedGameId === null) {
+    return <div className="arena-shell">잘못된 게임 ID 입니다.</div>;
+  }
 
   if (resolvedState.status === "loading") {
     return <div className="arena-shell">불러오는 중...</div>;
@@ -200,6 +269,8 @@ export function WorldcupArenaPage() {
                 type="button"
                 onClick={() => {
                   const shuffled = [...items].sort(() => Math.random() - 0.5);
+                  pickIndexRef.current = 0;
+                  void startNewSession("worldcup_restart");
                   setChampion(null);
                   startRound(shuffled, 1);
                 }}

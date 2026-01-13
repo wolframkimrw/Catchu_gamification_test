@@ -5,6 +5,7 @@ export type AuthUser = {
   id: number;
   email: string;
   name: string;
+  is_staff?: boolean;
 };
 
 export async function loginAccount(params: {
@@ -48,4 +49,21 @@ export async function resetPassword(params: { email: string }) {
     >("/accounts/password/reset/", params)
   );
   return response;
+}
+
+export type AdminUser = {
+  id: number;
+  email: string;
+  name: string;
+  is_active: boolean;
+  is_staff: boolean;
+  created_at: string;
+  profile: { nickname: string; level: number; exp: number } | null;
+};
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ users: AdminUser[] }>>("/accounts/admin/users/")
+  );
+  return response.users || [];
 }

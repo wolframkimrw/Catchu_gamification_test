@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
-import { createGameSession } from "../../api/gamesSession";
+import { useGameSessionStart } from "../../hooks/useGameSessionStart";
 import type { GameDetailData, GameItem } from "../../api/games";
 import { GameStartScreen } from "../../components/GameStartScreen";
 import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../../data/localWorldcup";
@@ -33,6 +33,7 @@ export function WorldcupPlayPage() {
   const [currentRound, setCurrentRound] = useState<GameItem[]>([]);
   const [nextRound, setNextRound] = useState<GameItem[]>([]);
   const [matchIndex, setMatchIndex] = useState(0);
+  const { startSession } = useGameSessionStart(parsedGameId, "worldcup_play_start");
 
   useEffect(() => {
     if (parsedGameId === null) {
@@ -92,10 +93,9 @@ export function WorldcupPlayPage() {
   const startGame = async () => {
     if (!items.length || parsedGameId === null) return;
     try {
-      await createGameSession({
-        game_id: parsedGameId,
-        source: "worldcup_play_start",
-      });
+      if (!isLocalGame) {
+        await startSession();
+      }
     } catch {
       // 로그 실패는 게임 진행을 막지 않음
     }

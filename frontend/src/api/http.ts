@@ -37,6 +37,51 @@ export class ApiError extends Error {
 export const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   timeout: 10000,
+  withCredentials: true,
+});
+
+export const getBackendOrigin = () => {
+  const base = import.meta.env.VITE_API_BASE_URL || "/api";
+  if (base.startsWith("http://") || base.startsWith("https://")) {
+    return new URL(base).origin;
+  }
+  return window.location.origin;
+};
+
+export const resolveMediaUrl = (url: string) => {
+  if (url.startsWith("/media/")) {
+    return `${getBackendOrigin()}${url}`;
+  }
+  return url;
+};
+
+const CSRF_HEADER_NAME = "X-CSRFToken";
+const SAFE_METHODS = new Set(["get", "head", "options", "trace"]);
+
+function getCookie(name: string): string | null {
+  if (!document.cookie) {
+    return null;
+  }
+  const cookies = document.cookie.split(";");
+  for (const cookie of cookies) {
+    const [rawName, ...valueParts] = cookie.trim().split("=");
+    if (rawName === name) {
+      return decodeURIComponent(valueParts.join("="));
+    }
+  }
+  return null;
+}
+
+apiClient.interceptors.request.use((config) => {
+  const method = config.method?.toLowerCase();
+  if (method && !SAFE_METHODS.has(method)) {
+    const csrfToken = getCookie("csrftoken");
+    if (csrfToken) {
+      config.headers = config.headers ?? {};
+      config.headers[CSRF_HEADER_NAME] = csrfToken;
+    }
+  }
+  return config;
 });
 
 export async function requestWithMeta<T>(

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Game, GameChoiceLog, GameItem, GameResult
+from .models import Game, GameChoiceLog, GameItem, GameResult, WorldcupPickLog, WorldcupTopic
 
 
 class GameListSerializer(serializers.ModelSerializer):
@@ -9,7 +9,7 @@ class GameListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Game
-        fields = ["id", "title", "type", "topic", "thumbnail_image_url"]
+        fields = ["id", "title", "slug", "type", "topic", "thumbnail_image_url"]
 
     def get_topic(self, obj):
         if obj.parent_topic:
@@ -27,6 +27,7 @@ class GameDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "slug",
             "type",
             "topic",
             "thumbnail_image_url",
@@ -49,6 +50,149 @@ class GameItemSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "file_name", "sort_order"]
 
 
+class WorldcupTopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorldcupTopic
+        fields = ["id", "name"]
+
+
+class WorldcupTopicCreateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+    def validate_name(self, value):
+        cleaned = value.strip()
+        if not cleaned:
+            raise serializers.ValidationError("주제명을 입력해 주세요.")
+        return cleaned
+
+
+class GameAdminListSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+    thumbnail_image_url = serializers.CharField()
+
+    class Meta:
+        model = Game
+        fields = [
+            "id",
+            "title",
+            "type",
+            "status",
+            "visibility",
+            "thumbnail_image_url",
+            "created_at",
+            "created_by",
+        ]
+
+    def get_created_by(self, obj):
+        user = obj.created_by
+        if not user:
+            return None
+        return {"id": user.id, "name": user.name, "email": user.email}
+
+
+class AdminGameItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameItem
+        fields = ["id", "name", "file_name", "sort_order", "is_active"]
+
+
+class AdminGameDetailSerializer(serializers.ModelSerializer):
+    topic = serializers.SerializerMethodField()
+    items = serializers.SerializerMethodField()
+    thumbnail_image_url = serializers.CharField()
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Game
+        fields = [
+            "id",
+            "title",
+            "description",
+            "slug",
+            "type",
+            "status",
+            "visibility",
+            "topic",
+            "thumbnail_image_url",
+            "items",
+            "created_by",
+        ]
+
+    def get_topic(self, obj):
+        if obj.parent_topic:
+            return {"id": obj.parent_topic.id, "name": obj.parent_topic.name}
+        return None
+
+    def get_items(self, obj):
+        items = obj.items.all().order_by("sort_order", "id")
+        return AdminGameItemSerializer(items, many=True).data
+
+    def get_created_by(self, obj):
+        user = obj.created_by
+        if not user:
+            return None
+        return {"id": user.id, "name": user.name, "email": user.email}
+
+
+class AdminWorldcupTopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorldcupTopic
+        fields = ["id", "name", "slug", "sort_order", "is_active"]
+
+
+class AdminGameChoiceLogSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GameChoiceLog
+        fields = ["id", "game", "user", "source", "ip_address", "started_at"]
+
+    def get_game(self, obj):
+        return {"id": obj.game_id, "title": obj.game.title}
+
+    def get_user(self, obj):
+        if not obj.user:
+            return None
+        return {"id": obj.user.id, "name": obj.user.name, "email": obj.user.email}
+
+
+class AdminWorldcupPickLogSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+    choice_id = serializers.IntegerField()
+    selected_item = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorldcupPickLog
+        fields = ["id", "choice_id", "game", "selected_item", "step_index", "created_at"]
+
+    def get_game(self, obj):
+        return {"id": obj.game_id, "title": obj.game.title}
+
+    def get_selected_item(self, obj):
+        if not obj.selected_item:
+            return None
+        return {"id": obj.selected_item.id, "name": obj.selected_item.name}
+
+
+class AdminGameResultSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+    choice_id = serializers.IntegerField()
+    winner_item = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GameResult
+        fields = ["id", "choice_id", "game", "winner_item", "result_title", "created_at"]
+
+    def get_game(self, obj):
+        return {"id": obj.game_id, "title": obj.game.title}
+
+    def get_winner_item(self, obj):
+        if not obj.winner_item:
+            return None
+        return {"id": obj.winner_item.id, "name": obj.winner_item.name}
+
+
 class GameChoiceLogCreateSerializer(serializers.Serializer):
     game_id = serializers.IntegerField()
     source = serializers.CharField(required=False, allow_blank=True)
@@ -60,7 +204,7 @@ class GameChoiceLogCreateSerializer(serializers.Serializer):
 
 
 class WorldcupPickLogCreateSerializer(serializers.Serializer):
-    session_id = serializers.IntegerField()
+    choice_id = serializers.IntegerField()
     game_id = serializers.IntegerField()
     left_item_id = serializers.IntegerField(required=False, allow_null=True)
     right_item_id = serializers.IntegerField(required=False, allow_null=True)
@@ -68,9 +212,9 @@ class WorldcupPickLogCreateSerializer(serializers.Serializer):
     step_index = serializers.IntegerField(min_value=0)
 
     def validate(self, attrs):
-        session = GameChoiceLog.objects.filter(id=attrs["session_id"]).first()
+        session = GameChoiceLog.objects.filter(id=attrs["choice_id"]).first()
         if not session:
-            raise serializers.ValidationError({"session_id": "세션을 찾을 수 없습니다."})
+            raise serializers.ValidationError({"choice_id": "선택 로그를 찾을 수 없습니다."})
         game = Game.objects.filter(id=attrs["game_id"]).first()
         if not game:
             raise serializers.ValidationError({"game_id": "게임을 찾을 수 없습니다."})
@@ -95,7 +239,7 @@ class WorldcupPickLogCreateSerializer(serializers.Serializer):
                     {"selected_item_id": "선택된 아이템이 좌/우 아이템에 포함되지 않습니다."}
                 )
 
-        attrs["session"] = session
+        attrs["choice"] = session
         attrs["game"] = game
         attrs["left_item"] = left_item
         attrs["right_item"] = right_item
@@ -104,7 +248,7 @@ class WorldcupPickLogCreateSerializer(serializers.Serializer):
 
 
 class GameResultCreateSerializer(serializers.Serializer):
-    session_id = serializers.IntegerField()
+    choice_id = serializers.IntegerField()
     game_id = serializers.IntegerField()
     winner_item_id = serializers.IntegerField(required=False, allow_null=True)
     result_title = serializers.CharField()
@@ -114,16 +258,16 @@ class GameResultCreateSerializer(serializers.Serializer):
     result_payload = serializers.JSONField(required=False, allow_null=True)
 
     def validate(self, attrs):
-        session = GameChoiceLog.objects.filter(id=attrs["session_id"]).first()
-        if not session:
-            raise serializers.ValidationError({"session_id": "세션을 찾을 수 없습니다."})
+        choice = GameChoiceLog.objects.filter(id=attrs["choice_id"]).first()
+        if not choice:
+            raise serializers.ValidationError({"choice_id": "선택 로그를 찾을 수 없습니다."})
         game = Game.objects.filter(id=attrs["game_id"]).first()
         if not game:
             raise serializers.ValidationError({"game_id": "게임을 찾을 수 없습니다."})
-        if session.game_id != game.id:
+        if choice.game_id != game.id:
             raise serializers.ValidationError("세션과 게임이 일치하지 않습니다.")
-        if GameResult.objects.filter(session_id=session.id).exists():
-            raise serializers.ValidationError({"session_id": "이미 결과가 등록된 세션입니다."})
+        if GameResult.objects.filter(choice_id=choice.id).exists():
+            raise serializers.ValidationError({"choice_id": "이미 결과가 등록된 선택 로그입니다."})
 
         winner_item = None
         winner_item_id = attrs.get("winner_item_id")
@@ -136,7 +280,7 @@ class GameResultCreateSerializer(serializers.Serializer):
                     {"winner_item_id": "게임 아이템을 찾을 수 없습니다."}
                 )
 
-        attrs["session"] = session
+        attrs["choice"] = choice
         attrs["game"] = game
         attrs["winner_item"] = winner_item
         return attrs

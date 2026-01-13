@@ -209,7 +209,7 @@
 
 @media (min-width: 40rem) {
   .app-shell {
-    /* margin: 1.5rem 0; */
+    margin: 1.5rem 0;
     --app-shell-shadow: 0 18px 48px rgba(22, 24, 44, 0.18);
   }
 }

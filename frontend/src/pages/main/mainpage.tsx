@@ -3,8 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../games/worldcup.css";
 import type { Game } from "../../api/games";
-import { fetchGamesList } from "../../api/games";
+import { fetchGamesList, fetchMyGames } from "../../api/games";
 import { LOCAL_WORLDCUP_GAME } from "../../data/localWorldcup";
+import { useAuthUser } from "../../hooks/useAuthUser";
 
 
 const categories = [
@@ -23,9 +24,11 @@ const categories = [
 export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
+  const [myGames, setMyGames] = useState<Game[]>([]);
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
   const psychoRef = useRef<HTMLDivElement | null>(null);
+  const { user } = useAuthUser();
   const todayPickGame: Game = {
     id: 0,
     title: "오늘의 사주 운세",
@@ -45,11 +48,27 @@ export function WorldcupListPage() {
       });
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setMyGames([]);
+      return;
+    }
+    fetchMyGames()
+      .then((games) => setMyGames(games))
+      .catch(() => {
+        setMyGames([]);
+      });
+  }, [user]);
+
   const catalogGames = useMemo(() => apiGames, [apiGames]);
 
   const worldcupGames = useMemo(
     () => [LOCAL_WORLDCUP_GAME, ...worldcupApiGames],
     [worldcupApiGames]
+  );
+  const myWorldcupGames = useMemo(
+    () => myGames.filter((game) => game.type === "WORLD_CUP"),
+    [myGames]
   );
   const fortuneGames = catalogGames.filter(
     (game) => game.type === "FORTUNE_TEST"
@@ -188,6 +207,18 @@ export function WorldcupListPage() {
                 getMeta={() => ({})}
               />
             </section>
+            {user ? (
+              <section className="section">
+                <CategorySection
+                  title="내 월드컵"
+                  variant="small"
+                  games={myWorldcupGames}
+                  fallbackLabel="아직 만든 월드컵이 없습니다."
+                  onCardClick={(game) => `/worldcup/${game.id}/play`}
+                  getMeta={() => ({})}
+                />
+              </section>
+            ) : null}
             <div className="section-title">
               <span className="badge badge-new">NEW</span>
               <span>카테고리 둘러보기</span>

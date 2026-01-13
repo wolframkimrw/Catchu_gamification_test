@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./login.css";
 import { loginAccount, resetPassword, signupAccount } from "../api/accounts";
 import { ApiError } from "../api/http";
+import { setStoredUser } from "../utils/auth";
 
 type TabKey = "login" | "signup" | "reset";
 
@@ -50,7 +51,10 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
-      await loginAccount(loginState);
+      const data = await loginAccount(loginState);
+      if (data?.user) {
+        setStoredUser(data.user);
+      }
       navigate("/");
     } catch (err) {
       if (err instanceof ApiError) {

@@ -1,0 +1,54 @@
+.admin-shell {
+  padding: 1.5rem var(--app-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-shell-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-shell-header-top {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.3rem;
+}
+
+.admin-shell-header h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.7rem;
+}
+
+.admin-shell-header p {
+  margin: 0.4rem 0 0;
+  color: #6a6d77;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.7rem;
+  background: #f5f6fb;
+  border-radius: 999px;
+  display: inline-flex;
+  width: fit-content;
+}
+
+.admin-shell-tabs {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admin-shell-tabs a {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: #f0f1f7;
+  color: #1b1c1f;
+  font-weight: 600;
+}
+
+.admin-shell-tabs a.active {
+  background: #1b1c1f;
+  color: #fff;
+}

@@ -243,7 +243,7 @@ class GameChoiceLog(TimeStampedModel):
 # WorldcupPickLog (토너먼트 선택 로그)
 # --------------------------------------------------
 class WorldcupPickLog(models.Model):
-    session = models.ForeignKey(
+    choice = models.ForeignKey(
         GameChoiceLog,
         on_delete=models.CASCADE,
         related_name="choices",
@@ -286,19 +286,19 @@ class WorldcupPickLog(models.Model):
 
     class Meta:
         db_table = "gaimification_worldcup_pick_log"
-        ordering = ["session_id", "step_index", "id"]
+        ordering = ["choice_id", "step_index", "id"]
         verbose_name = "월드컵 선택 로그"
         verbose_name_plural = "월드컵 선택 로그"
 
     def __str__(self) -> str:
-        return f"Choice #{self.id} (session {self.session_id})"
+        return f"Choice #{self.id} (choice {self.choice_id})"
 
 
 # --------------------------------------------------
 # GameResult (최종 결과)
 # --------------------------------------------------
 class GameResult(models.Model):
-    session = models.OneToOneField(
+    choice = models.OneToOneField(
         GameChoiceLog,
         on_delete=models.CASCADE,
         related_name="result",
@@ -356,7 +356,7 @@ class GameResult(models.Model):
         verbose_name_plural = "게임 결과"
 
     def __str__(self) -> str:
-        return f"Result of session {self.session_id}"
+        return f"Result of choice {self.choice_id}"
 
 
 # --------------------------------------------------
@@ -409,7 +409,7 @@ class BannerClickLog(models.Model):
         related_name="banner_click_logs",
         verbose_name="게임",
     )
-    session = models.ForeignKey(
+    choice = models.ForeignKey(
         GameChoiceLog,
         on_delete=models.SET_NULL,
         null=True,
@@ -439,3 +439,37 @@ class BannerClickLog(models.Model):
 
     def __str__(self) -> str:
         return f"BannerClick #{self.id} (banner {self.banner_id})"
+
+
+# --------------------------------------------------
+# WorldcupDraft (월드컵 작성 임시 저장)
+# --------------------------------------------------
+class WorldcupDraft(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="worldcup_drafts",
+        verbose_name="유저",
+    )
+    draft_prefix = models.CharField(
+        max_length=255,
+        verbose_name="드래프트 저장 prefix",
+        help_text="드래프트 이미지가 저장되는 폴더 prefix",
+    )
+    payload = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="드래프트 payload",
+        help_text="작성 중인 데이터(JSON)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성 시각")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정 시각")
+
+    class Meta:
+        db_table = "gaimification_worldcup_draft"
+        ordering = ["-updated_at"]
+        verbose_name = "월드컵 드래프트"
+        verbose_name_plural = "월드컵 드래프트"
+
+    def __str__(self) -> str:
+        return f"WorldcupDraft #{self.id} (user {self.user_id})"

@@ -4,7 +4,7 @@ from rest_framework import status
 
 from config.views import BaseAPIView
 from .models import GamificationProfile
-from .serializers import LoginSerializer, ResetPasswordSerializer, SignupSerializer
+from .serializers import AdminUserSerializer, LoginSerializer, ResetPasswordSerializer, SignupSerializer
 
 
 class LoginView(BaseAPIView):
@@ -39,6 +39,7 @@ class LoginView(BaseAPIView):
                     "id": user.id,
                     "email": user.email,
                     "name": user.name,
+                    "is_staff": user.is_staff,
                 },
             },
             status_code=status.HTTP_200_OK,
@@ -75,6 +76,7 @@ class SignupView(BaseAPIView):
                     "id": user.id,
                     "email": user.email,
                     "name": user.name,
+                    "is_staff": user.is_staff,
                 },
             },
             status_code=status.HTTP_201_CREATED,
@@ -92,3 +94,29 @@ class ResetPasswordView(BaseAPIView):
             data={"status": "OK"},
             status_code=status.HTTP_200_OK,
         )
+
+
+class AdminUserListView(BaseAPIView):
+    api_name = "admin.users.list"
+
+    def get(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return self.respond(
+                data=None,
+                success=False,
+                code="UNAUTHORIZED",
+                message="로그인이 필요합니다.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        if not request.user.is_staff:
+            return self.respond(
+                data=None,
+                success=False,
+                code="FORBIDDEN",
+                message="관리자 권한이 필요합니다.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+        User = get_user_model()
+        qs = User.objects.all().select_related("gamification_profile").order_by("-created_at")[:200]
+        serializer = AdminUserSerializer(qs, many=True)
+        return self.respond(data={"users": serializer.data})

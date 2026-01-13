@@ -1,11 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./saju.css";
 import { GameStartScreen } from "../../components/GameStartScreen";
 import sajuHero from "../../assets/saju-hero.svg";
+import { fetchGameJsonFile, fetchGamesList } from "../../api/games";
+import { createGameResult } from "../../api/gamesSession";
+import { useGameSessionStart } from "../../hooks/useGameSessionStart";
 import {
   calculateLuckFromBirthDate,
   type CalendarType,
   type GenderType,
+  type IdiomsData,
 } from "../../utils/sajuLuck";
 
 type LuckResult = ReturnType<typeof calculateLuckFromBirthDate>;
@@ -17,11 +21,38 @@ export function SajuLuckPage() {
   const [birthDate, setBirthDate] = useState("");
   const [result, setResult] = useState<LuckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [gameId, setGameId] = useState<number | null>(null);
+  const [idiomsData, setIdiomsData] = useState<IdiomsData | null>(null);
+  const lastResultSessionRef = useRef<number | null>(null);
+  const { sessionId, startSession } = useGameSessionStart(gameId, "saju_start");
 
   const canSubmit = useMemo(
     () => Boolean(gender) && Boolean(birthDate),
     [gender, birthDate]
   );
+
+  useEffect(() => {
+    fetchGamesList()
+      .then((games) => {
+        const sajuGame = games.find((game) => game.slug === "saju-luck");
+        if (sajuGame) {
+          setGameId(sajuGame.id);
+        }
+      })
+      .catch(() => {
+        // 게임 목록 실패는 UI 진행을 막지 않음
+      });
+  }, []);
+
+  useEffect(() => {
+    fetchGameJsonFile("fortune/idioms.json")
+      .then((data) => {
+        setIdiomsData(data as IdiomsData);
+      })
+      .catch(() => {
+        // json 로드 실패는 기본값 사용
+      });
+  }, []);
 
   const handleSubmit = () => {
     if (!canSubmit) {
@@ -33,9 +64,30 @@ export function SajuLuckPage() {
       birthDate,
       gender: gender as GenderType,
       calendarType,
+      idiomsData: idiomsData ?? undefined,
     });
     setResult(next);
   };
+
+  useEffect(() => {
+    if (!result || !gameId || !sessionId) {
+      return;
+    }
+    if (lastResultSessionRef.current === sessionId) {
+      return;
+    }
+    lastResultSessionRef.current = sessionId;
+    void createGameResult({
+      choice_id: sessionId,
+      game_id: gameId,
+      winner_item_id: null,
+      result_title: "오늘의 사주 운세",
+      result_code: "SAJU_LUCK",
+      result_payload: result,
+    }).catch(() => {
+      // 결과 로그 실패는 진행을 막지 않음
+    });
+  }, [gameId, result, sessionId]);
 
   return (
     <div className="saju-page">
@@ -99,7 +151,10 @@ export function SajuLuckPage() {
           ]}
           media={<img src={sajuHero} alt="오늘의 사주 운세" />}
           buttonLabel="운세 시작"
-          onStart={() => setStarted(true)}
+          onStart={() => {
+            setStarted(true);
+            void startSession();
+          }}
         />
       ) : (
         <>

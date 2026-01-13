@@ -1,5 +1,7 @@
 import idioms from "./idioms.json";
 
+export type IdiomsData = typeof idioms;
+
 export const HEAVENLY_STEMS = [
   "갑",
   "을",
@@ -114,8 +116,12 @@ export function getMessageFromScore(score: number): string {
 잠시 멈추고, 자신을 지켜도 충분합니다.`;
 }
 
-function pickIdiomFromBucket(bucket: IdiomBucketKey, seed?: number) {
-  const list = idioms[bucket] || [];
+function pickIdiomFromBucket(
+  bucket: IdiomBucketKey,
+  seed: number | undefined,
+  idiomsData: IdiomsData
+) {
+  const list = idiomsData[bucket] || [];
   if (list.length === 0) return null;
   if (seed === undefined) {
     const randomIndex = Math.floor(Math.random() * list.length);
@@ -125,8 +131,8 @@ function pickIdiomFromBucket(bucket: IdiomBucketKey, seed?: number) {
   return list[index];
 }
 
-export function pickRandomIdiom(bucket: IdiomBucketKey = "mid") {
-  return pickIdiomFromBucket(bucket);
+export function pickRandomIdiom(bucket: IdiomBucketKey = "mid", idiomsData: IdiomsData = idioms) {
+  return pickIdiomFromBucket(bucket, undefined, idiomsData);
 }
 
 function hashString(input: string): number {
@@ -138,9 +144,13 @@ function hashString(input: string): number {
   return hash;
 }
 
-export function pickDeterministicIdiom(bucket: IdiomBucketKey, seed: string) {
+export function pickDeterministicIdiom(
+  bucket: IdiomBucketKey,
+  seed: string,
+  idiomsData: IdiomsData = idioms
+) {
   const hashed = hashString(seed);
-  return pickIdiomFromBucket(bucket, hashed);
+  return pickIdiomFromBucket(bucket, hashed, idiomsData);
 }
 
 export function getHeavenlyStemFromBirthDate(birthDate: Date): HeavenlyStem {
@@ -156,7 +166,9 @@ export function calculateLuck(params: {
   gender: GenderType;
   calendarType: CalendarType;
   todayDate?: Date;
+  idiomsData?: IdiomsData;
 }) {
+  const idiomsData = params.idiomsData ?? idioms;
   const today = params.todayDate ?? new Date();
   const weekday = today.getDay();
   const todayDate = today.toISOString().slice(0, 10);
@@ -170,7 +182,7 @@ export function calculateLuck(params: {
   const grade = getGradeFromScore(score);
   const message = getMessageFromScore(score);
   const seed = `${todayDate}-${params.birthDate.toISOString()}-${params.gender}-${params.calendarType}`;
-  const idiom = pickDeterministicIdiom(grade, seed);
+  const idiom = pickDeterministicIdiom(grade, seed, idiomsData);
 
   return {
     score,
@@ -192,6 +204,7 @@ export function calculateLuckFromBirthDate(params: {
   birthDate: string;
   gender: GenderType;
   calendarType: CalendarType;
+  idiomsData?: IdiomsData;
 }) {
   const birth = new Date(params.birthDate);
   if (Number.isNaN(birth.getTime())) {
@@ -202,5 +215,6 @@ export function calculateLuckFromBirthDate(params: {
     birthDate: birth,
     gender: params.gender,
     calendarType: params.calendarType,
+    idiomsData: params.idiomsData,
   });
 }

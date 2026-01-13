@@ -62,3 +62,23 @@ class ResetPasswordSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         return validate_email(value)
+
+
+class AdminUserSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    name = serializers.CharField()
+    is_active = serializers.BooleanField()
+    is_staff = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    profile = serializers.SerializerMethodField()
+
+    def get_profile(self, obj):
+        profile = getattr(obj, "gamification_profile", None)
+        if not profile:
+            return None
+        return {
+            "nickname": profile.nickname,
+            "level": profile.level,
+            "exp": profile.exp,
+        }

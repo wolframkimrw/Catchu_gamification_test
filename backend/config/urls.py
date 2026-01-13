@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/test-error', views.TestErrorView.as_view(), name='system.test_error'),
     
     path('api/games/', include('games.urls', namespace='games')),
+    path('api/accounts/', include('accounts.urls', namespace='accounts')),
 ]

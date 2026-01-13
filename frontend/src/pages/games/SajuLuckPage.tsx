@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import "../pages/saju.css";
-import { GameStartScreen } from "../components/GameStartScreen";
-import sajuHero from "../assets/saju-hero.svg";
+import "./saju.css";
+import { GameStartScreen } from "../../components/GameStartScreen";
+import sajuHero from "../../assets/saju-hero.svg";
 import {
   calculateLuckFromBirthDate,
   type CalendarType,
   type GenderType,
-} from "../utils/sajuLuck";
+} from "../../utils/sajuLuck";
 
 type LuckResult = ReturnType<typeof calculateLuckFromBirthDate>;
 

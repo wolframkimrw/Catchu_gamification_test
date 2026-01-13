@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
-import { WorldcupDetailPage } from "./pages/WorldcupDetailPage";
-import { WorldcupListPage } from "./pages/WorldcupListPage";
-import { WorldcupPlayPage } from "./pages/WorldcupPlayPage";
-import { WorldcupArenaPage } from "./pages/WorldcupArenaPage";
-import { SajuLuckPage } from "./pages/SajuLuckPage";
+import { WorldcupDetailPage } from "./pages/games/WorldcupDetailPage";
+import { WorldcupListPage } from "./pages/main/mainpage";
+import { WorldcupPlayPage } from "./pages/games/WorldcupPlayPage";
+import { WorldcupArenaPage } from "./pages/games/WorldcupArenaPage";
+import { SajuLuckPage } from "./pages/games/SajuLuckPage";
+import { LoginPage } from "./pages/loginpage";
 
 function Layout() {
   const location = useLocation();
@@ -29,9 +30,9 @@ function Layout() {
             <button className="app-icon" type="button" aria-label="검색">
               🔍
             </button>
-            <button className="app-icon" type="button" aria-label="로그인">
+            <Link className="app-icon" to="/login" aria-label="로그인">
               👤
-            </button>
+            </Link>
           </div>
         </header>
         {isMenuOpen ? (
@@ -63,6 +64,7 @@ function Layout() {
             <Route path="/worldcup/:gameId/play" element={<WorldcupPlayPage />} />
             <Route path="/worldcup/:gameId/arena" element={<WorldcupArenaPage />} />
             <Route path="/saju" element={<SajuLuckPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

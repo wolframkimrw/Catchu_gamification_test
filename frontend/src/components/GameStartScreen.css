@@ -54,7 +54,7 @@
   height: clamp(190px, 35vw, 210px);
   border-radius: 14px;
   overflow: hidden;
-  background: #f0f1f4;
+  /* background: #f0f1f4; */
 }
 
 .game-start-media img {

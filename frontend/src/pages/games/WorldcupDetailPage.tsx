@@ -1,11 +1,11 @@
 // src/pages/WorldcupDetailPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import "../pages/worldcup.css";
-import { ApiError } from "../api/http";
-import { fetchGameDetail } from "../api/games";
-import type { GameDetailData } from "../api/games";
-import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../data/localWorldcup";
+import "./worldcup.css";
+import { ApiError } from "../../api/http";
+import { fetchGameDetail } from "../../api/games";
+import type { GameDetailData } from "../../api/games";
+import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../../data/localWorldcup";
 
 type PageState =
   | { status: "loading" }
@@ -19,6 +19,10 @@ export function WorldcupDetailPage() {
     return Number.isFinite(idNumber) ? idNumber : null;
   }, [gameId]);
   const isLocalGame = parsedGameId === LOCAL_WORLDCUP_ID;
+  const localData = useMemo(
+    () => (isLocalGame ? getLocalWorldcupDetail() : null),
+    [isLocalGame]
+  );
 
   const [state, setState] = useState<PageState>({ status: "loading" });
 
@@ -27,7 +31,6 @@ export function WorldcupDetailPage() {
       return;
     }
     if (isLocalGame) {
-      setState({ status: "success", data: getLocalWorldcupDetail() });
       return;
     }
     fetchGameDetail(parsedGameId)
@@ -45,15 +48,19 @@ export function WorldcupDetailPage() {
     return <div className="state-box">잘못된 게임 ID 입니다.</div>;
   }
 
-  if (state.status === "loading") {
+  const resolvedState: PageState = localData
+    ? { status: "success", data: localData }
+    : state;
+
+  if (resolvedState.status === "loading") {
     return <div className="state-box">불러오는 중...</div>;
   }
 
-  if (state.status === "error") {
-    return <div className="state-box">에러: {state.message}</div>;
+  if (resolvedState.status === "error") {
+    return <div className="state-box">에러: {resolvedState.message}</div>;
   }
 
-  const { game, items } = state.data;
+  const { game, items } = resolvedState.data;
 
   return (
     <div className="page-section detail-card">

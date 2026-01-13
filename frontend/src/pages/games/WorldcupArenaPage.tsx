@@ -1,11 +1,11 @@
 // src/pages/WorldcupArenaPage.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import "../pages/worldcup.css";
-import { ApiError } from "../api/http";
-import { fetchGameDetail } from "../api/games";
-import type { GameDetailData, GameItem } from "../api/games";
-import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../data/localWorldcup";
+import "./worldcup.css";
+import { ApiError } from "../../api/http";
+import { fetchGameDetail } from "../../api/games";
+import type { GameDetailData, GameItem } from "../../api/games";
+import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../../data/localWorldcup";
 
 type PageState =
   | { status: "loading" }
@@ -19,6 +19,10 @@ export function WorldcupArenaPage() {
     return Number.isFinite(idNumber) ? idNumber : null;
   }, [gameId]);
   const isLocalGame = parsedGameId === LOCAL_WORLDCUP_ID;
+  const localData = useMemo(
+    () => (isLocalGame ? getLocalWorldcupDetail() : null),
+    [isLocalGame]
+  );
 
   const transitionMs = 1400; // 애니메이션(약 0.9~1.0초) 포함 총 2초 안팎으로 끝나도록 조정
   const [state, setState] = useState<PageState>({ status: "loading" });
@@ -30,20 +34,41 @@ export function WorldcupArenaPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const isSelecting = selectedId !== null;
 
+  const startRound = useCallback((roundItems: GameItem[], round: number) => {
+    if (roundItems.length === 0) {
+      return;
+    }
+    const candidates = [...roundItems];
+    let carry: GameItem | null = null;
+    if (candidates.length % 2 === 1) {
+      carry = candidates.pop() || null;
+    }
+    setChampion(null);
+    setRoundNumber(round);
+    setCurrentRound(candidates);
+    setNextRound(carry ? [carry] : []);
+    setMatchIndex(0);
+  }, []);
+
   // 아레나 진입 시 화면을 맨 아래로 스크롤 (상단 여백 없이 바로 콘텐츠가 보이도록)
   useEffect(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "auto" });
   }, []);
 
   useEffect(() => {
+    if (!localData) {
+      return;
+    }
+    const shuffled = [...localData.items].sort(() => Math.random() - 0.5);
+    const timer = window.setTimeout(() => startRound(shuffled, 1), 0);
+    return () => window.clearTimeout(timer);
+  }, [localData, startRound]);
+
+  useEffect(() => {
     if (parsedGameId === null) {
       return;
     }
     if (isLocalGame) {
-      const data = getLocalWorldcupDetail();
-      setState({ status: "success", data });
-      const shuffled = [...data.items].sort(() => Math.random() - 0.5);
-      startRound(shuffled, 1);
       return;
     }
     fetchGameDetail(parsedGameId)
@@ -59,23 +84,7 @@ export function WorldcupArenaPage() {
           "게임 정보를 불러오지 못했습니다.";
         setState({ status: "error", message });
       });
-  }, [isLocalGame, parsedGameId]);
-
-  const startRound = (roundItems: GameItem[], round: number) => {
-    if (roundItems.length === 0) {
-      return;
-    }
-    const candidates = [...roundItems];
-    let carry: GameItem | null = null;
-    if (candidates.length % 2 === 1) {
-      carry = candidates.pop() || null;
-    }
-    setChampion(null);
-    setRoundNumber(round);
-    setCurrentRound(candidates);
-    setNextRound(carry ? [carry] : []);
-    setMatchIndex(0);
-  };
+  }, [isLocalGame, parsedGameId, startRound]);
 
   const handleSelect = (winner: GameItem) => {
     setSelectedId(winner.id);
@@ -110,15 +119,19 @@ export function WorldcupArenaPage() {
     return <div className="arena-shell">잘못된 게임 ID 입니다.</div>;
   }
 
-  if (state.status === "loading") {
+  const resolvedState: PageState = localData
+    ? { status: "success", data: localData }
+    : state;
+
+  if (resolvedState.status === "loading") {
     return <div className="arena-shell">불러오는 중...</div>;
   }
 
-  if (state.status === "error") {
-    return <div className="arena-shell">에러: {state.message}</div>;
+  if (resolvedState.status === "error") {
+    return <div className="arena-shell">에러: {resolvedState.message}</div>;
   }
 
-  const { game, items } = state.data;
+  const { game, items } = resolvedState.data;
   const totalMatches = currentRound.length / 2;
   const a = currentRound[matchIndex * 2];
   const b = currentRound[matchIndex * 2 + 1];

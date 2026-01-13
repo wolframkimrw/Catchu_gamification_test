@@ -1,10 +1,10 @@
-// src/pages/WorldcupListPage.tsx
+// src/pages/main/mainpage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import "../pages/worldcup.css";
-import type { Game } from "../api/games";
-import { fetchGamesList } from "../api/games";
-import { LOCAL_WORLDCUP_GAME } from "../data/localWorldcup";
+import "../games/worldcup.css";
+import type { Game } from "../../api/games";
+import { fetchGamesList } from "../../api/games";
+import { LOCAL_WORLDCUP_GAME } from "../../data/localWorldcup";
 
 
 const categories = [
@@ -26,6 +26,13 @@ export function WorldcupListPage() {
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
   const psychoRef = useRef<HTMLDivElement | null>(null);
+  const todayPickGame: Game = {
+    id: 0,
+    title: "오늘의 사주 운세",
+    type: "FORTUNE_TEST",
+    thumbnail: "",
+    topic: null,
+  };
 
   useEffect(() => {
     fetchGamesList()
@@ -171,9 +178,31 @@ export function WorldcupListPage() {
                 <div className="hero-emoji">🐣</div>
               </div>
             </section>
+            <section className="section">
+              <CategorySection
+                title="오늘의 추천"
+                variant="small"
+                games={[todayPickGame]}
+                fallbackLabel="추천 준비중"
+                onCardClick={() => "/saju"}
+                getMeta={() => ({})}
+              />
+            </section>
+            <div className="section-title">
+              <span className="badge badge-new">NEW</span>
+              <span>카테고리 둘러보기</span>
+            </div>
+            <div className="category-grid">
+              {categories.map((cat) => (
+                <div key={cat.label} className="category-tile">
+                  <span className="category-emoji">{cat.emoji}</span>
+                  <span>{cat.label}</span>
+                </div>
+              ))}
+            </div>
             <div ref={fortuneRef}>
               <CategorySection
-                title="운게임 (사주팔자)"
+                title="운세"
                 variant="small"
                 games={fortuneGames}
                 fallbackLabel="운게임 준비중"
@@ -183,7 +212,7 @@ export function WorldcupListPage() {
             </div>
             <div ref={psychoRef} className="psy-section">
               <CategorySection
-                title="심리테스트"
+                title="테스트"
                 variant="small"
                 games={resolvedPsychoGames}
                 fallbackLabel="심리테스트 준비중"
@@ -191,19 +220,6 @@ export function WorldcupListPage() {
                 getMeta={() => ({})}
               />
             </div>
-          </div>
-
-          <div className="section-title">
-            <span className="badge badge-new">NEW</span>
-            <span>카테고리 둘러보기</span>
-          </div>
-          <div className="category-grid">
-            {categories.map((cat) => (
-              <div key={cat.label} className="category-tile">
-                <span className="category-emoji">{cat.emoji}</span>
-                <span>{cat.label}</span>
-              </div>
-            ))}
           </div>
         </section>
       </div>
@@ -241,51 +257,51 @@ function CategorySection({
         <div className="h-rail-track">
           {hasGames
             ? games.map((game) => {
-                const meta = getMeta(game);
-                const content = (
-                  <>
-                    <div className="gc-thumb">
-                      {game.thumbnail ? (
-                        <img src={game.thumbnail} alt={game.title} />
-                      ) : (
-                        <div className="gc-thumb-placeholder">준비중</div>
-                      )}
-                    </div>
-                    <div className="gc-body">
-                      <div className="gc-title">{game.title}</div>
-                      {meta.caption ? (
-                        <div className="gc-meta">{meta.caption}</div>
-                      ) : null}
-                    </div>
-                  </>
-                );
-
-                const cardNode = !onCardClick ? (
-                  <div className="gc-card">{content}</div>
-                ) : (
-                  <Link to={onCardClick(game)} className="gc-card">
-                    {content}
-                  </Link>
-                );
-
-                return (
-                  <div key={game.id} className="h-rail-item">
-                    {cardNode}
-                  </div>
-                );
-              })
-            : (
-                <div className="h-rail-item">
-                  <div className="gc-card">
-                    <div className="gc-thumb">
+              const meta = getMeta(game);
+              const content = (
+                <>
+                  <div className="gc-thumb">
+                    {game.thumbnail ? (
+                      <img src={game.thumbnail} alt={game.title} />
+                    ) : (
                       <div className="gc-thumb-placeholder">준비중</div>
-                    </div>
-                    <div className="gc-body">
-                      <div className="gc-title">{fallbackLabel}</div>
-                    </div>
+                    )}
+                  </div>
+                  <div className="gc-body">
+                    <div className="gc-title">{game.title}</div>
+                    {meta.caption ? (
+                      <div className="gc-meta">{meta.caption}</div>
+                    ) : null}
+                  </div>
+                </>
+              );
+
+              const cardNode = !onCardClick ? (
+                <div className="gc-card">{content}</div>
+              ) : (
+                <Link to={onCardClick(game)} className="gc-card">
+                  {content}
+                </Link>
+              );
+
+              return (
+                <div key={game.id} className="h-rail-item">
+                  {cardNode}
+                </div>
+              );
+            })
+            : (
+              <div className="h-rail-item">
+                <div className="gc-card">
+                  <div className="gc-thumb">
+                    <div className="gc-thumb-placeholder">준비중</div>
+                  </div>
+                  <div className="gc-body">
+                    <div className="gc-title">{fallbackLabel}</div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
         </div>
       </div>
     </section>

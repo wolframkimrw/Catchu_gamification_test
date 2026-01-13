@@ -14,11 +14,11 @@
 .app-shell {
   width: min(100%, var(--app-max-width));
   min-height: 100vh;
-  margin: 0 auto;
+  /* margin: 0 auto; */
   padding: 0;
   background: var(--app-surface);
-  border-radius: var(--app-shell-radius);
-  box-shadow: var(--app-shell-shadow, none);
+  /* border-radius: var(--app-shell-radius); */
+  /* box-shadow: var(--app-shell-shadow, none); */
 }
 
 .app-main {
@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0;
+  padding: 0.25rem 0;
 }
 
 .app-menu {

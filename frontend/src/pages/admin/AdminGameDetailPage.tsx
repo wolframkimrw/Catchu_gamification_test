@@ -43,7 +43,6 @@ export function AdminGameDetailPage() {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
-  const [isJsonSaving, setIsJsonSaving] = useState(false);
   const [activeBucket, setActiveBucket] = useState<"high" | "mid" | "low">("high");
   const [idiomBuckets, setIdiomBuckets] = useState<{
     high: IdiomEntry[];
@@ -378,7 +377,6 @@ export function AdminGameDetailPage() {
       low: sanitize(idiomBuckets.low),
     };
     try {
-      setIsJsonSaving(true);
       await saveAdminJsonFile(jsonPath, next);
       return true;
     } catch (err) {
@@ -388,8 +386,6 @@ export function AdminGameDetailPage() {
         setError("JSON 저장에 실패했습니다.");
       }
       return false;
-    } finally {
-      setIsJsonSaving(false);
     }
   };
 
@@ -438,16 +434,6 @@ export function AdminGameDetailPage() {
         { key: "", text: "", reading: "", meaning: "", message: "" },
       ];
       setActiveEntryIndex(next.length - 1);
-      return { ...prev, [activeBucket]: next };
-    });
-  };
-
-  const removeEntry = (index: number) => {
-    setIdiomBuckets((prev) => {
-      const next = prev[activeBucket].filter((_, idx) => idx !== index);
-      if (activeEntryIndex === index) {
-        setActiveEntryIndex(null);
-      }
       return { ...prev, [activeBucket]: next };
     });
   };
@@ -896,6 +882,7 @@ export function AdminGameDetailPage() {
                             name: prev[item.id]?.name ?? item.name,
                             image: file,
                             preview: file ? URL.createObjectURL(file) : item.file_name || null,
+                            isSelected: prev[item.id]?.isSelected ?? item.is_active,
                           },
                         }));
                       }}

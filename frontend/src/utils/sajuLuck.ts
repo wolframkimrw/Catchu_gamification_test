@@ -64,7 +64,7 @@ export function getWeekdayBonus(weekday: number): number {
 }
 
 export function getGradeFromScore(score: number): IdiomBucketKey {
-  if (score >= 85) return "very_high";
+  if (score >= 85) return "high";
   if (score >= 70) return "high";
   if (score >= 50) return "mid";
   return "low";

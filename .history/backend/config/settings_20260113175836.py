@@ -78,16 +78,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://catchu-gamification-test-[a-z0-9-]+\.vercel\.app$",
+    r"^https://catchu-gamification-test-[a-z0-9-]+\\.vercel\\.app$",
 ]
 
 CORS_ALLOWED_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
-
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",

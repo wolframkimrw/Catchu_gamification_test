@@ -1063,6 +1063,135 @@
   overflow-y: hidden;
 }
 
+.worldcup-result-page {
+  min-height: calc(100vh - var(--app-header-height));
+  min-height: calc(100dvh - var(--app-header-height));
+  background: radial-gradient(circle at 20% 20%, rgba(122, 90, 248, 0.18), transparent 45%),
+    radial-gradient(circle at 80% 10%, rgba(255, 159, 67, 0.14), transparent 38%),
+    #0e1017;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.worldcup-dashboard {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.worldcup-dashboard-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.worldcup-dashboard-title {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.worldcup-dashboard-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.worldcup-dashboard-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.worldcup-dashboard-hero {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+}
+
+.worldcup-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.worldcup-stat-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+
+.worldcup-stat-card span {
+  color: #c4c6d3;
+  font-size: 12px;
+}
+
+.worldcup-stat-card strong {
+  font-size: 16px;
+}
+
+.worldcup-dashboard-summary {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.worldcup-dashboard-summary h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #c4c6d3;
+}
+
+.worldcup-dashboard-summary p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.worldcup-dashboard-empty {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 540px) {
+  .worldcup-dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.worldcup-result-meta {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #c4c6d3;
+  flex-wrap: wrap;
+}
+
 .arena-topbar {
   display: flex;
   align-items: center;
@@ -1183,7 +1312,8 @@
 .arena-media video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 

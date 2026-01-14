@@ -1,0 +1,63 @@
+.arcana-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  align-items: center;
+}
+
+.arcana-btn {
+  min-width: 120px;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  box-shadow:
+    0 6px 16px rgba(86, 70, 120, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.arcana-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(138, 114, 197, 0.35),
+    0 6px 16px rgba(86, 70, 120, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.arcana-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 18px rgba(86, 70, 120, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.arcana-btn:active {
+  transform: scale(0.98);
+}
+
+.arcana-btn-retry {
+  background: linear-gradient(
+    135deg,
+    rgba(243, 238, 254, 0.7) 0%,
+    rgba(230, 221, 250, 0.7) 100%
+  );
+  color: #5a3d8c;
+}
+
+.arcana-btn-exit {
+  background: rgba(255, 255, 255, 0.6);
+  color: #5a3d8c;
+  border-color: rgba(181, 162, 214, 0.55);
+}
+
+.arcana-btn-exit:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 360px) {
+  .arcana-btn {
+    padding: 0.65rem 1.15rem;
+  }
+}

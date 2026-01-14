@@ -174,7 +174,7 @@ export function WorldcupListPage() {
             </div>
             <div ref={psychoRef} className="psy-section">
               <CategorySection
-                title="심리 테스트"
+                title="테스트"
                 variant="small"
                 games={resolvedPsychoGames}
                 fallbackLabel="심리테스트 준비중"

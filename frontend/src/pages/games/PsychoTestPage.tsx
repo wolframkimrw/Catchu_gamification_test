@@ -4,6 +4,7 @@ import "./worldcup.css";
 import "./psycho-test.css";
 import "./major-arcana.css";
 import { GameStartScreen } from "../../components/GameStartScreen";
+import { MajorArcanaResultActions } from "../../components/MajorArcanaResultActions";
 import { fetchGamesList } from "../../api/games";
 import { createGameResult } from "../../api/gamesSession";
 import { useGameSessionStart } from "../../hooks/useGameSessionStart";
@@ -289,14 +290,10 @@ export function PsychoTestPage() {
               <p className="arcana-page-summary">{result.main.summary}</p>
             ) : null}
           </div>
-          <div className="arcana-page-actions">
-            <button type="button" className="btn btn-primary" onClick={handleRestart}>
-              다시 하기
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={() => setStarted(false)}>
-              나가기
-            </button>
-          </div>
+          <MajorArcanaResultActions
+            onRetry={handleRestart}
+            onExit={() => setStarted(false)}
+          />
         </div>
       ) : (
         <div className="psycho-card">

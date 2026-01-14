@@ -5,6 +5,7 @@ import { WorldcupDetailPage } from "./pages/games/WorldcupDetailPage";
 import { WorldcupListPage } from "./pages/main/mainpage";
 import { WorldcupPlayPage } from "./pages/games/WorldcupPlayPage";
 import { WorldcupArenaPage } from "./pages/games/WorldcupArenaPage";
+import { WorldcupResultPage } from "./pages/games/WorldcupResultPage";
 import { WorldcupCreatePage } from "./pages/games/WorldcupCreatePage";
 import { MyGameEditListPage } from "./pages/games/MyGameEditListPage";
 import { MyGameEditRequestPage } from "./pages/games/MyGameEditRequestPage";
@@ -148,6 +149,7 @@ function Layout() {
             <Route path="/worldcup/:gameId" element={<WorldcupDetailPage />} />
             <Route path="/worldcup/:gameId/play" element={<WorldcupPlayPage />} />
             <Route path="/worldcup/:gameId/arena" element={<WorldcupArenaPage />} />
+            <Route path="/worldcup/:gameId/result" element={<WorldcupResultPage />} />
             <Route path="/worldcup/create" element={<WorldcupCreatePage />} />
             <Route path="/my/games" element={<MyGameEditListPage />} />
             <Route path="/my/games/:gameId/edit" element={<MyGameEditRequestPage />} />

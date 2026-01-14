@@ -1,6 +1,6 @@
 // src/pages/WorldcupArenaPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
@@ -31,6 +31,8 @@ export function WorldcupArenaPage() {
   const [sessionId, setSessionId] = useState<number | null>(null);
   const isSelecting = selectedId !== null;
   const pickIndexRef = useRef(0);
+  const navigate = useNavigate();
+  const hasNavigatedRef = useRef(false);
 
   const startRound = useCallback((roundItems: GameItem[], round: number) => {
     if (roundItems.length === 0) {
@@ -145,6 +147,32 @@ export function WorldcupArenaPage() {
   const resolvedState: PageState = state;
 
   const resolvedGame = resolvedState.status === "success" ? resolvedState.data.game : null;
+  const itemsCount =
+    resolvedState.status === "success" ? resolvedState.data.items.length : 0;
+
+  useEffect(() => {
+    if (!champion || parsedGameId === null || !resolvedGame) {
+      return;
+    }
+    if (hasNavigatedRef.current) {
+      return;
+    }
+    const payload = {
+      gameId: parsedGameId,
+      gameTitle: resolvedGame.title,
+      round: roundNumber,
+      totalItems: itemsCount,
+      champion: {
+        id: champion.id,
+        name: champion.name || "",
+        file_name: champion.file_name || "",
+        sort_order: champion.sort_order,
+      },
+    };
+    sessionStorage.setItem(`worldcup-result-${parsedGameId}`, JSON.stringify(payload));
+    hasNavigatedRef.current = true;
+    navigate(`/worldcup/${parsedGameId}/result`, { replace: true, state: payload });
+  }, [champion, itemsCount, navigate, parsedGameId, resolvedGame, roundNumber]);
 
   useEffect(() => {
     if (!champion || parsedGameId === null || !sessionId) {

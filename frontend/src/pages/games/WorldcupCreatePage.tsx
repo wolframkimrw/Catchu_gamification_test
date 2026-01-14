@@ -142,7 +142,10 @@ export function WorldcupCreatePage() {
   };
 
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { name: "", imageFile: null, imageUrl: "" }]);
+    setItems((prev) => [
+      ...prev,
+      { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
+    ]);
   };
 
   const handleRemoveItem = (index: number) => {

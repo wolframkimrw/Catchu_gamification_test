@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import "./worldcup.css";
+import { fetchGameResult } from "../../api/gamesSession";
+import type { GameResultDetail } from "../../api/gamesSession";
 import placeholderImage from "../../assets/worldcup-placeholder.svg";
+import { getStoredGameSessionId } from "../../utils/gameSession";
 
 type ResultPayload = {
   gameId: number;
@@ -38,6 +41,68 @@ const isVideo = (url: string | null) => {
   return /\.(mp4|mov|webm|ogg)$/i.test(url);
 };
 
+const normalizeRanking = (rankingValue: unknown): ResultPayload["ranking"] => {
+  if (!Array.isArray(rankingValue)) return [];
+  return rankingValue
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+      const record = entry as Record<string, unknown>;
+      const id = Number(record.id);
+      if (!Number.isFinite(id)) return null;
+      return {
+        id,
+        name: typeof record.name === "string" ? record.name : "",
+        file_name: typeof record.file_name === "string" ? record.file_name : "",
+        sort_order: Number(record.sort_order ?? 0),
+        wins: Number(record.wins ?? 0),
+      };
+    })
+    .filter((entry): entry is ResultPayload["ranking"][number] => !!entry);
+};
+
+const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
+  const payload = data.result_payload ?? {};
+  const payloadRecord = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+  const championFromPayload = payloadRecord.champion as Record<string, unknown> | undefined;
+  const payloadChampionId = championFromPayload ? Number(championFromPayload.id) : NaN;
+  const winner = data.winner_item;
+
+  const champion = winner
+    ? {
+        id: winner.id,
+        name: winner.name || "",
+        file_name: winner.file_name || "",
+        sort_order: Number(championFromPayload?.sort_order ?? 0),
+      }
+    : Number.isFinite(payloadChampionId)
+    ? {
+        id: payloadChampionId,
+        name: typeof championFromPayload?.name === "string" ? championFromPayload.name : "",
+        file_name: typeof championFromPayload?.file_name === "string" ? championFromPayload.file_name : "",
+        sort_order: Number(championFromPayload?.sort_order ?? 0),
+      }
+    : null;
+
+  if (!champion) {
+    return null;
+  }
+
+  const ranking = normalizeRanking(payloadRecord.ranking);
+  const totalItemsValue = Number(payloadRecord.total_items ?? payloadRecord.totalItems ?? ranking.length || 0);
+  const roundValue = Number(payloadRecord.round ?? 0);
+
+  return {
+    gameId: data.game.id,
+    gameTitle: data.game.title,
+    round: Number.isFinite(roundValue) ? roundValue : 0,
+    totalItems: Number.isFinite(totalItemsValue) ? totalItemsValue : ranking.length || 0,
+    champion,
+    ranking: ranking.length ? ranking : [ { ...champion, wins: 1 } ],
+  };
+};
+
 export function WorldcupResultPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const location = useLocation();
@@ -56,6 +121,23 @@ export function WorldcupResultPage() {
     }
     const stored = sessionStorage.getItem(`worldcup-result-${parsedGameId}`);
     if (!stored) {
+      const sessionId = getStoredGameSessionId(parsedGameId);
+      if (!sessionId) {
+        return;
+      }
+      fetchGameResult(sessionId)
+        .then((data) => {
+          if (!data.result) {
+            return;
+          }
+          const mapped = mapResultFromApi(data.result);
+          if (mapped) {
+            setResult(mapped);
+          }
+        })
+        .catch(() => {
+          // 결과 조회 실패는 빈 상태로 둠
+        });
       return;
     }
     try {

@@ -180,6 +180,39 @@ class AdminGameResultSerializer(serializers.ModelSerializer):
         return {"id": obj.winner_item.id, "name": obj.winner_item.name}
 
 
+class GameResultDetailSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+    choice_id = serializers.IntegerField()
+    winner_item = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GameResult
+        fields = [
+            "id",
+            "choice_id",
+            "game",
+            "winner_item",
+            "result_title",
+            "result_code",
+            "result_image_url",
+            "share_url",
+            "result_payload",
+            "created_at",
+        ]
+
+    def get_game(self, obj):
+        return {"id": obj.game_id, "title": obj.game.title}
+
+    def get_winner_item(self, obj):
+        if not obj.winner_item:
+            return None
+        return {
+            "id": obj.winner_item.id,
+            "name": obj.winner_item.name,
+            "file_name": obj.winner_item.file_name,
+        }
+
+
 class AdminGameEditRequestSerializer(serializers.ModelSerializer):
     game = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()

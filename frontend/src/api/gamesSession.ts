@@ -52,3 +52,27 @@ export async function createGameResult(params: {
   );
   return response;
 }
+
+export type GameResultDetail = {
+  id: number;
+  choice_id: number;
+  game: { id: number; title: string };
+  winner_item: { id: number; name: string; file_name: string } | null;
+  result_title: string;
+  result_code: string;
+  result_image_url: string;
+  share_url: string;
+  result_payload: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export async function fetchGameResult(choiceId: number) {
+  const response = await requestWithMeta(
+    apiClient.get<
+      ApiResponse<{
+        result: GameResultDetail | null;
+      }>
+    >("/games/result/detail/", { params: { choice_id: choiceId } })
+  );
+  return response;
+}

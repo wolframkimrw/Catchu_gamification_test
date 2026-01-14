@@ -14,6 +14,26 @@ type PageState =
   | { status: "error"; message: string }
   | { status: "success"; data: GameDetailData };
 
+type WorldcupResultPayload = {
+  gameId: number;
+  gameTitle: string;
+  round: number;
+  totalItems: number;
+  champion: {
+    id: number;
+    name: string;
+    file_name: string;
+    sort_order: number;
+  };
+  ranking: {
+    id: number;
+    name: string;
+    file_name: string;
+    sort_order: number;
+    wins: number;
+  }[];
+};
+
 export function WorldcupArenaPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const parsedGameId = useMemo(() => {
@@ -33,6 +53,7 @@ export function WorldcupArenaPage() {
   const isSelecting = selectedId !== null;
   const pickIndexRef = useRef(0);
   const winCountsRef = useRef<Record<number, number>>({});
+  const resultPayloadRef = useRef<WorldcupResultPayload | null>(null);
   const navigate = useNavigate();
   const hasNavigatedRef = useRef(false);
 
@@ -188,7 +209,8 @@ export function WorldcupArenaPage() {
         sort_order: champion.sort_order,
       },
       ranking,
-    };
+    } satisfies WorldcupResultPayload;
+    resultPayloadRef.current = payload;
     sessionStorage.setItem(`worldcup-result-${parsedGameId}`, JSON.stringify(payload));
     hasNavigatedRef.current = true;
     navigate(`/worldcup/${parsedGameId}/result`, { replace: true, state: payload });
@@ -201,6 +223,7 @@ export function WorldcupArenaPage() {
     const resultTitle = resolvedGame?.title
       ? `${resolvedGame.title} 우승`
       : "월드컵 우승";
+    const payload = resultPayloadRef.current;
     void createGameResult({
       choice_id: sessionId,
       game_id: parsedGameId,
@@ -209,11 +232,14 @@ export function WorldcupArenaPage() {
       result_code: "WORLD_CUP",
       result_payload: {
         round: roundNumber,
+        total_items: payload?.totalItems ?? itemsCount,
+        champion: payload?.champion,
+        ranking: payload?.ranking,
       },
     }).catch(() => {
       // 결과 로그 실패는 진행을 막지 않음
     });
-  }, [champion, parsedGameId, resolvedGame, roundNumber, sessionId]);
+  }, [champion, itemsCount, parsedGameId, resolvedGame, roundNumber, sessionId]);
 
   if (parsedGameId === null) {
     return <div className="arena-shell">잘못된 게임 ID 입니다.</div>;

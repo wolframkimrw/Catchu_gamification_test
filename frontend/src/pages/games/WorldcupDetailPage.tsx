@@ -5,6 +5,7 @@ import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
 import type { GameDetailData } from "../../api/games";
+import placeholderImage from "../../assets/worldcup-placeholder.svg";
 
 type PageState =
   | { status: "loading" }
@@ -83,7 +84,7 @@ export function WorldcupDetailPage() {
                   {item.file_name ? (
                     <img src={item.file_name} alt={item.name || "게임 아이템"} />
                   ) : (
-                    <span className="detail-item-fallback">이미지 없음</span>
+                    <img src={placeholderImage} alt="NO IMAGE" />
                   )}
                 </div>
                 <div className="detail-item-name">{item.name || "이름 없음"}</div>

@@ -37,6 +37,7 @@ from .serializers import (
     GameDetailSerializer,
     GameChoiceLogCreateSerializer,
     GameResultCreateSerializer,
+    GameResultDetailSerializer,
     WorldcupPickLogCreateSerializer,
 )
 from django.shortcuts import get_object_or_404
@@ -191,6 +192,30 @@ class GameResultCreateView(BaseAPIView):
             result.choice.finished_at = timezone.now()
             result.choice.save(update_fields=["finished_at"])
         return self.respond(data={"result_id": result.id})
+
+
+class GameResultDetailView(BaseAPIView):
+    api_name = "games.result.detail"
+
+    def get(self, request, *args, **kwargs):
+        choice_id = request.query_params.get("choice_id")
+        if not choice_id:
+            raise ValidationError({"choice_id": "choice_id가 필요합니다."})
+        try:
+            choice_id_value = int(choice_id)
+        except (TypeError, ValueError):
+            raise ValidationError({"choice_id": "choice_id는 숫자여야 합니다."})
+
+        result = (
+            GameResult.objects.select_related("game", "winner_item")
+            .filter(choice_id=choice_id_value)
+            .order_by("-created_at")
+            .first()
+        )
+        if not result:
+            return self.respond(data={"result": None})
+        serializer = GameResultDetailSerializer(result)
+        return self.respond(data={"result": serializer.data})
 
 
 class GameJsonReadView(BaseAPIView):

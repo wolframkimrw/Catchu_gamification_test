@@ -5,6 +5,7 @@ from .views import (
     TodayPickView,
     GameChoiceLogCreateView,
     GameResultCreateView,
+    GameResultDetailView,
     WorldcupPickLogCreateView,
     WorldcupCreateView,
     MyGameListView,
@@ -61,4 +62,5 @@ urlpatterns = [
     path("admin/json/file/", AdminJsonDetailView.as_view(), name="admin_json_detail"),
     path("json/", GameJsonReadView.as_view(), name="json_read"),
     path("result/", GameResultCreateView.as_view(), name="result_create"),
+    path("result/detail/", GameResultDetailView.as_view(), name="result_detail"),
 ]

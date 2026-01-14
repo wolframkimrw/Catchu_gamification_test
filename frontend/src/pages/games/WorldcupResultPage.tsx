@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import "./worldcup.css";
+import placeholderImage from "../../assets/worldcup-placeholder.svg";
 
 type ResultPayload = {
   gameId: number;
@@ -128,7 +129,9 @@ export function WorldcupResultPage() {
                           <img src={entryMedia} alt={entry.name || entry.file_name} />
                         )
                       ) : (
-                        <div className="worldcup-rank-fallback">NO</div>
+                        <div className="worldcup-rank-fallback">
+                          <img src={placeholderImage} alt="NO IMAGE" />
+                        </div>
                       )}
                     </div>
                     <div className="worldcup-rank-name">{entry.name || entry.file_name}</div>
@@ -151,7 +154,9 @@ export function WorldcupResultPage() {
                   <img src={mediaUrl} alt={result.champion.name || result.champion.file_name} />
                 )
               ) : (
-                <div className="arena-media-fallback">이미지를 불러올 수 없습니다.</div>
+                <div className="arena-media-fallback">
+                  <img src={placeholderImage} alt="NO IMAGE" />
+                </div>
               )}
             </div>
             <h3 className="result-title">{result.champion.name || result.champion.file_name}</h3>

@@ -75,7 +75,7 @@ export function WorldcupListPage() {
   );
 
   const psychoGames = catalogGames.filter(
-    (game) => game.type === "PSYCHO_TEST"
+    (game) => game.type === "PSYCHOLOGICAL" || game.type === "PSYCHO_TEST"
   );
   const resolvedPsychoGames =
     psychoGames.length > 0 ? psychoGames : psychoFallbackGames;
@@ -341,7 +341,7 @@ function CategorySection({
 const psychoFallbackGames: Game[] = Array.from({ length: 10 }, (_, index) => ({
   id: 1000 + index,
   title: `심리테스트 ${index + 1}`,
-  type: "PSYCHO_TEST",
+  type: "PSYCHOLOGICAL",
   thumbnail:
     "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80&auto=format&fit=crop",
   topic: null,

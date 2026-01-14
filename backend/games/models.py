@@ -40,6 +40,7 @@ class WorldcupTopic(TimeStampedModel):
 class GameType(models.TextChoices):
     WORLD_CUP = "WORLD_CUP", "이상형 월드컵"
     FORTUNE_TEST = "FORTUNE_TEST", "운세 테스트"
+    PSYCHOLOGICAL = "PSYCHOLOGICAL", "심리테스트"
     QUIZ = "QUIZ", "퀴즈"
     # 필요한 타입 계속 추가 가능
 

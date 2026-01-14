@@ -1,6 +1,6 @@
 // src/pages/WorldcupDetailPage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
@@ -90,11 +90,6 @@ export function WorldcupDetailPage() {
               <span>{game.topic.name}</span>
             </div>
           ) : null}
-          <div className="detail-actions">
-            <Link to="/" className="detail-home-button">
-              홈으로
-            </Link>
-          </div>
         </div>
       </div>
 

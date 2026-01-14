@@ -14,6 +14,17 @@ type PageState =
   | { status: "error"; message: string }
   | { status: "success"; data: GameDetailData };
 
+const getTypeLabel = (value: string) => {
+  const map: Record<string, string> = {
+    WORLD_CUP: "월드컵",
+    FORTUNE_TEST: "운세",
+    PSYCHOLOGICAL: "심리테스트",
+    PSYCHO_TEST: "심리테스트",
+    QUIZ: "퀴즈",
+  };
+  return map[value] || value;
+};
+
 export function WorldcupPlayPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const parsedGameId = useMemo(() => {
@@ -138,7 +149,7 @@ export function WorldcupPlayPage() {
           description="메인에서 바로 시작! 라운드 선택 없이 일단 플레이해요."
           tags={[
             {
-              label: game.type,
+              label: getTypeLabel(game.type),
               icon: (
                 <svg viewBox="0 0 24 24" role="img">
                   <path

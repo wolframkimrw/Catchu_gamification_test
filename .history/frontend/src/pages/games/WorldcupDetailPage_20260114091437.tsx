@@ -1,6 +1,6 @@
 // src/pages/WorldcupDetailPage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
@@ -84,16 +84,9 @@ export function WorldcupDetailPage() {
           <p className="badge badge-hot" style={{ display: "inline-flex" }}>
             월드컵
           </p>
-          <h1 className="detail-title">게임명 : {game.title}</h1>
-          {game.topic?.name && game.topic.name !== "게임" ? (
-            <div className="detail-meta">
-              <span>{game.topic.name}</span>
-            </div>
-          ) : null}
-          <div className="detail-actions">
-            <Link to="/" className="detail-home-button">
-              홈으로
-            </Link>
+          <h1 className="detail-title">{game.title}</h1>
+          <div className="detail-meta">
+            {game.topic?.name && <span>• {game.topic.name}</span>}
           </div>
         </div>
       </div>

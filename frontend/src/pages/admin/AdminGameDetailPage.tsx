@@ -393,6 +393,8 @@ export function AdminGameDetailPage() {
     const map: Record<string, string> = {
       WORLD_CUP: "월드컵",
       FORTUNE_TEST: "운세",
+      PSYCHOLOGICAL: "심리테스트",
+      PSYCHO_TEST: "심리테스트",
       QUIZ: "퀴즈",
     };
     return map[value] || value;

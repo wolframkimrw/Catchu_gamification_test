@@ -631,7 +631,6 @@
 
 .detail-thumb {
   position: relative;
-  container-type: inline-size;
 }
 
 .detail-header img {
@@ -642,17 +641,13 @@
 }
 
 .detail-thumb-message {
-  margin: 10px 0px 30px 0px;
+  margin-bottom: 8px;
   color: #11131a;
-  width: 100%;
-  display: block;
-  font-size: clamp(18px, 6cqw, 34px);
+  font-size: 28px;
   font-weight: 900;
   letter-spacing: -0.01em;
   text-align: center;
   text-shadow: 0 2px 6px rgba(17, 19, 26, 0.2);
-  line-height: 1.1;
-  white-space: nowrap;
 }
 
 .detail-title {
@@ -667,30 +662,6 @@
   gap: 10px;
   color: #4a4b52;
   font-size: 14px;
-}
-
-.detail-actions {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-}
-
-.detail-home-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 22px;
-  border-radius: 3px;
-  background: #8e6dd8;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  text-decoration: none;
-  box-shadow: 0 6px 14px rgba(27, 31, 59, 0.12);
-}
-
-.detail-home-button:hover {
-  transform: translateY(-1px);
 }
 
 .detail-items {
@@ -1315,5 +1286,18 @@
 @media (min-width: 768px) {
   .worldcup-hero {
     padding: 22px 20px;
+  }
+
+  .detail-header {
+    flex-direction: row;
+  }
+
+  .detail-header img {
+    max-width: 320px;
+    max-height: none;
+  }
+
+  .detail-thumb-message {
+    font-size: 32px;
   }
 }

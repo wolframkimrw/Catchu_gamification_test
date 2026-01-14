@@ -97,7 +97,7 @@ export function SajuLuckPage() {
           description="당신의 오늘을 가볍게 체크해 보세요."
           tags={[
             {
-              label: "FORTUNE_TEST",
+              label: "운세",
               icon: (
                 <svg viewBox="0 0 24 24" role="img">
                   <path

@@ -1,6 +1,6 @@
 // src/pages/WorldcupDetailPage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
@@ -11,17 +11,6 @@ type PageState =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "success"; data: GameDetailData };
-
-const getTypeLabel = (value: string) => {
-  const map: Record<string, string> = {
-    WORLD_CUP: "월드컵",
-    FORTUNE_TEST: "운세",
-    PSYCHOLOGICAL: "심리테스트",
-    PSYCHO_TEST: "심리테스트",
-    QUIZ: "퀴즈",
-  };
-  return map[value] || value;
-};
 
 export function WorldcupDetailPage() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -77,29 +66,23 @@ export function WorldcupDetailPage() {
     <div className="page-section detail-card">
       <div className="detail-header">
         <div className="detail-thumb">
-          <div className="detail-thumb-message">🎉 월드컵이 생성되었습니다! 🎉</div>
+          <div className="detail-thumb-message">월드컵이 생성되었습니다!</div>
           <img src={game.thumbnail} alt={game.title} />
         </div>
         <div>
           <p className="badge badge-hot" style={{ display: "inline-flex" }}>
-            월드컵
+            WORLD CUP
           </p>
-          <h1 className="detail-title">게임명 : {game.title}</h1>
-          {game.topic?.name && game.topic.name !== "게임" ? (
-            <div className="detail-meta">
-              <span>{game.topic.name}</span>
-            </div>
-          ) : null}
-          <div className="detail-actions">
-            <Link to="/" className="detail-home-button">
-              홈으로
-            </Link>
+          <h1 className="detail-title">{game.title}</h1>
+          <div className="detail-meta">
+            <span>{game.type}</span>
+            {game.topic?.name && <span>• {game.topic.name}</span>}
           </div>
         </div>
       </div>
 
       <div className="page-section">
-        <h3>월드컵 항목</h3>
+        <h3>게임 아이템</h3>
         {items.length === 0 ? (
           <div className="state-box">아직 등록된 항목이 없습니다.</div>
         ) : (

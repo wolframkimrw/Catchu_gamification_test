@@ -38,6 +38,8 @@ export const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   timeout: 10000,
   withCredentials: true,
+  xsrfCookieName: "csrftoken",
+  xsrfHeaderName: "X-CSRFToken",
 });
 
 export const getBackendOrigin = () => {
@@ -57,6 +59,11 @@ export const resolveMediaUrl = (url: string) => {
 
 const CSRF_HEADER_NAME = "X-CSRFToken";
 const SAFE_METHODS = new Set(["get", "head", "options", "trace"]);
+let csrfTokenCache: string | null = null;
+
+export const setCsrfToken = (token: string | null) => {
+  csrfTokenCache = token;
+};
 
 function getCookie(name: string): string | null {
   if (!document.cookie) {
@@ -75,7 +82,7 @@ function getCookie(name: string): string | null {
 apiClient.interceptors.request.use((config) => {
   const method = config.method?.toLowerCase();
   if (method && !SAFE_METHODS.has(method)) {
-    const csrfToken = getCookie("csrftoken");
+    const csrfToken = getCookie("csrftoken") || csrfTokenCache;
     if (csrfToken) {
       config.headers = config.headers ?? {};
       config.headers[CSRF_HEADER_NAME] = csrfToken;

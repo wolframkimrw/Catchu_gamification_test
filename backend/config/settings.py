@@ -74,7 +74,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://catchu-gamification-test.vercel.app",
     "https://local.catchu.ngrok.app",
     "https://catchu-gamification-test-h2xr4z0ge-wolframs-projects-37373fbb.vercel.app"
-    
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -85,9 +84,9 @@ CORS_ALLOWED_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
 SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = not DEBUG
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
@@ -96,6 +95,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://local.catchu.ngrok.app",
     "https://catchu-gamification-test-h2xr4z0ge-wolframs-projects-37373fbb.vercel.app",
 ]
+
 
 ROOT_URLCONF = 'config.urls'
 

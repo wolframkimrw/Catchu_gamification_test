@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import get_user_model
+from django.middleware.csrf import get_token
 from rest_framework import status
 
 from config.views import BaseAPIView
@@ -50,6 +51,14 @@ class LoginView(BaseAPIView):
             },
             status_code=status.HTTP_200_OK,
         )
+
+
+class CsrfTokenView(BaseAPIView):
+    api_name = "accounts.csrf"
+
+    def get(self, request, *args, **kwargs):
+        token = get_token(request)
+        return self.respond(data={"token": token})
 
 
 class SignupView(BaseAPIView):

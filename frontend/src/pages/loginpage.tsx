@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./login.css";
-import { loginAccount, resetPassword, signupAccount } from "../api/accounts";
+import { fetchCsrfToken, loginAccount, resetPassword, signupAccount } from "../api/accounts";
 import { ApiError } from "../api/http";
 import { setStoredUser } from "../utils/auth";
 
@@ -51,7 +51,8 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
-      const data = await loginAccount(loginState);
+      const csrfToken = await fetchCsrfToken();
+      const data = await loginAccount({ ...loginState, csrfToken });
       if (data?.user) {
         setStoredUser(data.user);
       }
@@ -69,11 +70,13 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
+      const csrfToken = await fetchCsrfToken();
       await signupAccount({
         name: signupState.name,
         email: signupState.email,
         password: signupState.password,
         password_confirm: signupState.passwordConfirm,
+        csrfToken,
       });
       window.alert("회원가입이 완료되었습니다. 로그인해 주세요.");
       setActiveTab("login");
@@ -91,7 +94,8 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
-      await resetPassword(resetState);
+      const csrfToken = await fetchCsrfToken();
+      await resetPassword({ ...resetState, csrfToken });
     } catch (err) {
       if (err instanceof ApiError) {
         setFormError(err.meta.message || "요청에 실패했습니다.");

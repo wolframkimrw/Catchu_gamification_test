@@ -10,10 +10,12 @@ export function AdminGamesPage() {
   const [games, setGames] = useState<AdminGame[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(3);
 
   const loadGames = () => {
     setIsLoading(true);
     setError(null);
+    setVisibleCount(3);
     fetchAdminGames()
       .then((data) => setGames(data))
       .catch((err) => {
@@ -70,48 +72,59 @@ export function AdminGamesPage() {
       ) : games.length === 0 ? (
         <div className="admin-games-empty">게임이 없습니다.</div>
       ) : (
-        <div className="admin-games-list">
-          {games.map((game) => (
-            <div key={game.id} className="admin-games-card">
-              <Link to={`/admin/games/${game.id}`} className="admin-card-link">
-                <div className="admin-games-info">
-                  <div className="admin-games-thumb">
-                    {game.thumbnail_image_url ? (
-                      <img src={game.thumbnail_image_url} alt={game.title} />
-                  ) : (
-                    <div className="admin-games-thumb-placeholder">NO</div>
-                  )}
-                </div>
-                <div>
-                  <div className="admin-games-title">{game.title}</div>
-                  <div className="admin-games-tags">
-                    <span className="admin-badge badge-type">{getTypeLabel(game.type)}</span>
-                    <span
-                      className={`admin-badge badge-status ${
-                        game.status === "ACTIVE" ? "is-active" : "is-inactive"
-                      }`}
-                    >
-                      {getStatusLabel(game.status)}
-                    </span>
-                    <span
-                      className={`admin-badge badge-visibility ${
-                        game.visibility === "PUBLIC" ? "is-public" : "is-private"
-                      }`}
-                    >
-                      {getVisibilityLabel(game.visibility)}
-                    </span>
+        <>
+          <div className="admin-games-list">
+            {games.slice(0, visibleCount).map((game) => (
+              <div key={game.id} className="admin-games-card">
+                <Link to={`/admin/games/${game.id}`} className="admin-card-link">
+                  <div className="admin-games-info">
+                    <div className="admin-games-thumb">
+                      {game.thumbnail_image_url ? (
+                        <img src={game.thumbnail_image_url} alt={game.title} />
+                      ) : (
+                        <div className="admin-games-thumb-placeholder">NO</div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="admin-games-title">{game.title}</div>
+                      <div className="admin-games-tags">
+                        <span className="admin-badge badge-type">{getTypeLabel(game.type)}</span>
+                        <span
+                          className={`admin-badge badge-status ${
+                            game.status === "ACTIVE" ? "is-active" : "is-inactive"
+                          }`}
+                        >
+                          {getStatusLabel(game.status)}
+                        </span>
+                        <span
+                          className={`admin-badge badge-visibility ${
+                            game.visibility === "PUBLIC" ? "is-public" : "is-private"
+                          }`}
+                        >
+                          {getVisibilityLabel(game.visibility)}
+                        </span>
+                      </div>
+                      <div className="admin-games-owner">
+                        {game.created_by
+                          ? `${game.created_by.name} (${game.created_by.email})`
+                          : "작성자 없음"}
+                      </div>
+                    </div>
                   </div>
-                  <div className="admin-games-owner">
-                    {game.created_by
-                      ? `${game.created_by.name} (${game.created_by.email})`
-                      : "작성자 없음"}
-                  </div>
-                </div>
+                </Link>
               </div>
-              </Link>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          {games.length > visibleCount ? (
+            <button
+              type="button"
+              className="admin-log-more"
+              onClick={() => setVisibleCount(games.length)}
+            >
+              더보기
+            </button>
+          ) : null}
+        </>
       )}
     </AdminShell>
   );

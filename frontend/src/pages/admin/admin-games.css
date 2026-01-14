@@ -881,7 +881,9 @@
   padding: 0.45rem 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  align-self: flex-start;
+  align-self: center;
+  display: block;
+  margin: 0 auto;
 }
 
 .admin-log-row {

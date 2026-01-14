@@ -10,10 +10,12 @@ export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(3);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
+    setVisibleCount(3);
     fetchAdminUsers()
       .then((userData) => {
         setUsers(userData);
@@ -48,28 +50,41 @@ export function AdminUsersPage() {
       ) : users.length === 0 ? (
         <div className="admin-games-empty">유저가 없습니다.</div>
       ) : (
-        <div className="admin-games-list">
-          {sortedUsers.map((user) => {
-            return (
-              <div key={user.id} className="admin-games-card">
-                <Link to={`/admin/users/${user.id}`} className="admin-card-link">
-                  <div>
-                    <div className="admin-games-title">{user.name}</div>
-                    <div className="admin-games-meta">
-                      <span>{user.email}</span>
-                      <span>{user.is_staff ? "스태프" : "유저"}</span>
-                      <span>{user.is_active ? "활성" : "비활성"}</span>
+        <>
+          <div className="admin-games-list">
+            {sortedUsers.slice(0, visibleCount).map((user) => {
+              return (
+                <div key={user.id} className="admin-games-card">
+                  <Link to={`/admin/users/${user.id}`} className="admin-card-link">
+                    <div>
+                      <div className="admin-games-title">{user.name}</div>
+                      <div className="admin-games-meta">
+                        <span>{user.email}</span>
+                        <span>{user.is_staff ? "스태프" : "유저"}</span>
+                        <span>{user.is_active ? "활성" : "비활성"}</span>
+                      </div>
+                      <div className="admin-games-owner">
+                        {user.profile ? `닉네임: ${user.profile.nickname}` : "프로필 없음"}
+                      </div>
+                      <div className="admin-games-owner">
+                        가입일: {formatDateTime(user.created_at)}
+                      </div>
                     </div>
-                    <div className="admin-games-owner">
-                      {user.profile ? `닉네임: ${user.profile.nickname}` : "프로필 없음"}
-                    </div>
-                    <div className="admin-games-owner">가입일: {formatDateTime(user.created_at)}</div>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+          {sortedUsers.length > visibleCount ? (
+            <button
+              type="button"
+              className="admin-log-more"
+              onClick={() => setVisibleCount(sortedUsers.length)}
+            >
+              더보기
+            </button>
+          ) : null}
+        </>
       )}
     </AdminShell>
   );

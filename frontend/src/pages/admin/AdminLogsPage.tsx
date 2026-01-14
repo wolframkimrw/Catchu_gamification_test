@@ -9,9 +9,11 @@ export function AdminLogsPage() {
   const [games, setGames] = useState<AdminGame[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(3);
   const navigate = useNavigate();
 
   useEffect(() => {
+    setVisibleCount(3);
     setIsLoading(true);
     fetchAdminGames()
       .then((data) => setGames(data))
@@ -54,48 +56,59 @@ export function AdminLogsPage() {
       ) : games.length === 0 ? (
         <div className="admin-games-empty">로그가 없습니다.</div>
       ) : (
-        <div className="admin-games-list">
-          {games.map((game) => (
-            <div key={game.id} className="admin-games-card">
-              <div
-                className="admin-games-info"
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/admin/logs/${game.id}`)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    navigate(`/admin/logs/${game.id}`);
-                  }
-                }}
-              >
-                <div className="admin-games-thumb">
-                  {game.thumbnail_image_url ? (
-                    <img src={game.thumbnail_image_url} alt={game.title} />
-                  ) : (
-                    <div className="admin-games-thumb-placeholder">NO</div>
-                  )}
-                </div>
-                <div className="admin-item-fields">
-                  <div className="admin-games-title">{game.title}</div>
-                  <div className="admin-games-tags">
-                    <span className="admin-badge badge-type">{getTypeLabel(game.type)}</span>
-                    <span
-                      className={`admin-badge badge-status ${
-                        game.status === "ACTIVE" ? "is-active" : "is-inactive"
-                      }`}
-                    >
-                      {getStatusLabel(game.status)}
-                    </span>
+        <>
+          <div className="admin-games-list">
+            {games.slice(0, visibleCount).map((game) => (
+              <div key={game.id} className="admin-games-card">
+                <div
+                  className="admin-games-info"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/admin/logs/${game.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/admin/logs/${game.id}`);
+                    }
+                  }}
+                >
+                  <div className="admin-games-thumb">
+                    {game.thumbnail_image_url ? (
+                      <img src={game.thumbnail_image_url} alt={game.title} />
+                    ) : (
+                      <div className="admin-games-thumb-placeholder">NO</div>
+                    )}
                   </div>
-                  <div className="admin-games-meta">
-                    생성일: {new Date(game.created_at).toLocaleDateString()}
+                  <div className="admin-item-fields">
+                    <div className="admin-games-title">{game.title}</div>
+                    <div className="admin-games-tags">
+                      <span className="admin-badge badge-type">{getTypeLabel(game.type)}</span>
+                      <span
+                        className={`admin-badge badge-status ${
+                          game.status === "ACTIVE" ? "is-active" : "is-inactive"
+                        }`}
+                      >
+                        {getStatusLabel(game.status)}
+                      </span>
+                    </div>
+                    <div className="admin-games-meta">
+                      생성일: {new Date(game.created_at).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          {games.length > visibleCount ? (
+            <button
+              type="button"
+              className="admin-log-more"
+              onClick={() => setVisibleCount(games.length)}
+            >
+              더보기
+            </button>
+          ) : null}
+        </>
       )}
     </AdminShell>
   );

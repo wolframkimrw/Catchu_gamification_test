@@ -31,7 +31,6 @@ export function AdminLogDetailPage() {
     picks: 3,
   });
   const [modalChoiceId, setModalChoiceId] = useState<number | null>(null);
-  const [expandedPickIds, setExpandedPickIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,6 +62,13 @@ export function AdminLogDetailPage() {
       .finally(() => setIsLoading(false));
   }, [isValidGameId, parsedGameId]);
 
+  useEffect(() => {
+    if (game && game.type !== "WORLD_CUP" && activeTab !== "choices") {
+      setActiveTab("choices");
+    }
+  }, [activeTab, game]);
+
+  const isWorldCup = game?.type === "WORLD_CUP";
   const totalStarts = choiceLogs.length;
   const totalResults = resultLogs.length;
   const totalDrops = Math.max(0, totalStarts - totalResults);
@@ -246,33 +252,37 @@ export function AdminLogDetailPage() {
             </div>
           </div>
 
-          <section className="admin-item-section">
-            <div className="admin-item-header">
-              <h3>우승 항목 랭킹</h3>
-            </div>
-          </section>
-          {winnerRanking.length === 0 ? (
-            <div className="admin-games-empty">우승 데이터가 없습니다.</div>
-          ) : (
-            <div className="admin-rank-list">
-              {winnerRanking.map((entry, index) => (
-                <div key={`${entry.label}-${index}`} className="admin-rank-row">
-                  <div className="admin-rank-order">{index + 1}</div>
-                  <div className="admin-rank-media">
-                    {entry.imageUrl ? (
-                      <img src={entry.imageUrl} alt={entry.label} />
-                    ) : (
-                      <div className="admin-rank-fallback">NO</div>
-                    )}
-                  </div>
-                  <div className="admin-rank-name">{entry.label}</div>
-                  <div className="admin-rank-rate">
-                    {totalResults ? `${Math.round(entry.rate * 100)}%` : "-"}
-                  </div>
+          {isWorldCup ? (
+            <>
+              <section className="admin-item-section">
+                <div className="admin-item-header">
+                  <h3>우승 항목 랭킹</h3>
                 </div>
-              ))}
-            </div>
-          )}
+              </section>
+              {winnerRanking.length === 0 ? (
+                <div className="admin-games-empty">우승 데이터가 없습니다.</div>
+              ) : (
+                <div className="admin-rank-list">
+                  {winnerRanking.map((entry, index) => (
+                    <div key={`${entry.label}-${index}`} className="admin-rank-row">
+                      <div className="admin-rank-order">{index + 1}</div>
+                      <div className="admin-rank-media">
+                        {entry.imageUrl ? (
+                          <img src={entry.imageUrl} alt={entry.label} />
+                        ) : (
+                          <div className="admin-rank-fallback">NO</div>
+                        )}
+                      </div>
+                      <div className="admin-rank-name">{entry.label}</div>
+                      <div className="admin-rank-rate">
+                        {totalResults ? `${Math.round(entry.rate * 100)}%` : "-"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : null}
 
           <section className="admin-item-section">
             <div className="admin-item-header">
@@ -286,17 +296,19 @@ export function AdminLogDetailPage() {
               >
                 게임 시작 로그
               </button>
-              <button
-                type="button"
-                className={activeTab === "picks" ? "active" : ""}
-                onClick={() => setActiveTab("picks")}
-              >
-                월드컵 픽 로그
-              </button>
+              {isWorldCup ? (
+                <button
+                  type="button"
+                  className={activeTab === "picks" ? "active" : ""}
+                  onClick={() => setActiveTab("picks")}
+                >
+                  월드컵 픽 로그
+                </button>
+              ) : null}
             </div>
           </section>
 
-          {activeTab === "choices" ? (
+          {activeTab === "choices" || !isWorldCup ? (
             totalStarts === 0 ? (
               <div className="admin-games-empty">게임 시작 로그가 없습니다.</div>
             ) : (

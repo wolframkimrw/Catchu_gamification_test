@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./worldcup-create.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
@@ -150,7 +150,7 @@ export function WorldcupCreatePage() {
     };
   }, []);
 
-  const scheduleDraftSave = () => {
+  const scheduleDraftSave = useCallback(() => {
     if (!user || isSubmitting) {
       return;
     }
@@ -188,7 +188,7 @@ export function WorldcupCreatePage() {
           // 드래프트 저장 실패는 진행을 막지 않음
         });
     }, 800);
-  };
+  }, [description, isSubmitting, items, thumbnail, thumbnailUrl, title, user]);
 
   useEffect(() => {
     scheduleDraftSave();
@@ -197,7 +197,7 @@ export function WorldcupCreatePage() {
         window.clearTimeout(draftTimerRef.current);
       }
     };
-  }, [title, description, thumbnail, thumbnailUrl, items, user, isSubmitting]);
+  }, [description, isSubmitting, items, scheduleDraftSave, thumbnail, thumbnailUrl, title, user]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

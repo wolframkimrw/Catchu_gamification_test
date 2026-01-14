@@ -84,16 +84,26 @@ export function WorldcupResultPage() {
       return;
     }
     hasRequestedRef.current = true;
-    fetchWorldcupPickSummary(parsedGameId)
-      .then((data) => {
-        if (!data.summary) {
+    const choiceId = result?.choiceId ?? getStoredGameSessionId(parsedGameId);
+    const summaryRequests = [
+      fetchWorldcupPickSummary(parsedGameId),
+      choiceId ? fetchWorldcupPickSummary(parsedGameId, choiceId) : Promise.resolve({ summary: null }),
+    ] as const;
+
+    Promise.all(summaryRequests)
+      .then(([gameSummaryResponse, sessionSummaryResponse]) => {
+        const gameSummary = gameSummaryResponse.summary;
+        const sessionSummary = sessionSummaryResponse.summary;
+        const base = gameSummary ? mapPickSummaryToResult(gameSummary) : null;
+        if (!base) {
           return;
         }
-        const mapped = mapPickSummaryToResult(data.summary);
-        if (mapped) {
-          hasSummaryRef.current = true;
-          setResult(mapped);
-        }
+        const sessionMapped = sessionSummary ? mapPickSummaryToResult(sessionSummary) : null;
+        const nextResult = sessionMapped
+          ? { ...base, champion: sessionMapped.champion, choiceId: sessionMapped.choiceId }
+          : base;
+        hasSummaryRef.current = true;
+        setResult(nextResult);
       })
       .catch(() => {
         // 결과 조회 실패는 빈 상태로 둠

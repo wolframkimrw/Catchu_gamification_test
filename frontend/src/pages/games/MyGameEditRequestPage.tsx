@@ -246,25 +246,48 @@ export function MyGameEditRequestPage() {
         </label>
         <label className="worldcup-create-field">
           <span>썸네일</span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(event) =>
-              setThumbnail(event.target.files ? event.target.files[0] : null)
-            }
-          />
+          <label className="worldcup-create-upload">
+            {thumbnail ? (
+              <img
+                className="worldcup-create-upload-image"
+                src={URL.createObjectURL(thumbnail)}
+                alt="썸네일 미리보기"
+              />
+            ) : thumbnailUrl ? (
+              <img
+                className="worldcup-create-upload-image"
+                src={thumbnailUrl}
+                alt="썸네일 미리보기"
+              />
+            ) : (
+              <>
+                <span className="worldcup-create-upload-plus">+</span>
+                <span className="worldcup-create-upload-text">
+                  클릭하거나 드래그해서 업로드
+                </span>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                setThumbnail(event.target.files ? event.target.files[0] : null);
+                setThumbnailUrl("");
+              }}
+            />
+          </label>
           <small>이미지 URL로도 제출할 수 있습니다.</small>
           <input
             type="text"
-            value={thumbnailUrl}
-            onChange={(event) => setThumbnailUrl(event.target.value)}
+            value={thumbnail ? "" : thumbnailUrl}
+            onChange={(event) => {
+              setThumbnailUrl(event.target.value);
+              if (event.target.value) {
+                setThumbnail(null);
+              }
+            }}
             placeholder="이미지 URL"
           />
-          {thumbnailUrl ? (
-            <div className="worldcup-create-preview">
-              <img src={thumbnailUrl} alt="썸네일 미리보기" />
-            </div>
-          ) : null}
         </label>
         <div className="worldcup-create-items">
           <div className="worldcup-create-items-header">

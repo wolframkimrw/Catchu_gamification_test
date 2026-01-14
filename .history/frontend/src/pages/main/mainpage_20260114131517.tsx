@@ -25,6 +25,9 @@ export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
   const [myGames, setMyGames] = useState<Game[]>([]);
+  const [activeTab, setActiveTab] = useState<"worldcup" | "fortune" | "psycho" | "my">(
+    "worldcup"
+  );
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const myGamesRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);

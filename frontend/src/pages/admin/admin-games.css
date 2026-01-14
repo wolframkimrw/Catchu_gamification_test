@@ -981,6 +981,21 @@
   text-align: left;
 }
 
+.admin-log-detail-row select.admin-log-detail-value {
+  border: 1px solid #e4e6f1;
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  background: #fff;
+  color: #1b1c1f;
+}
+
+.admin-log-detail-row select.admin-log-detail-value:disabled {
+  background: #f5f6fb;
+  color: #8a8f9d;
+  cursor: not-allowed;
+}
+
 .admin-pick-row {
   display: flex;
   align-items: center;

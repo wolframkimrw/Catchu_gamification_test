@@ -82,3 +82,8 @@ class AdminUserSerializer(serializers.Serializer):
             "level": profile.level,
             "exp": profile.exp,
         }
+
+
+class AdminUserUpdateSerializer(serializers.Serializer):
+    is_active = serializers.BooleanField(required=False)
+    is_staff = serializers.BooleanField(required=False)

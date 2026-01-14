@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import "./admin-games.css";
 import { ApiError } from "../../api/http";
-import { fetchAdminUsers, type AdminUser } from "../../api/accounts";
+import { fetchAdminUsers, updateAdminUser, type AdminUser } from "../../api/accounts";
 import { fetchAdminChoiceLogs, type AdminChoiceLog } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
 
@@ -13,7 +13,9 @@ export function AdminUserDetailPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [choiceLogs, setChoiceLogs] = useState<AdminChoiceLog[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!isValidUserId) {
@@ -65,6 +67,26 @@ export function AdminUserDetailPage() {
   const formatDateTime = (value?: string | null) =>
     value ? new Date(value).toLocaleString() : "-";
 
+  const handleUpdate = async (payload: { is_active?: boolean; is_staff?: boolean }) => {
+    if (!user) {
+      return;
+    }
+    setActionError(null);
+    setIsSaving(true);
+    try {
+      const updated = await updateAdminUser(user.id, payload);
+      setUsers((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setActionError(err.meta.message || "유저 정보를 변경하지 못했습니다.");
+      } else {
+        setActionError("유저 정보를 변경하지 못했습니다.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (!isValidUserId) {
     return (
       <AdminShell
@@ -88,6 +110,7 @@ export function AdminUserDetailPage() {
       active="users"
       title=""
       description={user ? `유저 · ${user.name}` : "유저"}
+      showTabs={false}
       headerTop={
         <Link className="admin-back-button" to="/admin/users">
           <span className="admin-back-icon" aria-hidden="true" />
@@ -96,6 +119,7 @@ export function AdminUserDetailPage() {
       }
     >
       {error ? <div className="admin-games-error">{error}</div> : null}
+      {actionError ? <div className="admin-games-error">{actionError}</div> : null}
       {isLoading ? (
         <div className="admin-games-empty">불러오는 중...</div>
       ) : !user ? (
@@ -114,6 +138,38 @@ export function AdminUserDetailPage() {
               </div>
             </div>
           </div>
+
+          <section className="admin-item-section">
+            <div className="admin-item-header">
+              <h3>권한/상태 변경</h3>
+            </div>
+            <div className="admin-log-detail-list">
+              <label className="admin-log-detail-row">
+                <span className="admin-log-detail-label">권한</span>
+                <select
+                  className="admin-log-detail-value"
+                  value={user.is_staff ? "staff" : "user"}
+                  onChange={(event) => handleUpdate({ is_staff: event.target.value === "staff" })}
+                  disabled={isSaving}
+                >
+                  <option value="staff">스태프</option>
+                  <option value="user">유저</option>
+                </select>
+              </label>
+              <label className="admin-log-detail-row">
+                <span className="admin-log-detail-label">상태</span>
+                <select
+                  className="admin-log-detail-value"
+                  value={user.is_active ? "active" : "inactive"}
+                  onChange={(event) => handleUpdate({ is_active: event.target.value === "active" })}
+                  disabled={isSaving}
+                >
+                  <option value="active">활성</option>
+                  <option value="inactive">비활성</option>
+                </select>
+              </label>
+            </div>
+          </section>
 
           <div className="admin-log-summary">
             <div>

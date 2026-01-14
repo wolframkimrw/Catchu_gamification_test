@@ -166,7 +166,8 @@
 }
 
 .app-menu-nav a {
-  padding: 14px 20px;
+  margin : 0px 12px
+  padding: 14px 12px;
   color: #111318;
   font-weight: 600;
   background: transparent;

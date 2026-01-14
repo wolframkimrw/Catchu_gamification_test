@@ -4,22 +4,19 @@ import { Link } from "react-router-dom";
 import { ApiError } from "../../api/http";
 import type { AdminUser } from "../../api/accounts";
 import { fetchAdminUsers } from "../../api/accounts";
-import { fetchAdminChoiceLogs, type AdminChoiceLog } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [choiceLogs, setChoiceLogs] = useState<AdminChoiceLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    Promise.all([fetchAdminUsers(), fetchAdminChoiceLogs()])
-      .then(([userData, choiceData]) => {
+    fetchAdminUsers()
+      .then((userData) => {
         setUsers(userData);
-        setChoiceLogs(choiceData);
       })
       .catch((err) => {
         if (err instanceof ApiError) {
@@ -30,30 +27,6 @@ export function AdminUsersPage() {
       })
       .finally(() => setIsLoading(false));
   }, []);
-
-  const usageByUser = useMemo(() => {
-    const map = new Map<
-      number,
-      { starts: number; lastStartedAt: string | null; gameIds: Set<number> }
-    >();
-    choiceLogs.forEach((log) => {
-      if (!log.user?.id) {
-        return;
-      }
-      const entry = map.get(log.user.id) ?? {
-        starts: 0,
-        lastStartedAt: null,
-        gameIds: new Set<number>(),
-      };
-      entry.starts += 1;
-      entry.gameIds.add(log.game.id);
-      if (!entry.lastStartedAt || new Date(log.started_at) > new Date(entry.lastStartedAt)) {
-        entry.lastStartedAt = log.started_at;
-      }
-      map.set(log.user.id, entry);
-    });
-    return map;
-  }, [choiceLogs]);
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -77,10 +50,6 @@ export function AdminUsersPage() {
       ) : (
         <div className="admin-games-list">
           {sortedUsers.map((user) => {
-            const usage = usageByUser.get(user.id);
-            const starts = usage?.starts ?? 0;
-            const games = usage?.gameIds.size ?? 0;
-            const lastStartedAt = usage?.lastStartedAt ?? null;
             return (
               <div key={user.id} className="admin-games-card">
                 <Link to={`/admin/users/${user.id}`} className="admin-card-link">
@@ -95,23 +64,6 @@ export function AdminUsersPage() {
                       {user.profile ? `닉네임: ${user.profile.nickname}` : "프로필 없음"}
                     </div>
                     <div className="admin-games-owner">가입일: {formatDateTime(user.created_at)}</div>
-                    <div className="admin-user-dashboard">
-                      <div className="admin-user-dashboard-title">이용 내역</div>
-                      <div className="admin-log-summary admin-user-summary">
-                        <div>
-                          <strong>{starts}</strong>
-                          <span>게임 시작</span>
-                        </div>
-                        <div>
-                          <strong>{games}</strong>
-                          <span>참여 게임</span>
-                        </div>
-                        <div>
-                          <strong>{formatDateTime(lastStartedAt)}</strong>
-                          <span>최근 이용</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </Link>
               </div>

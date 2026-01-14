@@ -67,3 +67,13 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
   );
   return response.users || [];
 }
+
+export async function updateAdminUser(
+  userId: number,
+  payload: { is_active?: boolean; is_staff?: boolean }
+): Promise<AdminUser> {
+  const response = await requestWithMeta(
+    apiClient.patch<ApiResponse<{ user: AdminUser }>>(`/accounts/admin/users/${userId}/`, payload)
+  );
+  return response.user;
+}

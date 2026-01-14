@@ -4,7 +4,13 @@ from rest_framework import status
 
 from config.views import BaseAPIView
 from .models import GamificationProfile
-from .serializers import AdminUserSerializer, LoginSerializer, ResetPasswordSerializer, SignupSerializer
+from .serializers import (
+    AdminUserSerializer,
+    AdminUserUpdateSerializer,
+    LoginSerializer,
+    ResetPasswordSerializer,
+    SignupSerializer,
+)
 
 
 class LoginView(BaseAPIView):
@@ -120,3 +126,51 @@ class AdminUserListView(BaseAPIView):
         qs = User.objects.all().select_related("gamification_profile").order_by("-created_at")[:200]
         serializer = AdminUserSerializer(qs, many=True)
         return self.respond(data={"users": serializer.data})
+
+
+class AdminUserDetailView(BaseAPIView):
+    api_name = "admin.users.detail"
+
+    def patch(self, request, user_id: int, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return self.respond(
+                data=None,
+                success=False,
+                code="UNAUTHORIZED",
+                message="로그인이 필요합니다.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        if not request.user.is_staff:
+            return self.respond(
+                data=None,
+                success=False,
+                code="FORBIDDEN",
+                message="관리자 권한이 필요합니다.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = AdminUserUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        User = get_user_model()
+        try:
+            user = User.objects.select_related("gamification_profile").get(id=user_id)
+        except User.DoesNotExist:
+            return self.respond(
+                data=None,
+                success=False,
+                code="NOT_FOUND",
+                message="유저를 찾을 수 없습니다.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        updated = False
+        if "is_active" in serializer.validated_data:
+            user.is_active = serializer.validated_data["is_active"]
+            updated = True
+        if "is_staff" in serializer.validated_data:
+            user.is_staff = serializer.validated_data["is_staff"]
+            updated = True
+        if updated:
+            user.save(update_fields=["is_active", "is_staff"])
+
+        return self.respond(data={"user": AdminUserSerializer(user).data})

@@ -109,7 +109,7 @@ function Layout() {
           <div className="app-menu-overlay" onClick={() => setIsMenuOpen(false)}>
             <aside className="app-menu-panel" onClick={(event) => event.stopPropagation()}>
               <div className="app-menu-header">
-                <span>메뉴</span>
+                <span />
                 <button
                   type="button"
                   className="app-menu-close"
@@ -126,13 +126,14 @@ function Layout() {
                 <Link to="/worldcup/create" onClick={() => setIsMenuOpen(false)}>
                   월드컵 만들기
                 </Link>
+                {user ? (
+                  <Link to="/my/games" onClick={() => setIsMenuOpen(false)}>
+                    내 게임
+                  </Link>
+                ) : null}
                 {user?.is_staff ? (
                   <Link to="/admin/games" onClick={() => setIsMenuOpen(false)}>
                     관리자
-                  </Link>
-                ) : user ? (
-                  <Link to="/my/games" onClick={() => setIsMenuOpen(false)}>
-                    내 게임 수정
                   </Link>
                 ) : null}
               </nav>

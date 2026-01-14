@@ -25,6 +25,9 @@ export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
   const [myGames, setMyGames] = useState<Game[]>([]);
+  const [activeTab, setActiveTab] = useState<"worldcup" | "fortune" | "psycho" | "my">(
+    "worldcup"
+  );
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const myGamesRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
@@ -129,6 +132,67 @@ export function WorldcupListPage() {
       </section>
 
       <div className="wc-content">
+        <section className="section categories">
+          <div className="wc-tabs h-rail">
+            <div className="h-rail-track">
+              <button
+                type="button"
+                className={`wc-tab ${activeTab === "worldcup" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("worldcup");
+                  worldcupRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                월드컵
+              </button>
+              {user ? (
+                <button
+                  type="button"
+                  className={`wc-tab ${activeTab === "my" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("my");
+                    myGamesRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }}
+                >
+                  내 게임
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className={`wc-tab ${activeTab === "fortune" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("fortune");
+                  fortuneRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                운게임
+              </button>
+              <button
+                type="button"
+                className={`wc-tab ${activeTab === "psycho" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("psycho");
+                  psychoRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                심리테스트
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section className="section list">
           <div className="category-page">
             <div className="worldcup-gap" aria-hidden="true" />

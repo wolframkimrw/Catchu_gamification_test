@@ -6,7 +6,7 @@
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
-  box-shadow: 0 1px 5px rgba(122, 90, 248, 0.18);
+  box-shadow: 0 1px 20px rgba(122, 90, 248, 0.18);
 }
 
 .worldcup-hero h2 {

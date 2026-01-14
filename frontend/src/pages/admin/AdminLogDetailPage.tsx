@@ -30,6 +30,7 @@ export function AdminLogDetailPage() {
     choices: 3,
     picks: 3,
   });
+  const [modalChoiceId, setModalChoiceId] = useState<number | null>(null);
   const [expandedPickIds, setExpandedPickIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +98,11 @@ export function AdminLogDetailPage() {
       });
   }, [game?.items, resultLogs, totalResults]);
 
+  const itemImageMap = useMemo(
+    () => new Map(game?.items.map((item) => [item.id, item.file_name]) ?? []),
+    [game?.items]
+  );
+
   const pickSessions = useMemo(() => {
     const choiceById = new Map(choiceLogs.map((log) => [log.id, log]));
     const grouped = new Map<number, { choiceId: number; startedAt: string; picks: AdminPickLog[] }>();
@@ -125,17 +131,12 @@ export function AdminLogDetailPage() {
     setVisibleCounts((prev) => ({ ...prev, [tab]: total }));
   };
 
-  const togglePickExpanded = (pickId: number) => {
-    setExpandedPickIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(pickId)) {
-        next.delete(pickId);
-      } else {
-        next.add(pickId);
-      }
-      return next;
-    });
-  };
+  const activeModalSession = useMemo(() => {
+    if (modalChoiceId === null) {
+      return null;
+    }
+    return pickSessions.find((session) => session.choiceId === modalChoiceId) || null;
+  }, [modalChoiceId, pickSessions]);
 
   const getTypeLabel = (value: string) => {
     const map: Record<string, string> = {
@@ -275,62 +276,49 @@ export function AdminLogDetailPage() {
 
           <section className="admin-item-section">
             <div className="admin-item-header">
-              <h3>세부 로그</h3>
+              <h3>게임 시작 로그</h3>
             </div>
           </section>
-
-          <div className="admin-log-tabs">
-            <button
-              type="button"
-              className={activeTab === "choices" ? "active" : ""}
-              onClick={() => setActiveTab("choices")}
-            >
-              게임 시작
-            </button>
-            <button
-              type="button"
-              className={activeTab === "picks" ? "active" : ""}
-              onClick={() => setActiveTab("picks")}
-            >
-              월드컵 픽
-            </button>
-          </div>
-
-          {activeTab === "choices" ? (
-            totalStarts === 0 ? (
-              <div className="admin-games-empty">게임 시작 로그가 없습니다.</div>
-            ) : (
-              <div className="admin-log-list">
-                {choiceLogs.slice(0, visibleCounts.choices).map((log) => (
-                  <div key={log.id} className="admin-log-card admin-log-card-compact">
-                    <div className="admin-log-lines">
-                      <div className="admin-log-line">
-                        <span className="admin-log-label">시작날짜</span>
-                        <span className="admin-log-value">{formatDateTime(log.started_at)}</span>
-                      </div>
-                      <div className="admin-log-line">
-                        <span className="admin-log-label">이름</span>
-                        <span className="admin-log-value">{log.user ? log.user.name : "익명"}</span>
-                      </div>
-                      <div className="admin-log-line">
-                        <span className="admin-log-label">IP</span>
-                        <span className="admin-log-value">{log.ip_address || "-"}</span>
-                      </div>
+          {totalStarts === 0 ? (
+            <div className="admin-games-empty">게임 시작 로그가 없습니다.</div>
+          ) : (
+            <div className="admin-log-list">
+              {choiceLogs.slice(0, visibleCounts.choices).map((log) => (
+                <div key={log.id} className="admin-log-card admin-log-card-compact">
+                  <div className="admin-log-lines">
+                    <div className="admin-log-line">
+                      <span className="admin-log-label">시작날짜</span>
+                      <span className="admin-log-value">{formatDateTime(log.started_at)}</span>
+                    </div>
+                    <div className="admin-log-line">
+                      <span className="admin-log-label">이름</span>
+                      <span className="admin-log-value">{log.user ? log.user.name : "익명"}</span>
+                    </div>
+                    <div className="admin-log-line">
+                      <span className="admin-log-label">IP</span>
+                      <span className="admin-log-value">{log.ip_address || "-"}</span>
                     </div>
                   </div>
-                ))}
-                {choiceLogs.length > visibleCounts.choices ? (
-                  <button
-                    type="button"
-                    className="admin-log-more"
-                    onClick={() => handleShowMore("choices", choiceLogs.length)}
-                  >
-                    더보기
-                  </button>
-                ) : null}
-              </div>
-            )
-          ) : pickSessions.length === 0 ? (
+                </div>
+              ))}
+              {choiceLogs.length > visibleCounts.choices ? (
+                <button
+                  type="button"
+                  className="admin-log-more"
+                  onClick={() => handleShowMore("choices", choiceLogs.length)}
+                >
+                  더보기
+                </button>
+              ) : null}
+            </div>
+          )}
+
+          <section className="admin-item-section">
+            <div className="admin-item-header">
+              <h3>월드컵 픽 로그</h3>
+            </div>
+          </section>
+          {pickSessions.length === 0 ? (
             <div className="admin-games-empty">월드컵 픽 로그가 없습니다.</div>
           ) : (
             <div className="admin-log-list">
@@ -339,7 +327,7 @@ export function AdminLogDetailPage() {
                   key={session.choiceId}
                   type="button"
                   className="admin-log-card admin-log-card-button"
-                  onClick={() => togglePickExpanded(session.choiceId)}
+                  onClick={() => setModalChoiceId(session.choiceId)}
                 >
                   <div className="admin-log-lines">
                     <div className="admin-log-line">
@@ -351,25 +339,9 @@ export function AdminLogDetailPage() {
                       <span className="admin-log-value">{session.picks.length}판</span>
                     </div>
                   </div>
-                  {expandedPickIds.has(session.choiceId) ? (
-                    <div className="admin-log-detail-list">
-                      {session.picks
-                        .slice()
-                        .sort((a, b) => a.step_index - b.step_index)
-                        .map((pick) => (
-                          <div key={pick.id} className="admin-log-detail-row">
-                            <span className="admin-log-detail-label">판 {pick.step_index + 1}</span>
-                            <span className="admin-log-detail-value">
-                              {(pick.left_item?.name || "-") +
-                                " vs " +
-                                (pick.right_item?.name || "-") +
-                                " → " +
-                                (pick.selected_item?.name || "-")}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  ) : null}
+                  <div className="admin-log-sub">
+                    <span className="admin-log-helper">세부 보기</span>
+                  </div>
                 </button>
               ))}
               {pickSessions.length > visibleCounts.picks ? (
@@ -383,6 +355,75 @@ export function AdminLogDetailPage() {
               ) : null}
             </div>
           )}
+          {activeModalSession ? (
+            <div className="admin-modal-backdrop" onClick={() => setModalChoiceId(null)}>
+              <div
+                className="admin-modal"
+                role="dialog"
+                aria-modal="true"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="admin-modal-header">
+                  <div>
+                    <div className="admin-modal-title">게임 {activeModalSession.picks.length}판</div>
+                    <div className="admin-modal-sub">
+                      {formatDateTime(activeModalSession.startedAt)}
+                    </div>
+                  </div>
+                  <button type="button" className="admin-modal-close" onClick={() => setModalChoiceId(null)}>
+                    닫기
+                  </button>
+                </div>
+                <div className="admin-modal-body">
+                  {activeModalSession.picks
+                    .slice()
+                    .sort((a, b) => a.step_index - b.step_index)
+                    .map((pick) => (
+                      <div key={pick.id} className="admin-modal-row">
+                        <div className="admin-modal-step">판 {pick.step_index + 1}</div>
+                        <div className="admin-pick-row admin-pick-row-large">
+                          <span
+                            className={`admin-pick-item ${
+                              pick.selected_item?.id === pick.left_item?.id ? "is-winner" : ""
+                            }`}
+                          >
+                            <span className="admin-pick-thumb admin-pick-thumb-large">
+                              {pick.left_item?.id && itemImageMap.get(pick.left_item.id) ? (
+                                <img
+                                  src={itemImageMap.get(pick.left_item.id)}
+                                  alt={pick.left_item.name || "left"}
+                                />
+                              ) : (
+                                <span className="admin-pick-fallback">NO</span>
+                              )}
+                            </span>
+                            <span className="admin-pick-name">{pick.left_item?.name || "-"}</span>
+                          </span>
+                          <span className="admin-pick-vs">vs</span>
+                          <span
+                            className={`admin-pick-item ${
+                              pick.selected_item?.id === pick.right_item?.id ? "is-winner" : ""
+                            }`}
+                          >
+                            <span className="admin-pick-thumb admin-pick-thumb-large">
+                              {pick.right_item?.id && itemImageMap.get(pick.right_item.id) ? (
+                                <img
+                                  src={itemImageMap.get(pick.right_item.id)}
+                                  alt={pick.right_item.name || "right"}
+                                />
+                              ) : (
+                                <span className="admin-pick-fallback">NO</span>
+                              )}
+                            </span>
+                            <span className="admin-pick-name">{pick.right_item?.name || "-"}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </>
       )}
     </AdminShell>

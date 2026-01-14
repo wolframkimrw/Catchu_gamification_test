@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from .models import Game, GameChoiceLog, GameItem, GameResult, WorldcupPickLog, WorldcupTopic
+from .models import (
+    Game,
+    GameChoiceLog,
+    GameItem,
+    GameResult,
+    GameEditRequest,
+    WorldcupPickLog,
+    WorldcupTopic,
+)
 
 
 class GameListSerializer(serializers.ModelSerializer):
@@ -27,6 +35,7 @@ class GameDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "description",
             "slug",
             "type",
             "topic",
@@ -191,6 +200,21 @@ class AdminGameResultSerializer(serializers.ModelSerializer):
         if not obj.winner_item:
             return None
         return {"id": obj.winner_item.id, "name": obj.winner_item.name}
+
+
+class AdminGameEditRequestSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GameEditRequest
+        fields = ["id", "game", "user", "status", "created_at", "updated_at", "payload"]
+
+    def get_game(self, obj):
+        return {"id": obj.game_id, "title": obj.game.title}
+
+    def get_user(self, obj):
+        return {"id": obj.user_id, "name": obj.user.name, "email": obj.user.email}
 
 
 class GameChoiceLogCreateSerializer(serializers.Serializer):

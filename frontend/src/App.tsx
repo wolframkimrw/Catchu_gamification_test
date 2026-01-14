@@ -6,9 +6,12 @@ import { WorldcupListPage } from "./pages/main/mainpage";
 import { WorldcupPlayPage } from "./pages/games/WorldcupPlayPage";
 import { WorldcupArenaPage } from "./pages/games/WorldcupArenaPage";
 import { WorldcupCreatePage } from "./pages/games/WorldcupCreatePage";
+import { MyGameEditListPage } from "./pages/games/MyGameEditListPage";
+import { MyGameEditRequestPage } from "./pages/games/MyGameEditRequestPage";
 import { SajuLuckPage } from "./pages/games/SajuLuckPage";
 import { LoginPage } from "./pages/loginpage";
 import { AdminGamesPage } from "./pages/admin/AdminGamesPage";
+import { AdminEditRequestsPage } from "./pages/admin/AdminEditRequestsPage";
 import { AdminGameDetailPage } from "./pages/admin/AdminGameDetailPage";
 import { AdminLogsPage } from "./pages/admin/AdminLogsPage";
 import { AdminTopicsPage } from "./pages/admin/AdminTopicsPage";
@@ -125,6 +128,10 @@ function Layout() {
                   <Link to="/admin/games" onClick={() => setIsMenuOpen(false)}>
                     관리자
                   </Link>
+                ) : user ? (
+                  <Link to="/my/games" onClick={() => setIsMenuOpen(false)}>
+                    내 게임 수정
+                  </Link>
                 ) : null}
               </nav>
             </aside>
@@ -137,10 +144,13 @@ function Layout() {
             <Route path="/worldcup/:gameId/play" element={<WorldcupPlayPage />} />
             <Route path="/worldcup/:gameId/arena" element={<WorldcupArenaPage />} />
             <Route path="/worldcup/create" element={<WorldcupCreatePage />} />
+            <Route path="/my/games" element={<MyGameEditListPage />} />
+            <Route path="/my/games/:gameId/edit" element={<MyGameEditRequestPage />} />
             <Route path="/saju" element={<SajuLuckPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin/games" element={<AdminGamesPage />} />
             <Route path="/admin/games/:gameId" element={<AdminGameDetailPage />} />
+            <Route path="/admin/requests" element={<AdminEditRequestsPage />} />
             <Route path="/admin/topics" element={<AdminTopicsPage />} />
             <Route path="/admin/logs" element={<AdminLogsPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />

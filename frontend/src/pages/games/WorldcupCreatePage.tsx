@@ -16,6 +16,19 @@ type WorldcupItemForm = {
   name: string;
   imageFile: File | null;
   imageUrl: string;
+  previewUrl: string;
+};
+
+const isMediaUrl = (value: string) => {
+  if (!value) {
+    return false;
+  }
+  try {
+    const parsed = new URL(value);
+    return parsed.pathname.startsWith("/media/");
+  } catch {
+    return value.startsWith("/media/");
+  }
 };
 
 export function WorldcupCreatePage() {
@@ -29,14 +42,15 @@ export function WorldcupCreatePage() {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [items, setItems] = useState<WorldcupItemForm[]>([
-    { name: "", imageFile: null, imageUrl: "" },
-    { name: "", imageFile: null, imageUrl: "" },
+    { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
+    { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<number | null>(null);
   const { user } = useAuthUser();
   const draftTimerRef = useRef<number | null>(null);
+  const itemsRef = useRef(items);
 
   useEffect(() => {
     fetchWorldcupTopics()
@@ -72,11 +86,15 @@ export function WorldcupCreatePage() {
         }
         if (draft.items && draft.items.length) {
           setItems(
-            draft.items.map((item) => ({
-              name: item.name || "",
-              imageFile: null,
-              imageUrl: item.image_url ? resolveMediaUrl(item.image_url) : "",
-            }))
+            draft.items.map((item) => {
+              const resolved = item.image_url ? resolveMediaUrl(item.image_url) : "";
+              return {
+                name: item.name || "",
+                imageFile: null,
+                imageUrl: resolved,
+                previewUrl: "",
+              };
+            })
           );
         }
       })
@@ -91,10 +109,36 @@ export function WorldcupCreatePage() {
     return items.every((item) => item.imageFile || item.imageUrl);
   }, [items, title]);
 
-  const handleItemChange = (index: number, next: Partial<WorldcupItemForm>) => {
+  const updateItem = (
+    index: number,
+    updater: (item: WorldcupItemForm) => WorldcupItemForm
+  ) => {
     setItems((prev) =>
-      prev.map((item, idx) => (idx === index ? { ...item, ...next } : item))
+      prev.map((item, idx) => {
+        if (idx !== index) {
+          return item;
+        }
+        const next = updater(item);
+        if (item.previewUrl && item.previewUrl !== next.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+        return next;
+      })
     );
+  };
+
+  const handleItemChange = (index: number, next: Partial<WorldcupItemForm>) => {
+    updateItem(index, (item) => ({ ...item, ...next }));
+  };
+
+  const handleItemFileSelect = (index: number, file: File | null) => {
+    const previewUrl = file ? URL.createObjectURL(file) : "";
+    updateItem(index, (item) => ({
+      ...item,
+      imageFile: file,
+      imageUrl: "",
+      previewUrl,
+    }));
   };
 
   const handleAddItem = () => {
@@ -102,8 +146,28 @@ export function WorldcupCreatePage() {
   };
 
   const handleRemoveItem = (index: number) => {
-    setItems((prev) => prev.filter((_, idx) => idx !== index));
+    setItems((prev) => {
+      const target = prev[index];
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
   };
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    return () => {
+      itemsRef.current.forEach((item) => {
+        if (item.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
+    };
+  }, []);
 
   const scheduleDraftSave = () => {
     if (!user || isSubmitting) {
@@ -338,33 +402,67 @@ export function WorldcupCreatePage() {
               </label>
               <label>
                 <span>이미지</span>
+                <label
+                  className="worldcup-create-upload"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const file = event.dataTransfer.files?.[0] || null;
+                    handleItemFileSelect(index, file);
+                  }}
+                >
+                  {item.previewUrl || item.imageUrl ? (
+                    <img
+                      className="worldcup-create-upload-image"
+                      src={item.previewUrl || item.imageUrl}
+                      alt={item.name || "item"}
+                    />
+                  ) : (
+                    <>
+                      <span className="worldcup-create-upload-plus">+</span>
+                      <span className="worldcup-create-upload-text">
+                        클릭하거나 드래그해서 업로드
+                      </span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) =>
+                      handleItemFileSelect(index, event.target.files?.[0] || null)
+                    }
+                  />
+                </label>
+              </label>
+              <label>
+                <span>이미지 URL</span>
                 <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) =>
-                    handleItemChange(index, {
-                      imageFile: event.target.files?.[0] || null,
-                      imageUrl: "",
-                    })
+                  type="text"
+                  placeholder="이미지 주소를 입력해 주세요"
+                  value={
+                    item.imageFile || (item.imageUrl && isMediaUrl(item.imageUrl))
+                      ? ""
+                      : item.imageUrl
                   }
-                  required={!item.imageUrl}
+                  disabled={Boolean(item.imageFile)}
+                  onChange={(event) =>
+                    updateItem(index, (item) => ({
+                      ...item,
+                      imageUrl: event.target.value,
+                      imageFile: null,
+                      previewUrl: "",
+                    }))
+                  }
                 />
               </label>
-              {item.imageUrl ? (
-                <div className="worldcup-create-preview">
-                  <span>저장된 이미지</span>
-                  <img src={item.imageUrl} alt={item.name || "item"} />
-                </div>
-              ) : null}
-              {items.length > 2 ? (
-                <button
-                  type="button"
-                  className="danger"
-                  onClick={() => handleRemoveItem(index)}
-                >
-                  삭제
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="danger"
+                onClick={() => handleRemoveItem(index)}
+                disabled={items.length <= 2}
+              >
+                삭제
+              </button>
             </div>
           ))}
         </div>

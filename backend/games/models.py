@@ -150,8 +150,7 @@ class GameItem(TimeStampedModel):
     )
 
     # storage_prefix + file_name 으로 실제 경로 구성
-    file_name = models.CharField(
-        max_length=255,
+    file_name = models.TextField(
         verbose_name="파일명",
         help_text="실제 저장된 파일명 (예: 1.jpg, a83fae.png)",
     )
@@ -188,6 +187,106 @@ class GameItem(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name or f"Item #{self.id} of {self.game_id}"
+
+
+# --------------------------------------------------
+# GameEditRequest (게임 수정 승인 요청)
+# --------------------------------------------------
+class GameEditRequestStatus(models.TextChoices):
+    PENDING = "PENDING", "승인 대기"
+    APPROVED = "APPROVED", "승인"
+    REJECTED = "REJECTED", "반려"
+
+
+class GameEditRequestAction(models.TextChoices):
+    SUBMITTED = "SUBMITTED", "요청"
+    APPROVED = "APPROVED", "승인"
+    REJECTED = "REJECTED", "반려"
+
+
+class GameEditRequest(TimeStampedModel):
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="edit_requests",
+        verbose_name="게임",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="game_edit_requests",
+        verbose_name="요청자",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=GameEditRequestStatus.choices,
+        default=GameEditRequestStatus.PENDING,
+        verbose_name="상태",
+    )
+    payload = models.JSONField(verbose_name="요청 내용")
+    request_prefix = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="요청 파일 prefix",
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_game_edit_requests",
+        verbose_name="검토자",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="검토 시각")
+
+    class Meta:
+        db_table = "gaimification_game_edit_request"
+        constraints = [
+            models.UniqueConstraint(fields=["game", "user"], name="uniq_game_edit_request"),
+        ]
+        verbose_name = "게임 수정 요청"
+        verbose_name_plural = "게임 수정 요청"
+
+    def __str__(self) -> str:
+        return f"EditRequest #{self.id} for game {self.game_id}"
+
+
+class GameEditRequestHistory(TimeStampedModel):
+    request = models.ForeignKey(
+        GameEditRequest,
+        on_delete=models.CASCADE,
+        related_name="history",
+        verbose_name="요청",
+    )
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="edit_request_history",
+        verbose_name="게임",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="game_edit_request_history",
+        verbose_name="요청자",
+    )
+    action = models.CharField(
+        max_length=20,
+        choices=GameEditRequestAction.choices,
+        default=GameEditRequestAction.SUBMITTED,
+        verbose_name="액션",
+    )
+    payload = models.JSONField(verbose_name="요청 내용")
+
+    class Meta:
+        db_table = "gaimification_game_edit_request_history"
+        verbose_name = "게임 수정 요청 기록"
+        verbose_name_plural = "게임 수정 요청 기록"
+
+    def __str__(self) -> str:
+        return f"EditRequestHistory #{self.id} for game {self.game_id}"
 
 
 # --------------------------------------------------

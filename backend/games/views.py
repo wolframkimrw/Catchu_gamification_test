@@ -14,6 +14,10 @@ from .models import (
     GameChoiceLog,
     GameItem,
     GameItemSourceType,
+    GameEditRequest,
+    GameEditRequestHistory,
+    GameEditRequestStatus,
+    GameEditRequestAction,
     GameResult,
     GameStatus,
     GameVisibility,
@@ -22,6 +26,7 @@ from .models import (
     WorldcupTopic,
 )
 from .serializers import (
+    AdminGameEditRequestSerializer,
     GameAdminListSerializer,
     AdminGameDetailSerializer,
     AdminGameChoiceLogSerializer,
@@ -75,6 +80,18 @@ def _resolve_frontend_json_path(normalized: str) -> str:
     if not abs_path.startswith(base_path + os.sep):
         raise ValidationError({"path": "허용되지 않는 경로입니다."})
     return abs_path
+
+
+def _cleanup_media_prefix(prefix: str | None) -> None:
+    if not prefix:
+        return
+    normalized = prefix.replace("\\", "/").lstrip("/")
+    if ".." in normalized.split("/"):
+        return
+    abs_path = os.path.realpath(os.path.join(settings.MEDIA_ROOT, normalized))
+    base_path = os.path.realpath(settings.MEDIA_ROOT)
+    if abs_path.startswith(base_path + os.sep) and os.path.isdir(abs_path):
+        shutil.rmtree(abs_path, ignore_errors=True)
 
 class GameListView(BaseAPIView):
     api_name = "games.list"
@@ -337,7 +354,7 @@ class WorldcupCreateView(BaseAPIView):
         if "://" in media_url:
             path = urlparse(media_url).path
         if not path.startswith(settings.MEDIA_URL):
-            raise ValidationError({"image_url": "허용되지 않은 이미지 경로입니다."})
+            return media_url
         relative_path = path[len(settings.MEDIA_URL) :]
         source_path = os.path.join(settings.MEDIA_ROOT, relative_path)
         if not os.path.exists(source_path):
@@ -545,6 +562,159 @@ class MyGameListView(BaseAPIView):
         return self.respond(data={"games": serializer.data})
 
 
+class GameEditRequestView(WorldcupCreateView):
+    api_name = "games.edit_request"
+    parser_classes = (MultiPartParser, FormParser)
+
+    def _parse_items(self, request):
+        items = []
+        index = 0
+        while True:
+            name = request.data.get(f"items[{index}].name")
+            image = request.FILES.get(f"items[{index}].image")
+            image_url = request.data.get(f"items[{index}].image_url")
+            item_id = request.data.get(f"items[{index}].id")
+            if name is None and image is None and image_url is None and item_id is None:
+                break
+            if image is None and not image_url:
+                raise ValidationError({f"items[{index}].image": "아이템 이미지는 필수입니다."})
+            if image is not None:
+                self._ensure_image(image, f"items[{index}].image")
+            parsed_id = None
+            if item_id not in (None, ""):
+                try:
+                    parsed_id = int(item_id)
+                except (TypeError, ValueError):
+                    raise ValidationError({f"items[{index}].id": "아이템 ID가 올바르지 않습니다."})
+            items.append(
+                {
+                    "id": parsed_id,
+                    "name": (name or "").strip(),
+                    "image": image,
+                    "image_url": image_url,
+                    "sort_order": index,
+                }
+            )
+            index += 1
+        return items
+
+    def post(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return self.respond(
+                data=None,
+                success=False,
+                code="UNAUTHORIZED",
+                message="로그인이 필요합니다.",
+                status_code=401,
+            )
+        game_id = request.data.get("game_id")
+        if not game_id:
+            raise ValidationError({"game_id": "게임 ID가 필요합니다."})
+        game = get_object_or_404(Game, pk=game_id)
+        if game.created_by_id != request.user.id and not request.user.is_staff:
+            return self.respond(
+                data=None,
+                success=False,
+                code="FORBIDDEN",
+                message="본인의 게임만 수정 요청할 수 있습니다.",
+                status_code=403,
+            )
+
+        title = (request.data.get("title") or "").strip()
+        if not title:
+            raise ValidationError({"title": "게임 제목을 입력해 주세요."})
+        description = (request.data.get("description") or "").strip()
+
+        items = self._parse_items(request)
+        if len(items) < 2:
+            raise ValidationError({"items": "아이템은 최소 2개 필요합니다."})
+
+        thumbnail = request.FILES.get("thumbnail")
+        thumbnail_url = request.data.get("thumbnail_url")
+        if thumbnail is not None:
+            self._ensure_image(thumbnail, "thumbnail")
+
+        request_prefix = f"worldcup/edit-requests/{game.id}/{uuid.uuid4().hex}/"
+        storage = FileSystemStorage(
+            location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL
+        )
+
+        if thumbnail is not None:
+            thumbnail_url = self._save_file(storage, request_prefix, thumbnail, "thumbnail")
+        elif thumbnail_url:
+            thumbnail_url = self._copy_from_media_url(storage, request_prefix, thumbnail_url)
+
+        payload_items = []
+        for item in items:
+            image_url = item["image_url"]
+            if item["image"] is not None:
+                image_url = self._save_file(
+                    storage, request_prefix, item["image"], f"item-{item['sort_order'] + 1}"
+                )
+            elif image_url:
+                image_url = self._copy_from_media_url(storage, request_prefix, image_url)
+            payload_items.append(
+                {
+                    "id": item["id"],
+                    "name": item["name"],
+                    "image_url": image_url,
+                    "sort_order": item["sort_order"],
+                }
+            )
+
+        payload = {
+            "title": title,
+            "description": description,
+            "thumbnail_url": thumbnail_url or "",
+            "items": payload_items,
+        }
+
+        existing_request = GameEditRequest.objects.filter(
+            game=game, user=request.user
+        ).first()
+        if existing_request:
+            old_prefix = existing_request.request_prefix
+            existing_request.request_prefix = request_prefix
+            existing_request.payload = payload
+            existing_request.status = GameEditRequestStatus.PENDING
+            existing_request.reviewed_by = None
+            existing_request.reviewed_at = None
+            existing_request.save(
+                update_fields=[
+                    "request_prefix",
+                    "payload",
+                    "status",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "updated_at",
+                ]
+            )
+            edit_request = existing_request
+            if old_prefix and old_prefix != request_prefix:
+                _cleanup_media_prefix(old_prefix)
+        else:
+            edit_request = GameEditRequest.objects.create(
+                game=game,
+                user=request.user,
+                status=GameEditRequestStatus.PENDING,
+                payload=payload,
+                request_prefix=request_prefix,
+            )
+
+        GameEditRequestHistory.objects.create(
+            request=edit_request,
+            game=game,
+            user=request.user,
+            action=GameEditRequestAction.SUBMITTED,
+            payload=payload,
+        )
+
+        return self.respond(
+            data={"request_id": edit_request.id, "status": edit_request.status},
+            status_code=201,
+        )
+
+
 class AdminGameListView(BaseAPIView):
     api_name = "admin.games.list"
 
@@ -555,6 +725,172 @@ class AdminGameListView(BaseAPIView):
         qs = Game.objects.all().order_by("-created_at")
         serializer = GameAdminListSerializer(qs, many=True)
         return self.respond(data={"games": serializer.data})
+
+
+class AdminGameEditRequestListView(BaseAPIView):
+    api_name = "admin.edit_requests.list"
+
+    def get(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        qs = (
+            GameEditRequest.objects.filter(status=GameEditRequestStatus.PENDING)
+            .select_related("game", "user")
+            .order_by("-updated_at")
+        )
+        serializer = AdminGameEditRequestSerializer(qs, many=True)
+        return self.respond(data={"requests": serializer.data})
+
+
+class AdminGameEditRequestApproveView(WorldcupCreateView):
+    api_name = "admin.edit_requests.approve"
+    parser_classes = (FormParser, MultiPartParser)
+
+    def _normalize_image_url(self, storage, game: Game, image_url: str) -> str:
+        if not image_url:
+            return ""
+        path = urlparse(image_url).path
+        if path.startswith(settings.MEDIA_URL):
+            relative_path = path[len(settings.MEDIA_URL) :]
+            if relative_path.startswith(game.storage_prefix):
+                return image_url
+            return self._copy_from_media_url(storage, game.storage_prefix, image_url)
+        return image_url
+
+    def post(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        request_id = request.data.get("request_id")
+        if not request_id:
+            raise ValidationError({"request_id": "요청 ID가 필요합니다."})
+        edit_request = get_object_or_404(GameEditRequest, pk=request_id)
+        if edit_request.status != GameEditRequestStatus.PENDING:
+            raise ValidationError({"request_id": "이미 처리된 요청입니다."})
+
+        payload = edit_request.payload or {}
+        items = payload.get("items") or []
+        if len(items) < 2:
+            raise ValidationError({"items": "아이템은 최소 2개 필요합니다."})
+
+        storage = FileSystemStorage(
+            location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL
+        )
+
+        with transaction.atomic():
+            game = edit_request.game
+            updates = []
+            title = (payload.get("title") or "").strip()
+            if title:
+                game.title = title
+                updates.append("title")
+            description = (payload.get("description") or "").strip()
+            game.description = description
+            updates.append("description")
+            thumbnail_url = payload.get("thumbnail_url")
+            if thumbnail_url:
+                game.thumbnail_image_url = self._normalize_image_url(storage, game, thumbnail_url)
+                updates.append("thumbnail_image_url")
+            if updates:
+                game.save(update_fields=updates)
+
+            existing_items = {item.id: item for item in game.items.all()}
+            payload_ids = set()
+            for item_data in items:
+                item_id = item_data.get("id")
+                name = (item_data.get("name") or "").strip()
+                image_url = item_data.get("image_url")
+                sort_order = item_data.get("sort_order")
+                try:
+                    sort_order = int(sort_order) if sort_order is not None else 0
+                except (TypeError, ValueError):
+                    sort_order = 0
+                if item_id and item_id in existing_items:
+                    item = existing_items[item_id]
+                    item_updates = []
+                    if item.name != name:
+                        item.name = name
+                        item_updates.append("name")
+                    if image_url:
+                        normalized = self._normalize_image_url(storage, game, image_url)
+                        if item.file_name != normalized:
+                            item.file_name = normalized
+                            item_updates.append("file_name")
+                    if item.sort_order != sort_order:
+                        item.sort_order = sort_order
+                        item_updates.append("sort_order")
+                    if item_updates:
+                        item.save(update_fields=item_updates)
+                    payload_ids.add(item_id)
+                else:
+                    if not image_url:
+                        raise ValidationError({"items": "새 아이템에는 이미지가 필요합니다."})
+                    normalized = self._normalize_image_url(storage, game, image_url)
+                    created = GameItem.objects.create(
+                        game=game,
+                        name=name,
+                        file_name=normalized,
+                        sort_order=sort_order,
+                        uploaded_by=edit_request.user,
+                        source_type=GameItemSourceType.USER_UPLOAD,
+                    )
+                    payload_ids.add(created.id)
+
+            for item_id, item in existing_items.items():
+                if item_id not in payload_ids:
+                    item.delete()
+
+            edit_request.status = GameEditRequestStatus.APPROVED
+            edit_request.reviewed_by = request.user
+            edit_request.reviewed_at = timezone.now()
+            edit_request.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+
+            GameEditRequestHistory.objects.create(
+                request=edit_request,
+                game=game,
+                user=edit_request.user,
+                action=GameEditRequestAction.APPROVED,
+                payload=payload,
+            )
+            _cleanup_media_prefix(edit_request.request_prefix)
+
+        return self.respond(
+            data={"request_id": edit_request.id, "status": edit_request.status}
+        )
+
+
+class AdminGameEditRequestRejectView(BaseAPIView):
+    api_name = "admin.edit_requests.reject"
+
+    def post(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        request_id = request.data.get("request_id")
+        if not request_id:
+            raise ValidationError({"request_id": "요청 ID가 필요합니다."})
+        edit_request = get_object_or_404(GameEditRequest, pk=request_id)
+        if edit_request.status != GameEditRequestStatus.PENDING:
+            raise ValidationError({"request_id": "이미 처리된 요청입니다."})
+
+        edit_request.status = GameEditRequestStatus.REJECTED
+        edit_request.reviewed_by = request.user
+        edit_request.reviewed_at = timezone.now()
+        edit_request.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+
+        GameEditRequestHistory.objects.create(
+            request=edit_request,
+            game=edit_request.game,
+            user=edit_request.user,
+            action=GameEditRequestAction.REJECTED,
+            payload=edit_request.payload or {},
+        )
+        _cleanup_media_prefix(edit_request.request_prefix)
+
+        return self.respond(
+            data={"request_id": edit_request.id, "status": edit_request.status}
+        )
 
 
 class AdminGameDetailView(BaseAPIView):

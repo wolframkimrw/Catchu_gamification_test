@@ -10,6 +10,7 @@ export interface Topic {
 export interface Game {
   id: number;
   title: string;
+  description?: string;
   slug?: string;
   type: string;
   thumbnail: string;
@@ -26,6 +27,7 @@ export interface GameItem {
 type GameDetailFromApi = {
   id: number;
   title: string;
+  description?: string;
   slug?: string;
   type: string;
   topic: Topic | null;
@@ -172,6 +174,67 @@ export type AdminGameDetail = {
   items: { id: number; name: string; file_name: string; sort_order: number; is_active: boolean }[];
   created_by: { id: number; name: string; email: string } | null;
 };
+
+export type AdminEditRequest = {
+  id: number;
+  game: { id: number; title: string };
+  user: { id: number; name: string; email: string };
+  status: string;
+  created_at: string;
+  updated_at: string;
+  payload: {
+    title?: string;
+    description?: string;
+    thumbnail_url?: string;
+    items?: { id?: number; name?: string; image_url?: string; sort_order?: number }[];
+  };
+};
+
+export async function fetchAdminEditRequests(): Promise<AdminEditRequest[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ requests: AdminEditRequest[] }>>(
+      "/games/admin/edit-requests/"
+    )
+  );
+  return response.requests || [];
+}
+
+export async function approveAdminEditRequest(
+  requestId: number
+): Promise<{ request_id: number; status: string }> {
+  const response = await requestWithMeta(
+    apiClient.post<ApiResponse<{ request_id: number; status: string }>>(
+      "/games/admin/edit-requests/approve/",
+      { request_id: requestId }
+    )
+  );
+  return response;
+}
+
+export async function rejectAdminEditRequest(
+  requestId: number
+): Promise<{ request_id: number; status: string }> {
+  const response = await requestWithMeta(
+    apiClient.post<ApiResponse<{ request_id: number; status: string }>>(
+      "/games/admin/edit-requests/reject/",
+      { request_id: requestId }
+    )
+  );
+  return response;
+}
+
+export async function submitGameEditRequest(
+  formData: FormData
+): Promise<{ request_id: number; status: string }> {
+  const response = await requestWithMeta(
+    apiClient.post<ApiResponse<{ request_id: number; status: string }>>(
+      "/games/edit-requests/",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    )
+  );
+  return response;
+}
 
 export async function fetchAdminGameDetail(gameId: number): Promise<AdminGameDetail> {
   const response = await requestWithMeta(

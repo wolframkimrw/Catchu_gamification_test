@@ -17,6 +17,7 @@ type PageState =
 type WorldcupResultPayload = {
   gameId: number;
   gameTitle: string;
+  choiceId: number | null;
   round: number;
   totalItems: number;
   champion: {
@@ -200,6 +201,7 @@ export function WorldcupArenaPage() {
     const payload = {
       gameId: parsedGameId,
       gameTitle: resolvedGame.title,
+      choiceId: sessionId ?? null,
       round: roundNumber,
       totalItems: itemsCount,
       champion: {

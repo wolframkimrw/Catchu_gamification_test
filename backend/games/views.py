@@ -171,6 +171,75 @@ class WorldcupPickLogCreateView(BaseAPIView):
         return self.respond(data={"pick_id": pick.id})
 
 
+class WorldcupPickSummaryView(BaseAPIView):
+    api_name = "games.worldcup.pick.summary"
+
+    def get(self, request, *args, **kwargs):
+        game_id = request.query_params.get("game_id")
+        if not game_id:
+            raise ValidationError({"game_id": "game_id가 필요합니다."})
+        try:
+            game_id_value = int(game_id)
+        except (TypeError, ValueError):
+            raise ValidationError({"game_id": "game_id는 숫자여야 합니다."})
+
+        choice_id = request.query_params.get("choice_id")
+        try:
+            choice_id_value = int(choice_id) if choice_id else None
+        except (TypeError, ValueError):
+            raise ValidationError({"choice_id": "choice_id는 숫자여야 합니다."})
+
+        logs = WorldcupPickLog.objects.select_related("game").filter(game_id=game_id_value)
+        if choice_id_value is not None:
+            logs = logs.filter(choice_id=choice_id_value)
+
+        if not logs.exists():
+            return self.respond(data={"summary": None})
+
+        game = get_object_or_404(Game, id=game_id_value)
+        items = list(game.items.all().order_by("sort_order", "id"))
+
+        counts = {
+            row["selected_item_id"]: row["wins"]
+            for row in logs.values("selected_item_id")
+            .exclude(selected_item_id__isnull=True)
+            .annotate(wins=models.Count("id"))
+        }
+
+        ranking = [
+            {
+                "id": item.id,
+                "name": item.name,
+                "file_name": item.file_name or "",
+                "sort_order": item.sort_order,
+                "wins": int(counts.get(item.id, 0) or 0),
+            }
+            for item in items
+        ]
+        ranking.sort(key=lambda entry: (-entry["wins"], entry["sort_order"], entry["id"]))
+
+        champion = ranking[0] if ranking else None
+        total_items = len(items)
+        round_count = 0
+        if total_items > 0:
+            import math
+
+            round_count = int(math.ceil(math.log2(total_items)))
+
+        return self.respond(
+            data={
+                "summary": {
+                    "choice_id": choice_id_value,
+                    "game": {"id": game.id, "title": game.title},
+                    "total_items": total_items,
+                    "round": round_count,
+                    "champion": champion,
+                    "ranking": ranking,
+                }
+            }
+        )
+
+
 class GameResultCreateView(BaseAPIView):
     api_name = "games.result.create"
 

@@ -76,3 +76,37 @@ export async function fetchGameResult(choiceId: number) {
   );
   return response;
 }
+
+export type WorldcupPickSummary = {
+  choice_id: number;
+  game: { id: number; title: string };
+  total_items: number;
+  round: number;
+  champion: {
+    id: number;
+    name: string;
+    file_name: string;
+    sort_order: number;
+    wins: number;
+  } | null;
+  ranking: {
+    id: number;
+    name: string;
+    file_name: string;
+    sort_order: number;
+    wins: number;
+  }[];
+};
+
+export async function fetchWorldcupPickSummary(gameId: number, choiceId?: number) {
+  const response = await requestWithMeta(
+    apiClient.get<
+      ApiResponse<{
+        summary: WorldcupPickSummary | null;
+      }>
+    >("/games/worldcup/pick/summary/", {
+      params: { game_id: gameId, choice_id: choiceId },
+    })
+  );
+  return response;
+}

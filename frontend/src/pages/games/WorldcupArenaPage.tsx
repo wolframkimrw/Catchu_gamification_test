@@ -7,6 +7,7 @@ import { fetchGameDetail } from "../../api/games";
 import { createGameResult, createWorldcupPickLog } from "../../api/gamesSession";
 import { getStoredGameSessionId, startGameSession } from "../../utils/gameSession";
 import type { GameDetailData, GameItem } from "../../api/games";
+import placeholderImage from "../../assets/worldcup-placeholder.svg";
 
 type PageState =
   | { status: "loading" }
@@ -31,6 +32,7 @@ export function WorldcupArenaPage() {
   const [sessionId, setSessionId] = useState<number | null>(null);
   const isSelecting = selectedId !== null;
   const pickIndexRef = useRef(0);
+  const winCountsRef = useRef<Record<number, number>>({});
   const navigate = useNavigate();
   const hasNavigatedRef = useRef(false);
 
@@ -101,6 +103,7 @@ export function WorldcupArenaPage() {
 
   const handleSelect = (winner: GameItem) => {
     setSelectedId(winner.id);
+    winCountsRef.current[winner.id] = (winCountsRef.current[winner.id] || 0) + 1;
     const left = a;
     const right = b;
     if (sessionId && left && right && parsedGameId !== null) {
@@ -149,6 +152,7 @@ export function WorldcupArenaPage() {
   const resolvedGame = resolvedState.status === "success" ? resolvedState.data.game : null;
   const itemsCount =
     resolvedState.status === "success" ? resolvedState.data.items.length : 0;
+  const allItems = resolvedState.status === "success" ? resolvedState.data.items : [];
 
   useEffect(() => {
     if (!champion || parsedGameId === null || !resolvedGame) {
@@ -157,6 +161,21 @@ export function WorldcupArenaPage() {
     if (hasNavigatedRef.current) {
       return;
     }
+    const ranking = allItems
+      .map((item) => ({
+        id: item.id,
+        name: item.name || "",
+        file_name: item.file_name || "",
+        sort_order: item.sort_order,
+        wins: winCountsRef.current[item.id] || 0,
+      }))
+      .sort((a, b) => {
+        if (b.wins !== a.wins) {
+          return b.wins - a.wins;
+        }
+        return a.sort_order - b.sort_order;
+      });
+
     const payload = {
       gameId: parsedGameId,
       gameTitle: resolvedGame.title,
@@ -168,11 +187,12 @@ export function WorldcupArenaPage() {
         file_name: champion.file_name || "",
         sort_order: champion.sort_order,
       },
+      ranking,
     };
     sessionStorage.setItem(`worldcup-result-${parsedGameId}`, JSON.stringify(payload));
     hasNavigatedRef.current = true;
     navigate(`/worldcup/${parsedGameId}/result`, { replace: true, state: payload });
-  }, [champion, itemsCount, navigate, parsedGameId, resolvedGame, roundNumber]);
+  }, [allItems, champion, itemsCount, navigate, parsedGameId, resolvedGame, roundNumber]);
 
   useEffect(() => {
     if (!champion || parsedGameId === null || !sessionId) {
@@ -264,7 +284,9 @@ export function WorldcupArenaPage() {
                   );
                 }
                 return (
-                  <div className="arena-media-fallback">이미지를 불러올 수 없습니다.</div>
+                  <div className="arena-media-fallback">
+                    <img src={placeholderImage} alt="NO IMAGE" />
+                  </div>
                 );
               })()}
             </div>
@@ -317,7 +339,9 @@ export function WorldcupArenaPage() {
                           <img src={mediaUrl} alt={contestant.name || contestant.file_name} />
                         )
                       ) : (
-                        <div className="arena-media-fallback">미리보기를 불러올 수 없습니다.</div>
+                        <div className="arena-media-fallback">
+                          <img src={placeholderImage} alt="NO IMAGE" />
+                        </div>
                       )}
                     </div>
                   );

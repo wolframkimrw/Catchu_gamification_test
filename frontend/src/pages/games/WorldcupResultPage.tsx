@@ -13,6 +13,13 @@ type ResultPayload = {
     file_name: string;
     sort_order: number;
   };
+  ranking: {
+    id: number;
+    name: string;
+    file_name: string;
+    sort_order: number;
+    wins: number;
+  }[];
 };
 
 type LocationState = ResultPayload | null;
@@ -104,6 +111,33 @@ export function WorldcupResultPage() {
           </div>
         </header>
         <div className="worldcup-dashboard-grid">
+          <section className="worldcup-dashboard-rank">
+            <h3>승리 랭킹</h3>
+            <div className="worldcup-rank-table">
+              {result.ranking.map((entry, index) => {
+                const entryMedia = getMediaUrl(entry.file_name);
+                const entryVideo = isVideo(entryMedia);
+                return (
+                  <div key={entry.id} className="worldcup-rank-row">
+                    <div className="worldcup-rank-order">{index + 1}</div>
+                    <div className="worldcup-rank-media">
+                      {entryMedia ? (
+                        entryVideo ? (
+                          <video src={entryMedia} muted playsInline />
+                        ) : (
+                          <img src={entryMedia} alt={entry.name || entry.file_name} />
+                        )
+                      ) : (
+                        <div className="worldcup-rank-fallback">NO</div>
+                      )}
+                    </div>
+                    <div className="worldcup-rank-name">{entry.name || entry.file_name}</div>
+                    <div className="worldcup-rank-score">{entry.wins}승</div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
           <section className="worldcup-dashboard-hero">
             <div className="result-badges">
               <span className="badge badge-hot">WINNER</span>

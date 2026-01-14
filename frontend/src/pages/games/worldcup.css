@@ -1113,6 +1113,76 @@
   gap: 16px;
 }
 
+.worldcup-dashboard-rank {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.worldcup-dashboard-rank h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.worldcup-rank-table {
+  display: grid;
+  gap: 10px;
+}
+
+.worldcup-rank-row {
+  display: grid;
+  grid-template-columns: 32px 44px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.worldcup-rank-order {
+  font-weight: 800;
+  color: #ffcf6b;
+  text-align: center;
+}
+
+.worldcup-rank-media {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.worldcup-rank-media img,
+.worldcup-rank-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.worldcup-rank-fallback {
+  color: #c4c6d3;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.worldcup-rank-name {
+  font-weight: 600;
+  color: #f1f1f5;
+}
+
+.worldcup-rank-score {
+  color: #c4c6d3;
+  font-size: 13px;
+}
+
 .worldcup-dashboard-hero {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1180,6 +1250,17 @@
 @media (max-width: 540px) {
   .worldcup-dashboard-stats {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 720px) {
+  .worldcup-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+
+  .worldcup-dashboard-stats,
+  .worldcup-dashboard-summary {
+    grid-column: 1 / -1;
   }
 }
 

@@ -44,11 +44,13 @@ export function MyGameEditRequestPage() {
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState("");
   const [items, setItems] = useState<EditItemForm[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const itemsRef = useRef<EditItemForm[]>([]);
+  const thumbnailPreviewRef = useRef<string>("");
 
   useEffect(() => {
     if (parsedGameId === null) {
@@ -59,7 +61,9 @@ export function MyGameEditRequestPage() {
         setState({ status: "ready", data });
         setTitle(data.game.title || "");
         setDescription(data.game.description || "");
-        setThumbnailUrl(data.game.thumbnail || "");
+        setThumbnailUrl("");
+        setThumbnailPreviewUrl(data.game.thumbnail || "");
+        thumbnailPreviewRef.current = data.game.thumbnail || "";
         setItems(
           data.items.map((item) => {
             const resolved = item.file_name ? resolveMediaUrl(item.file_name) : "";
@@ -148,6 +152,14 @@ export function MyGameEditRequestPage() {
           URL.revokeObjectURL(item.previewUrl);
         }
       });
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (thumbnailPreviewRef.current.startsWith("blob:")) {
+        URL.revokeObjectURL(thumbnailPreviewRef.current);
+      }
     };
   }, []);
 
@@ -247,16 +259,10 @@ export function MyGameEditRequestPage() {
         <label className="worldcup-create-field">
           <span>썸네일</span>
           <label className="worldcup-create-upload">
-            {thumbnail ? (
+            {thumbnailPreviewUrl ? (
               <img
                 className="worldcup-create-upload-image"
-                src={URL.createObjectURL(thumbnail)}
-                alt="썸네일 미리보기"
-              />
-            ) : thumbnailUrl ? (
-              <img
-                className="worldcup-create-upload-image"
-                src={thumbnailUrl}
+                src={thumbnailPreviewUrl}
                 alt="썸네일 미리보기"
               />
             ) : (
@@ -271,7 +277,14 @@ export function MyGameEditRequestPage() {
               type="file"
               accept="image/*"
               onChange={(event) => {
-                setThumbnail(event.target.files ? event.target.files[0] : null);
+                const file = event.target.files ? event.target.files[0] : null;
+                if (thumbnailPreviewRef.current.startsWith("blob:")) {
+                  URL.revokeObjectURL(thumbnailPreviewRef.current);
+                }
+                const previewUrl = file ? URL.createObjectURL(file) : "";
+                thumbnailPreviewRef.current = previewUrl;
+                setThumbnailPreviewUrl(previewUrl);
+                setThumbnail(file);
                 setThumbnailUrl("");
               }}
             />
@@ -281,10 +294,14 @@ export function MyGameEditRequestPage() {
             type="text"
             value={thumbnail ? "" : thumbnailUrl}
             onChange={(event) => {
-              setThumbnailUrl(event.target.value);
-              if (event.target.value) {
-                setThumbnail(null);
+              const value = event.target.value;
+              setThumbnailUrl(value);
+              if (thumbnailPreviewRef.current.startsWith("blob:")) {
+                URL.revokeObjectURL(thumbnailPreviewRef.current);
+                thumbnailPreviewRef.current = "";
               }
+              setThumbnail(null);
+              setThumbnailPreviewUrl(value);
             }}
             placeholder="이미지 URL"
           />

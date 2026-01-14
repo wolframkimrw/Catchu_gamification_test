@@ -71,26 +71,26 @@ const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
 
   const champion = winner
     ? {
-      id: winner.id,
-      name: winner.name || "",
-      file_name: winner.file_name || "",
-      sort_order: Number(championFromPayload?.sort_order ?? 0),
-    }
+        id: winner.id,
+        name: winner.name || "",
+        file_name: winner.file_name || "",
+        sort_order: Number(championFromPayload?.sort_order ?? 0),
+      }
     : Number.isFinite(payloadChampionId)
-      ? {
+    ? {
         id: payloadChampionId,
         name: typeof championFromPayload?.name === "string" ? championFromPayload.name : "",
         file_name: typeof championFromPayload?.file_name === "string" ? championFromPayload.file_name : "",
         sort_order: Number(championFromPayload?.sort_order ?? 0),
       }
-      : null;
+    : null;
 
   if (!champion) {
     return null;
   }
 
   const ranking = normalizeRanking(payloadRecord.ranking);
-  const totalItemsValue = Number((payloadRecord.total_items ?? payloadRecord.totalItems ?? ranking.length) || 0);
+  const totalItemsValue = Number(payloadRecord.total_items ?? payloadRecord.totalItems ?? ranking.length || 0);
   const roundValue = Number(payloadRecord.round ?? 0);
 
   return {
@@ -99,7 +99,7 @@ const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
     round: Number.isFinite(roundValue) ? roundValue : 0,
     totalItems: Number.isFinite(totalItemsValue) ? totalItemsValue : ranking.length || 0,
     champion,
-    ranking: ranking.length ? ranking : [{ ...champion, wins: 1 }],
+    ranking: ranking.length ? ranking : [ { ...champion, wins: 1 } ],
   };
 };
 

@@ -90,7 +90,7 @@ const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
   }
 
   const ranking = normalizeRanking(payloadRecord.ranking);
-  const totalItemsValue = Number((payloadRecord.total_items ?? payloadRecord.totalItems ?? ranking.length) || 0);
+  const totalItemsValue = Number(payloadRecord.total_items ?? payloadRecord.totalItems ?? ranking.length || 0);
   const roundValue = Number(payloadRecord.round ?? 0);
 
   return {

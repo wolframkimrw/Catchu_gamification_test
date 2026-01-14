@@ -7,12 +7,14 @@ import {
   rejectAdminEditRequest,
   type AdminEditRequest,
 } from "../../api/games";
+import { useNavigate } from "react-router-dom";
 import { AdminShell } from "../../components/AdminShell";
 
 export function AdminEditRequestsPage() {
   const [requests, setRequests] = useState<AdminEditRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const loadRequests = () => {
     setIsLoading(true);
@@ -74,36 +76,50 @@ export function AdminEditRequestsPage() {
         <div className="admin-games-list">
           {requests.map((request) => (
             <div key={request.id} className="admin-games-card">
-              <div className="admin-games-info">
-                <div className="admin-games-title">{request.game.title}</div>
-                <div className="admin-games-meta">
-                  <span>요청자: {request.user.name}</span>
-                  <span>요청일: {new Date(request.updated_at).toLocaleString()}</span>
+              <div
+                className="admin-games-info"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/admin/requests/${request.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(`/admin/requests/${request.id}`);
+                  }
+                }}
+              >
+                <div className="admin-games-thumb">
+                  {request.payload?.thumbnail_url ? (
+                    <img src={request.payload.thumbnail_url} alt={request.game.title} />
+                  ) : (
+                    <div className="admin-games-thumb-placeholder">NO</div>
+                  )}
                 </div>
-                <div className="admin-games-meta">
-                  <span>요청 제목: {request.payload?.title || "-"}</span>
-                  <span>아이템: {request.payload?.items?.length ?? 0}개</span>
-                </div>
-                {request.payload?.description ? (
-                  <div className="admin-games-meta">
-                    <span>요청 설명: {request.payload.description}</span>
+                <div className="admin-item-fields">
+                  <div className="admin-games-title">
+                    {request.game.title}
+                    <span className="admin-badge badge-status is-inactive">승인 대기</span>
                   </div>
-                ) : null}
-                <div className="admin-games-tags">
-                  <span className="admin-badge badge-status is-active">승인 대기</span>
+                  <div className="admin-games-meta">
+                    요청자: {request.user.name} · 아이템:{" "}
+                    {request.payload?.items?.length ?? 0}개
+                  </div>
+                  <div className="admin-games-meta">
+                    요청일: {new Date(request.updated_at).toLocaleString()}
+                  </div>
                 </div>
-                <div className="admin-games-actions">
-                  <button type="button" onClick={() => handleApprove(request.id)}>
-                    승인
-                  </button>
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={() => handleReject(request.id)}
-                  >
-                    반려
-                  </button>
-                </div>
+              </div>
+              <div className="admin-games-actions">
+                <button type="button" onClick={() => handleApprove(request.id)}>
+                  승인
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => handleReject(request.id)}
+                >
+                  반려
+                </button>
               </div>
             </div>
           ))}

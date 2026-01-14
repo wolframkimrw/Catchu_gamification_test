@@ -196,7 +196,74 @@ export async function fetchAdminEditRequests(): Promise<AdminEditRequest[]> {
       "/games/admin/edit-requests/"
     )
   );
-  return response.requests || [];
+  return (response.requests || []).map((req) => ({
+    ...req,
+    payload: {
+      ...req.payload,
+      thumbnail_url: req.payload?.thumbnail_url
+        ? resolveMediaUrl(req.payload.thumbnail_url)
+        : req.payload?.thumbnail_url,
+      items: req.payload?.items?.map((item) => ({
+        ...item,
+        image_url: item.image_url ? resolveMediaUrl(item.image_url) : item.image_url,
+      })),
+    },
+  }));
+}
+
+export type AdminEditRequestDetail = {
+  id: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  user: { id: number; name: string; email: string };
+  game: {
+    id: number;
+    title: string;
+    description: string;
+    thumbnail_image_url: string;
+    items: { id: number; name: string; file_name: string; sort_order: number }[];
+  };
+  payload: {
+    title?: string;
+    description?: string;
+    thumbnail_url?: string;
+    items?: { id?: number; name?: string; image_url?: string; sort_order?: number }[];
+  };
+};
+
+export async function fetchAdminEditRequestDetail(
+  requestId: number
+): Promise<AdminEditRequestDetail> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ request: AdminEditRequestDetail }>>(
+      `/games/admin/edit-requests/${requestId}/`
+    )
+  );
+  const req = response.request;
+  return {
+    ...req,
+    game: {
+      ...req.game,
+      thumbnail_image_url: req.game.thumbnail_image_url
+        ? resolveMediaUrl(req.game.thumbnail_image_url)
+        : "",
+      items: req.game.items.map((item) => ({
+        ...item,
+        file_name: item.file_name ? resolveMediaUrl(item.file_name) : item.file_name,
+      })),
+    },
+    payload: {
+      ...req.payload,
+      thumbnail_url: req.payload?.thumbnail_url
+        ? resolveMediaUrl(req.payload.thumbnail_url)
+        : req.payload?.thumbnail_url,
+      items: req.payload?.items?.map((item) => ({
+        ...item,
+        image_url: item.image_url ? resolveMediaUrl(item.image_url) : item.image_url,
+      })),
+    },
+  };
 }
 
 export async function approveAdminEditRequest(

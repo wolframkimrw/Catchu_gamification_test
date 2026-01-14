@@ -12,6 +12,7 @@ import { SajuLuckPage } from "./pages/games/SajuLuckPage";
 import { LoginPage } from "./pages/loginpage";
 import { AdminGamesPage } from "./pages/admin/AdminGamesPage";
 import { AdminEditRequestsPage } from "./pages/admin/AdminEditRequestsPage";
+import { AdminEditRequestDetailPage } from "./pages/admin/AdminEditRequestDetailPage";
 import { AdminGameDetailPage } from "./pages/admin/AdminGameDetailPage";
 import { AdminLogsPage } from "./pages/admin/AdminLogsPage";
 import { AdminTopicsPage } from "./pages/admin/AdminTopicsPage";
@@ -151,6 +152,7 @@ function Layout() {
             <Route path="/admin/games" element={<AdminGamesPage />} />
             <Route path="/admin/games/:gameId" element={<AdminGameDetailPage />} />
             <Route path="/admin/requests" element={<AdminEditRequestsPage />} />
+            <Route path="/admin/requests/:requestId" element={<AdminEditRequestDetailPage />} />
             <Route path="/admin/topics" element={<AdminTopicsPage />} />
             <Route path="/admin/logs" element={<AdminLogsPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />

@@ -217,6 +217,31 @@ class AdminGameEditRequestSerializer(serializers.ModelSerializer):
         return {"id": obj.user_id, "name": obj.user.name, "email": obj.user.email}
 
 
+class AdminGameEditRequestDetailSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GameEditRequest
+        fields = ["id", "game", "user", "status", "created_at", "updated_at", "payload"]
+
+    def get_game(self, obj):
+        game = obj.game
+        return {
+            "id": game.id,
+            "title": game.title,
+            "description": game.description,
+            "thumbnail_image_url": game.thumbnail_image_url,
+            "items": [
+                {"id": item.id, "name": item.name, "file_name": item.file_name, "sort_order": item.sort_order}
+                for item in game.items.all().order_by("sort_order", "id")
+            ],
+        }
+
+    def get_user(self, obj):
+        return {"id": obj.user_id, "name": obj.user.name, "email": obj.user.email}
+
+
 class GameChoiceLogCreateSerializer(serializers.Serializer):
     game_id = serializers.IntegerField()
     source = serializers.CharField(required=False, allow_blank=True)

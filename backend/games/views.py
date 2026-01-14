@@ -27,6 +27,7 @@ from .models import (
 )
 from .serializers import (
     AdminGameEditRequestSerializer,
+    AdminGameEditRequestDetailSerializer,
     GameAdminListSerializer,
     AdminGameDetailSerializer,
     AdminGameChoiceLogSerializer,
@@ -741,6 +742,18 @@ class AdminGameEditRequestListView(BaseAPIView):
         )
         serializer = AdminGameEditRequestSerializer(qs, many=True)
         return self.respond(data={"requests": serializer.data})
+
+
+class AdminGameEditRequestDetailView(BaseAPIView):
+    api_name = "admin.edit_requests.detail"
+
+    def get(self, request, request_id: int, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        edit_request = get_object_or_404(GameEditRequest, pk=request_id)
+        serializer = AdminGameEditRequestDetailSerializer(edit_request)
+        return self.respond(data={"request": serializer.data})
 
 
 class AdminGameEditRequestApproveView(WorldcupCreateView):

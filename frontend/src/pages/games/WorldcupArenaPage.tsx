@@ -7,7 +7,6 @@ import { fetchGameDetail } from "../../api/games";
 import { createGameResult, createWorldcupPickLog } from "../../api/gamesSession";
 import { getStoredGameSessionId, startGameSession } from "../../utils/gameSession";
 import type { GameDetailData, GameItem } from "../../api/games";
-import { getLocalWorldcupDetail, LOCAL_WORLDCUP_ID } from "../../data/localWorldcup";
 
 type PageState =
   | { status: "loading" }
@@ -20,11 +19,6 @@ export function WorldcupArenaPage() {
     const idNumber = Number(gameId);
     return Number.isFinite(idNumber) ? idNumber : null;
   }, [gameId]);
-  const isLocalGame = parsedGameId === LOCAL_WORLDCUP_ID;
-  const localData = useMemo(
-    () => (isLocalGame ? getLocalWorldcupDetail() : null),
-    [isLocalGame]
-  );
 
   const transitionMs = 1400; // 애니메이션(약 0.9~1.0초) 포함 총 2초 안팎으로 끝나도록 조정
   const [state, setState] = useState<PageState>({ status: "loading" });
@@ -56,7 +50,7 @@ export function WorldcupArenaPage() {
 
   const startNewSession = useCallback(
     async (source: string) => {
-      if (isLocalGame || parsedGameId === null) {
+      if (parsedGameId === null) {
         return null;
       }
       const nextSessionId = await startGameSession(parsedGameId, source);
@@ -65,7 +59,7 @@ export function WorldcupArenaPage() {
       }
       return nextSessionId;
     },
-    [isLocalGame, parsedGameId]
+    [parsedGameId]
   );
 
   // 아레나 진입 시 화면을 맨 아래로 스크롤 (상단 여백 없이 바로 콘텐츠가 보이도록)
@@ -74,20 +68,7 @@ export function WorldcupArenaPage() {
   }, []);
 
   useEffect(() => {
-    if (!localData) {
-      return;
-    }
-    const shuffled = [...localData.items].sort(() => Math.random() - 0.5);
-    pickIndexRef.current = 0;
-    const timer = window.setTimeout(() => startRound(shuffled, 1), 0);
-    return () => window.clearTimeout(timer);
-  }, [localData, startRound]);
-
-  useEffect(() => {
     if (parsedGameId === null) {
-      return;
-    }
-    if (isLocalGame) {
       return;
     }
     fetchGameDetail(parsedGameId)
@@ -104,23 +85,23 @@ export function WorldcupArenaPage() {
           "게임 정보를 불러오지 못했습니다.";
         setState({ status: "error", message });
       });
-  }, [isLocalGame, parsedGameId, startRound]);
+  }, [parsedGameId, startRound]);
 
   useEffect(() => {
-    if (isLocalGame || parsedGameId === null) {
+    if (parsedGameId === null) {
       return;
     }
     const stored = getStoredGameSessionId(parsedGameId);
     if (stored) {
       setSessionId(stored);
     }
-  }, [isLocalGame, parsedGameId]);
+  }, [parsedGameId]);
 
   const handleSelect = (winner: GameItem) => {
     setSelectedId(winner.id);
     const left = a;
     const right = b;
-    if (!isLocalGame && sessionId && left && right && parsedGameId !== null) {
+    if (sessionId && left && right && parsedGameId !== null) {
       const stepIndex = pickIndexRef.current;
       pickIndexRef.current += 1;
       void createWorldcupPickLog({
@@ -161,14 +142,12 @@ export function WorldcupArenaPage() {
     }
   };
 
-  const resolvedState: PageState = localData
-    ? { status: "success", data: localData }
-    : state;
+  const resolvedState: PageState = state;
 
   const resolvedGame = resolvedState.status === "success" ? resolvedState.data.game : null;
 
   useEffect(() => {
-    if (!champion || isLocalGame || parsedGameId === null || !sessionId) {
+    if (!champion || parsedGameId === null || !sessionId) {
       return;
     }
     const resultTitle = resolvedGame?.title
@@ -186,7 +165,7 @@ export function WorldcupArenaPage() {
     }).catch(() => {
       // 결과 로그 실패는 진행을 막지 않음
     });
-  }, [champion, isLocalGame, parsedGameId, resolvedGame, roundNumber, sessionId]);
+  }, [champion, parsedGameId, resolvedGame, roundNumber, sessionId]);
 
   if (parsedGameId === null) {
     return <div className="arena-shell">잘못된 게임 ID 입니다.</div>;

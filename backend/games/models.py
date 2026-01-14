@@ -161,6 +161,34 @@ class GameItem(TimeStampedModel):
         return self.name or f"Item #{self.id} of {self.game_id}"
 
 
+class TodayPick(TimeStampedModel):
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="today_picks",
+        verbose_name="오늘의 추천 게임",
+    )
+    picked_date = models.DateField(verbose_name="추천 날짜")
+    is_active = models.BooleanField(default=True, verbose_name="활성 여부")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="today_picks",
+        verbose_name="설정한 관리자",
+    )
+
+    class Meta:
+        db_table = "gaimification_today_pick"
+        ordering = ["-picked_date", "-created_at"]
+        verbose_name = "오늘의 추천"
+        verbose_name_plural = "오늘의 추천"
+
+    def __str__(self) -> str:
+        return f"[{self.picked_date}] {self.game.title}"
+
+
 # --------------------------------------------------
 # GameEditRequest (게임 수정 승인 요청)
 # --------------------------------------------------

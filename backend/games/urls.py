@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     GameListView,
     GameDetailView,
+    TodayPickView,
     GameChoiceLogCreateView,
     GameResultCreateView,
     WorldcupPickLogCreateView,
@@ -11,6 +12,7 @@ from .views import (
     WorldcupDraftView,
     AdminGameDeleteView,
     AdminGameListView,
+    AdminTodayPickView,
     AdminGameDetailView,
     AdminGameItemUpdateView,
     AdminGameItemCreateView,
@@ -32,6 +34,7 @@ app_name = 'games'
 
 urlpatterns = [
     path("", GameListView.as_view(), name="list"),
+    path("today-pick/", TodayPickView.as_view(), name="today_pick"),
     path("mine/", MyGameListView.as_view(), name="mine"),
     path("edit-requests/", GameEditRequestView.as_view(), name="edit_request"),
     path("<int:game_id>/", GameDetailView.as_view(), name="detail"),
@@ -40,6 +43,7 @@ urlpatterns = [
     path("worldcup/create/", WorldcupCreateView.as_view(), name="worldcup_create"),
     path("worldcup/draft/", WorldcupDraftView.as_view(), name="worldcup_draft"),
     path("admin/games/", AdminGameListView.as_view(), name="admin_games_list"),
+    path("admin/today-pick/", AdminTodayPickView.as_view(), name="admin_today_pick"),
     path("admin/games/update/", AdminGameUpdateView.as_view(), name="admin_games_update"),
     path("admin/games/items/update/", AdminGameItemUpdateView.as_view(), name="admin_games_items_update"),
     path("admin/games/items/create/", AdminGameItemCreateView.as_view(), name="admin_games_items_create"),

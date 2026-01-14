@@ -1,17 +1,9 @@
-.psycho-page {
-  min-height: calc(100vh - var(--app-header-height));
-  padding: 1.25rem 1rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  background: #f7f8fc;
-}
 
 .psycho-card {
-  background: #ffffff;
+  background: transparent;
   border-radius: 16px;
   padding: 1.25rem;
-  box-shadow: 0 12px 28px rgba(22, 28, 48, 0.08);
+  border: 1px solid rgba(74, 54, 34, 0.18);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -19,20 +11,20 @@
 
 .psycho-progress {
   font-weight: 700;
-  color: #5f6472;
+  color: #4b3a2a;
   text-align: right;
 }
 
 .psycho-question {
   margin: 0;
   font-size: 1.2rem;
-  font-weight: 800;
-  color: #1b1c1f;
+  font-weight: 700;
+  color: #3a2b1d;
 }
 
 .psycho-helper {
   margin: 0;
-  color: #626775;
+  color: #4b3a2a;
   font-size: 0.95rem;
 }
 
@@ -42,8 +34,8 @@
 }
 
 .psycho-option {
-  border: 1px solid #d9deea;
-  background: #f9fafc;
+  border: 1px solid rgba(74, 54, 34, 0.25);
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 14px;
   padding: 0.9rem 1rem;
   font-weight: 600;
@@ -53,61 +45,7 @@
 }
 
 .psycho-option:hover {
-  border-color: #5a36b2;
-  box-shadow: 0 10px 18px rgba(90, 54, 178, 0.18);
+  border-color: rgba(74, 54, 34, 0.65);
+  box-shadow: none;
   transform: translateY(-2px);
-}
-
-.psycho-result {
-  text-align: center;
-}
-
-.psycho-result-header h2 {
-  margin: 0.4rem 0 0.25rem;
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #1b1c1f;
-}
-
-.psycho-result-header p {
-  margin: 0;
-  color: #545965;
-}
-
-.psycho-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: #ece7ff;
-  color: #5a36b2;
-}
-
-.psycho-result-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.5rem;
-  color: #2f3440;
-  font-weight: 600;
-}
-
-.psycho-actions {
-  display: flex;
-  gap: 0.6rem;
-  justify-content: center;
-}
-
-@media (min-width: 40rem) {
-  .psycho-page {
-    padding: 1.75rem 1.5rem 2.5rem;
-  }
-
-  .psycho-card {
-    padding: 1.5rem 1.75rem;
-  }
 }

@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import "./worldcup.css";
 import "./psycho-test.css";
+import "./major-arcana.css";
 import { GameStartScreen } from "../../components/GameStartScreen";
 import { fetchGamesList } from "../../api/games";
 import { createGameResult } from "../../api/gamesSession";
@@ -8,8 +11,8 @@ import { useGameSessionStart } from "../../hooks/useGameSessionStart";
 type PsychoOption = {
   id: string;
   text: string;
+  weights: Record<string, number>;
   nextQuestionId?: string;
-  resultId?: string;
 };
 
 type PsychoQuestion = {
@@ -19,98 +22,155 @@ type PsychoQuestion = {
   options: PsychoOption[];
 };
 
-type PsychoResult = {
+type PsychoCard = {
   id: string;
-  title: string;
-  summary: string;
-  details: string[];
+  label: string;
+  summary?: string;
+  keywords?: string[];
+};
+
+type PsychoScoringRules = {
+  min: number;
+  max: number;
+  minNegative: number;
+  threshold: number;
+  maxResults: number;
+  patterns: string[];
 };
 
 type PsychoTemplate = {
   slug: string;
+  game_slug?: string;
   title: string;
   description: string;
   tags: { label: string }[];
+  scoring: PsychoScoringRules;
+  cards: PsychoCard[];
   questions: PsychoQuestion[];
-  results: PsychoResult[];
 };
 
-const psychoTemplate: PsychoTemplate = {
-  slug: "psycho-template",
-  title: "심리테스트",
-  description: "선택에 따라 결과가 달라지는 심리테스트 템플릿입니다.",
-  tags: [{ label: "심리" }, { label: "선택형" }, { label: "3분" }],
-  questions: [
-    {
-      id: "q1",
-      text: "새로운 팀 프로젝트가 시작됐다. 나는?",
-      helper: "가장 먼저 드는 생각을 골라보세요.",
-      options: [
-        { id: "q1-a", text: "구조부터 잡는다", nextQuestionId: "q2" },
-        { id: "q1-b", text: "아이디어를 모은다", nextQuestionId: "q3" },
-      ],
-    },
-    {
-      id: "q2",
-      text: "일정이 촉박할 때 나는?",
-      options: [
-        { id: "q2-a", text: "우선순위를 줄인다", resultId: "r1" },
-        { id: "q2-b", text: "팀을 재정렬한다", resultId: "r2" },
-      ],
-    },
-    {
-      id: "q3",
-      text: "새로운 기능을 제안할 때 나는?",
-      options: [
-        { id: "q3-a", text: "간단한 프로토타입", resultId: "r3" },
-        { id: "q3-b", text: "스토리로 설명", resultId: "r4" },
-      ],
-    },
-  ],
-  results: [
-    {
-      id: "r1",
-      title: "정리형 리더",
-      summary: "핵심을 빠르게 정리하는 전략가입니다.",
-      details: ["핵심을 먼저 정리", "불확실성을 줄이는 방식 선호", "명확한 체크리스트"],
-    },
-    {
-      id: "r2",
-      title: "조율형 리더",
-      summary: "팀의 리듬을 맞추는 조율자입니다.",
-      details: ["역할 분배에 능숙", "협업 분위기 중시", "커뮤니케이션 강점"],
-    },
-    {
-      id: "r3",
-      title: "실험형 크리에이터",
-      summary: "작게 실험하고 크게 확장하는 타입입니다.",
-      details: ["빠른 프로토타입", "피드백 주도", "실험을 즐김"],
-    },
-    {
-      id: "r4",
-      title: "스토리텔러",
-      summary: "맥락과 의미를 엮어 전달하는 타입입니다.",
-      details: ["설명과 설득에 강함", "큰 그림을 강조", "브랜드/콘셉트 지향"],
-    },
-  ],
+type PsychoAnswer = {
+  questionId: string;
+  optionId: string;
 };
 
-const findResult = (template: PsychoTemplate, id: string | undefined) =>
-  template.results.find((item) => item.id === id) || null;
+type PsychoOutcome = {
+  main: PsychoCard;
+  secondary: PsychoCard[];
+  scores: Record<string, number>;
+  points: Record<string, number>;
+};
+
+const DEFAULT_SLUG = "major-arcana";
+const templates = import.meta.glob<{ default: PsychoTemplate }>(
+  "../../utils/psycho/*.json",
+  { eager: true }
+);
+
+const getNextQuestionId = (template: PsychoTemplate, currentId: string) => {
+  const index = template.questions.findIndex((item) => item.id === currentId);
+  if (index === -1) {
+    return "";
+  }
+  return template.questions[index + 1]?.id ?? "";
+};
+
+const computeScores = (template: PsychoTemplate, answers: PsychoAnswer[]) => {
+  const points = Object.fromEntries(template.cards.map((card) => [card.id, 0])) as Record<
+    string,
+    number
+  >;
+  const optionMap = new Map<string, PsychoOption>();
+  template.questions.forEach((question) => {
+    question.options.forEach((option) => {
+      optionMap.set(`${question.id}:${option.id}`, option);
+    });
+  });
+  answers.forEach((answer) => {
+    const option = optionMap.get(`${answer.questionId}:${answer.optionId}`);
+    if (!option) {
+      return;
+    }
+    Object.entries(option.weights).forEach(([cardId, value]) => {
+      if (typeof points[cardId] === "number") {
+        if (value < 0) {
+          points[cardId] = Math.max(0, points[cardId] + value);
+        } else {
+          points[cardId] += value;
+        }
+      }
+    });
+  });
+  const scores = Object.fromEntries(
+    Object.entries(points).map(([cardId, total]) => {
+      if (total <= 0) {
+        return [cardId, 0];
+      }
+      let product = 1;
+      for (let idx = 0; idx < total; idx += 1) {
+        product *= idx * 2 + 1;
+      }
+      return [cardId, product];
+    })
+  ) as Record<string, number>;
+  return { scores, points };
+};
+
+const resolveOutcome = (template: PsychoTemplate, answers: PsychoAnswer[]): PsychoOutcome => {
+  const { scores, points } = computeScores(template, answers);
+  const maxPoints = Math.max(...Object.values(points), 0);
+  const threshold = template.scoring.threshold;
+  const eligible = template.cards.filter(
+    (card) => (points[card.id] ?? 0) >= threshold
+  );
+  const pool =
+    eligible.length > 0
+      ? eligible.filter((card) => (points[card.id] ?? 0) === maxPoints)
+      : template.cards.filter((card) => (points[card.id] ?? 0) === maxPoints);
+  const picked =
+    pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : template.cards[0];
+  return {
+    main: picked,
+    secondary: [],
+    scores,
+    points,
+  };
+};
 
 export function PsychoTestPage() {
+  const { slug } = useParams<{ slug?: string }>();
   const [started, setStarted] = useState(false);
-  const [currentId, setCurrentId] = useState(psychoTemplate.questions[0]?.id ?? "");
-  const [answers, setAnswers] = useState<{ questionId: string; optionId: string }[]>([]);
-  const [result, setResult] = useState<PsychoResult | null>(null);
+  const [template, setTemplate] = useState<PsychoTemplate | null>(null);
+  const [currentId, setCurrentId] = useState("");
+  const [answers, setAnswers] = useState<PsychoAnswer[]>([]);
+  const [result, setResult] = useState<PsychoOutcome | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [gameId, setGameId] = useState<number | null>(null);
   const lastResultSessionRef = useRef<number | null>(null);
   const { sessionId, startSession } = useGameSessionStart(gameId, "psycho_start");
 
   useEffect(() => {
+    const resolvedSlug = slug || DEFAULT_SLUG;
+    const entry = Object.entries(templates).find(([key]) =>
+      key.endsWith(`/${resolvedSlug}.json`)
+    );
+    if (!entry) {
+      setError("테스트 데이터를 불러오지 못했습니다.");
+      return;
+    }
+    const data = entry[1].default;
+    setTemplate(data);
+    const firstId = data.questions?.[0]?.id ?? "";
+    setCurrentId(firstId);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!template) {
+      return;
+    }
     fetchGamesList()
       .then((games) => {
-        const match = games.find((game) => game.slug === psychoTemplate.slug);
+        const match = games.find((game) => game.slug === (template.game_slug || template.slug));
         if (match) {
           setGameId(match.id);
         }
@@ -118,10 +178,10 @@ export function PsychoTestPage() {
       .catch(() => {
         // 목록 실패는 진행을 막지 않음
       });
-  }, []);
+  }, [template]);
 
   useEffect(() => {
-    if (!result || !gameId || !sessionId) {
+    if (!result || !gameId || !sessionId || !template) {
       return;
     }
     if (lastResultSessionRef.current === sessionId) {
@@ -132,76 +192,104 @@ export function PsychoTestPage() {
       choice_id: sessionId,
       game_id: gameId,
       winner_item_id: null,
-      result_title: result.title,
+      result_title: result.main.label,
       result_code: "PSYCHO_TEST",
-      result_payload: { resultId: result.id, answers },
+      result_payload: {
+        template: template.slug,
+        main: result.main.id,
+        secondary: result.secondary.map((card) => card.id),
+        scores: result.scores,
+        points: result.points,
+        answers,
+        rules: template.scoring,
+      },
     }).catch(() => {
       // 결과 로그 실패는 진행을 막지 않음
     });
-  }, [answers, gameId, result, sessionId]);
+  }, [answers, gameId, result, sessionId, template]);
 
   const question = useMemo(
-    () => psychoTemplate.questions.find((item) => item.id === currentId) || null,
-    [currentId]
+    () => template?.questions.find((item) => item.id === currentId) || null,
+    [currentId, template]
   );
 
-  const totalQuestions = psychoTemplate.questions.length;
+  const totalQuestions = template?.questions.length ?? 0;
   const currentIndex = useMemo(() => {
-    const index = psychoTemplate.questions.findIndex((item) => item.id === currentId);
+    if (!template) {
+      return 0;
+    }
+    const index = template.questions.findIndex((item) => item.id === currentId);
     return index === -1 ? 0 : index + 1;
-  }, [currentId]);
+  }, [currentId, template]);
 
   const handleStart = () => {
+    if (!template) {
+      return;
+    }
     setStarted(true);
     setResult(null);
     setAnswers([]);
-    setCurrentId(psychoTemplate.questions[0]?.id ?? "");
+    setCurrentId(template.questions[0]?.id ?? "");
     void startSession();
   };
 
   const handleOptionSelect = (option: PsychoOption) => {
-    if (!question) {
+    if (!question || !template) {
       return;
     }
     setAnswers((prev) => [...prev, { questionId: question.id, optionId: option.id }]);
-    if (option.nextQuestionId) {
-      setCurrentId(option.nextQuestionId);
+    const nextId = option.nextQuestionId || getNextQuestionId(template, question.id);
+    if (nextId) {
+      setCurrentId(nextId);
       return;
     }
-    if (option.resultId) {
-      setResult(findResult(psychoTemplate, option.resultId));
-    }
+    setResult(resolveOutcome(template, [...answers, { questionId: question.id, optionId: option.id }]));
   };
 
   const handleRestart = () => {
+    if (!template) {
+      return;
+    }
     setResult(null);
     setAnswers([]);
-    setCurrentId(psychoTemplate.questions[0]?.id ?? "");
+    setCurrentId(template.questions[0]?.id ?? "");
   };
 
   return (
-    <div className="psycho-page">
+    <div className="major-arcana-page">
       {!started ? (
         <GameStartScreen
-          title={psychoTemplate.title}
-          description={psychoTemplate.description}
-          tags={psychoTemplate.tags.map((tag) => ({ label: tag.label }))}
+          title={template?.title || "심리테스트"}
+          description={template?.description || "테스트 데이터를 불러오는 중입니다."}
+          badge="TEST"
+          tags={(template?.tags || []).map((tag) => ({ label: tag.label }))}
+          media={<div className="game-start-art">🔮</div>}
           buttonLabel="테스트 시작"
           onStart={handleStart}
         />
+      ) : error ? (
+        <div className="psycho-card psycho-result">
+          <p>{error}</p>
+        </div>
       ) : result ? (
-        <section className="psycho-card psycho-result">
-          <div className="psycho-result-header">
-            <span className="psycho-badge">RESULT</span>
-            <h2>{result.title}</h2>
-            <p>{result.summary}</p>
+        <div className={`arcana-page arcana-${result.main.id}`}>
+          <div className="arcana-page-header">
+            <span className="arcana-page-badge">RESULT</span>
+            <div className="arcana-card-visual">
+              <div className="arcana-card-frame">
+              </div>
+            </div>
+            <h2>{result.main.label}</h2>
+            <ul className="arcana-page-list">
+              {result.main.keywords?.map((keyword) => (
+                <li key={keyword}>{keyword}</li>
+              ))}
+            </ul>
+            {result.main.summary ? (
+              <p className="arcana-page-summary">{result.main.summary}</p>
+            ) : null}
           </div>
-          <ul className="psycho-result-list">
-            {result.details.map((detail) => (
-              <li key={detail}>{detail}</li>
-            ))}
-          </ul>
-          <div className="psycho-actions">
+          <div className="arcana-page-actions">
             <button type="button" className="btn btn-primary" onClick={handleRestart}>
               다시 하기
             </button>
@@ -209,9 +297,9 @@ export function PsychoTestPage() {
               나가기
             </button>
           </div>
-        </section>
+        </div>
       ) : (
-        <section className="psycho-card">
+        <div className="psycho-card">
           <div className="psycho-progress">
             <span>
               {currentIndex} / {totalQuestions}
@@ -231,7 +319,7 @@ export function PsychoTestPage() {
               </button>
             ))}
           </div>
-        </section>
+        </div>
       )}
     </div>
   );

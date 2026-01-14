@@ -1,0 +1,171 @@
+.major-arcana-page {
+  min-height: calc(100dvh - var(--app-header-height));
+  padding: 1.5rem 1rem 2.5rem;
+  /* background-color: #c8a97e; */
+  --arcana-bg-image: url("../../assets/arcana/arcana_back.png");
+  background-image: var(--arcana-bg-image);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: top center;
+  font-family: "Cinzel", "Cormorant Garamond", "Noto Serif KR", serif;
+}
+
+.arcana-page {
+  --arcana-accent: #c9b9f2;
+  background: transparent;
+  border-radius: 18px;
+  padding: 1.1rem 1rem 1.4rem;
+  border: 1px solid rgba(74, 54, 34, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.arcana-card-visual {
+  display: flex;
+  justify-content: center;
+  margin: 0.8rem 0 0.4rem;
+}
+
+.arcana-card-frame {
+  width: 190px;
+  height: 260px;
+  border-radius: 22px;
+  background-color: rgba(255, 255, 255, 0.12);
+  background-image: var(--arcana-card-image);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arcana-card-emoji {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.arcana-page-header h2 {
+  margin: 0.4rem 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3a2b1d;
+}
+
+.arcana-page-header p {
+  margin: 0;
+  color: #4b3a2a;
+}
+
+.arcana-page-summary {
+  white-space: pre-line;
+  margin: 0.65rem 0 0;
+  color: #463526;
+}
+
+.arcana-page-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.4);
+  color: #5a3c1b;
+}
+
+.arcana-page-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  color: #3a2b1d;
+  font-weight: 600;
+}
+
+.arcana-page-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.arcana-page-actions .btn {
+  border-radius: 999px;
+  padding: 0.65rem 1.25rem;
+  font-weight: 700;
+  border: 1px solid rgba(74, 54, 34, 0.35);
+  background: rgba(255, 255, 255, 0.35);
+  color: #3a2b1d;
+}
+
+.arcana-page-actions .btn.btn-primary {
+  background: rgba(111, 83, 48, 0.85);
+  color: #fff7e6;
+  border-color: rgba(74, 54, 34, 0.6);
+}
+
+.arcana-fool {
+  --arcana-accent: #f2b705;
+  --arcana-card-image: url("../../assets/arcana/fool.png");
+}
+
+.arcana-magician {
+  --arcana-accent: #5aa9ff;
+  --arcana-card-image: url("../../assets/arcana/magician.png");
+}
+
+.arcana-priestess {
+  --arcana-accent: #7b6df2;
+  --arcana-card-image: url("../../assets/arcana/high_priestess.png");
+}
+
+.arcana-empress {
+  --arcana-accent: #f08ab2;
+  --arcana-card-image: url("../../assets/arcana/empress.png");
+}
+
+.arcana-emperor {
+  --arcana-accent: #d47c2e;
+  --arcana-card-image: url("../../assets/arcana/emperor.png");
+}
+
+.arcana-hierophant {
+  --arcana-accent: #38a27c;
+  --arcana-card-image: url("../../assets/arcana/hierophant.png");
+}
+
+.arcana-lovers {
+  --arcana-accent: #e05b78;
+  --arcana-card-image: url("../../assets/arcana/lovers.png");
+}
+
+.arcana-chariot {
+  --arcana-accent: #4a86c5;
+  --arcana-card-image: url("../../assets/arcana/chariot.png");
+}
+
+.arcana-strength {
+  --arcana-accent: #f39a4b;
+  --arcana-card-image: url("../../assets/arcana/strength.png");
+}
+
+.arcana-hermit {
+  --arcana-accent: #4f4f78;
+  --arcana-card-image: url("../../assets/arcana/hermit.png");
+}
+
+.arcana-justice {
+  --arcana-accent: #6c9b5f;
+  --arcana-card-image: url("../../assets/arcana/justice.png");
+}
+
+.arcana-world {
+  --arcana-accent: #50b6c7;
+  --arcana-card-image: url("../../assets/arcana/world.png");
+}

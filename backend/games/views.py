@@ -14,6 +14,7 @@ from .models import (
     GameChoiceLog,
     GameItem,
     GameItemSourceType,
+    TodayPick,
     GameEditRequest,
     GameEditRequestHistory,
     GameEditRequestStatus,
@@ -97,6 +98,28 @@ class GameListView(BaseAPIView):
         qs = Game.objects.filter(status="ACTIVE", visibility="PUBLIC")
         serializer = GameListSerializer(qs, many=True)
         return self.respond(data={"games": serializer.data})
+
+
+class TodayPickView(BaseAPIView):
+    api_name = "games.today_pick"
+
+    def get(self, request, *args, **kwargs):
+        picks = (
+            TodayPick.objects.filter(is_active=True)
+            .select_related("game")
+            .order_by("-picked_date", "-created_at")
+        )
+        if not picks.exists():
+            return self.respond(data={"picks": []})
+        ordered_games = []
+        seen = set()
+        for pick in picks:
+            if pick.game_id in seen:
+                continue
+            seen.add(pick.game_id)
+            ordered_games.append(pick.game)
+        serializer = GameListSerializer(ordered_games, many=True)
+        return self.respond(data={"picks": serializer.data})
         
 class GameDetailView(BaseAPIView):
     api_name = "games.detail"
@@ -622,6 +645,70 @@ class AdminGameListView(BaseAPIView):
         qs = Game.objects.all().order_by("-created_at")
         serializer = GameAdminListSerializer(qs, many=True)
         return self.respond(data={"games": serializer.data})
+
+
+class AdminTodayPickView(BaseAPIView):
+    api_name = "admin.today_pick"
+
+    def get(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        picks = (
+            TodayPick.objects.filter(is_active=True)
+            .select_related("game")
+            .order_by("-picked_date", "-created_at")
+        )
+        if not picks.exists():
+            return self.respond(data={"picks": []})
+        ordered_games = []
+        seen = set()
+        for pick in picks:
+            if pick.game_id in seen:
+                continue
+            seen.add(pick.game_id)
+            ordered_games.append(pick.game)
+        serializer = GameAdminListSerializer(ordered_games, many=True)
+        return self.respond(data={"picks": serializer.data})
+
+    def post(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        game_id = request.data.get("game_id")
+        if not game_id:
+            raise ValidationError({"game_id": "게임 ID가 필요합니다."})
+        is_active = request.data.get("is_active", True)
+        if isinstance(is_active, str):
+            is_active = is_active.lower() in ("true", "1", "yes", "y")
+        else:
+            is_active = bool(is_active)
+        game = get_object_or_404(Game, pk=game_id)
+        if is_active:
+            exists = TodayPick.objects.filter(game=game, is_active=True).exists()
+            if not exists:
+                TodayPick.objects.create(
+                    game=game,
+                    picked_date=timezone.localdate(),
+                    is_active=True,
+                    created_by=request.user,
+                )
+        else:
+            TodayPick.objects.filter(game=game, is_active=True).update(is_active=False)
+        picks = (
+            TodayPick.objects.filter(is_active=True)
+            .select_related("game")
+            .order_by("-picked_date", "-created_at")
+        )
+        ordered_games = []
+        seen = set()
+        for pick in picks:
+            if pick.game_id in seen:
+                continue
+            seen.add(pick.game_id)
+            ordered_games.append(pick.game)
+        serializer = GameAdminListSerializer(ordered_games, many=True)
+        return self.respond(data={"picks": serializer.data})
 
 
 class AdminGameEditRequestListView(BaseAPIView):

@@ -88,6 +88,21 @@ export async function fetchGamesList(): Promise<Game[]> {
   return games;
 }
 
+export async function fetchTodayPick(): Promise<Game[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ picks: GameListItemFromApi[] }>>("/games/today-pick/")
+  );
+  return (response.picks || []).map((pick) => ({
+    id: pick.id,
+    title: pick.title,
+    slug: pick.slug,
+    type: pick.type,
+    thumbnail: pick.thumbnail_image_url
+      ? resolveMediaUrl(pick.thumbnail_image_url)
+      : "",
+  }));
+}
+
 export async function fetchMyGames(): Promise<Game[]> {
   const response = await requestWithMeta(
     apiClient.get<ApiResponse<{ games: GameListItemFromApi[] }>>("/games/mine/")
@@ -113,6 +128,36 @@ export type AdminGame = {
   created_at: string;
   created_by: { id: number; name: string; email: string } | null;
 };
+
+export async function fetchAdminTodayPick(): Promise<AdminGame[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ picks: AdminGame[] }>>("/games/admin/today-pick/")
+  );
+  return (response.picks || []).map((pick) => ({
+    ...pick,
+    thumbnail_image_url: pick.thumbnail_image_url
+      ? resolveMediaUrl(pick.thumbnail_image_url)
+      : "",
+  }));
+}
+
+export async function setAdminTodayPick(
+  gameId: number,
+  isActive: boolean
+): Promise<AdminGame[]> {
+  const response = await requestWithMeta(
+    apiClient.post<ApiResponse<{ picks: AdminGame[] }>>("/games/admin/today-pick/", {
+      game_id: gameId,
+      is_active: isActive,
+    })
+  );
+  return (response.picks || []).map((pick) => ({
+    ...pick,
+    thumbnail_image_url: pick.thumbnail_image_url
+      ? resolveMediaUrl(pick.thumbnail_image_url)
+      : "",
+  }));
+}
 
 export async function fetchAdminGames(): Promise<AdminGame[]> {
   const response = await requestWithMeta(

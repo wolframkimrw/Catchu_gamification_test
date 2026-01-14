@@ -5,6 +5,7 @@
 - 게임별 페이지는 `frontend/src/pages/games/`에 둔다.
 - 공용(비게임) 페이지는 `frontend/src/pages/common/`에 둔다.
 - 메인/게임/공용을 같은 폴더에 섞지 않는다.
+- 게임 페이지 구조는 `app-shell` 안의 `app-main` 내부에서 시작하고, 루트는 `게임명-page` 클래스로만 둔다. 내부 요소 외에 구조 래퍼를 추가하지 않는다.
 
 ## 컴포넌트
 - 재사용 UI 컴포넌트는 `frontend/src/components/`에 둔다.

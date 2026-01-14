@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../games/worldcup.css";
 import type { Game } from "../../api/games";
-import { fetchGamesList } from "../../api/games";
-import { LOCAL_WORLDCUP_GAME } from "../../data/localWorldcup";
+import { fetchGamesList, fetchTodayPick } from "../../api/games";
 
 
 const categories = [
@@ -23,15 +22,10 @@ const categories = [
 export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
+  const [todayPick, setTodayPick] = useState<Game[]>([]);
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
   const psychoRef = useRef<HTMLDivElement | null>(null);
-  const todayPickGame: Game = {
-    id: 0,
-    title: "오늘의 사주 운세",
-    type: "FORTUNE_TEST",
-    thumbnail: "",
-  };
 
   useEffect(() => {
     fetchGamesList()
@@ -42,14 +36,16 @@ export function WorldcupListPage() {
       .catch(() => {
         // 실패하면 하드코딩 데이터 사용
       });
+    fetchTodayPick()
+      .then((picks) => setTodayPick(picks))
+      .catch(() => {
+        setTodayPick([]);
+      });
   }, []);
 
   const catalogGames = useMemo(() => apiGames, [apiGames]);
 
-  const worldcupGames = useMemo(
-    () => [LOCAL_WORLDCUP_GAME, ...worldcupApiGames],
-    [worldcupApiGames]
-  );
+  const worldcupGames = useMemo(() => worldcupApiGames, [worldcupApiGames]);
   const fortuneGames = catalogGames.filter(
     (game) => game.type === "FORTUNE_TEST"
   );
@@ -86,6 +82,19 @@ export function WorldcupListPage() {
       link: "/saju",
     };
   }, [fortuneGames, worldcupGames]);
+
+  const resolveGameLink = (game: Game) => {
+    if (game.type === "WORLD_CUP") {
+      return `/worldcup/${game.id}/play`;
+    }
+    if (game.type === "FORTUNE_TEST") {
+      return "/saju";
+    }
+    if (game.type === "PSYCHOLOGICAL" || game.type === "PSYCHO_TEST") {
+      return `/psycho/${game.slug || "major-arcana"}`;
+    }
+    return "/";
+  };
 
 
   return (
@@ -135,9 +144,9 @@ export function WorldcupListPage() {
               <CategorySection
                 title="오늘의 추천"
                 variant="small"
-                games={[todayPickGame]}
+                games={todayPick}
                 fallbackLabel="추천 준비중"
-                onCardClick={() => "/saju"}
+                onCardClick={todayPick.length > 0 ? resolveGameLink : null}
                 getMeta={() => ({})}
               />
             </section>
@@ -169,7 +178,7 @@ export function WorldcupListPage() {
                 variant="small"
                 games={resolvedPsychoGames}
                 fallbackLabel="심리테스트 준비중"
-                onCardClick={null}
+                onCardClick={(game) => `/psycho/${game.slug || "major-arcana"}`}
                 getMeta={() => ({})}
               />
             </div>
@@ -260,10 +269,4 @@ function CategorySection({
     </section>
   );
 }
-const psychoFallbackGames: Game[] = Array.from({ length: 10 }, (_, index) => ({
-  id: 1000 + index,
-  title: `심리테스트 ${index + 1}`,
-  type: "PSYCHOLOGICAL",
-  thumbnail:
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80&auto=format&fit=crop",
-}));
+const psychoFallbackGames: Game[] = [];

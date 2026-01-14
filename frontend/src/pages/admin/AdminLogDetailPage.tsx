@@ -276,49 +276,61 @@ export function AdminLogDetailPage() {
 
           <section className="admin-item-section">
             <div className="admin-item-header">
-              <h3>게임 시작 로그</h3>
+              <h3>로그</h3>
+            </div>
+            <div className="admin-log-tabs">
+              <button
+                type="button"
+                className={activeTab === "choices" ? "active" : ""}
+                onClick={() => setActiveTab("choices")}
+              >
+                게임 시작 로그
+              </button>
+              <button
+                type="button"
+                className={activeTab === "picks" ? "active" : ""}
+                onClick={() => setActiveTab("picks")}
+              >
+                월드컵 픽 로그
+              </button>
             </div>
           </section>
-          {totalStarts === 0 ? (
-            <div className="admin-games-empty">게임 시작 로그가 없습니다.</div>
-          ) : (
-            <div className="admin-log-list">
-              {choiceLogs.slice(0, visibleCounts.choices).map((log) => (
-                <div key={log.id} className="admin-log-card admin-log-card-compact">
-                  <div className="admin-log-lines">
-                    <div className="admin-log-line">
-                      <span className="admin-log-label">시작날짜</span>
-                      <span className="admin-log-value">{formatDateTime(log.started_at)}</span>
-                    </div>
-                    <div className="admin-log-line">
-                      <span className="admin-log-label">이름</span>
-                      <span className="admin-log-value">{log.user ? log.user.name : "익명"}</span>
-                    </div>
-                    <div className="admin-log-line">
-                      <span className="admin-log-label">IP</span>
-                      <span className="admin-log-value">{log.ip_address || "-"}</span>
+
+          {activeTab === "choices" ? (
+            totalStarts === 0 ? (
+              <div className="admin-games-empty">게임 시작 로그가 없습니다.</div>
+            ) : (
+              <div className="admin-log-list">
+                {choiceLogs.slice(0, visibleCounts.choices).map((log) => (
+                  <div key={log.id} className="admin-log-card admin-log-card-compact">
+                    <div className="admin-log-lines">
+                      <div className="admin-log-line">
+                        <span className="admin-log-label">시작날짜</span>
+                        <span className="admin-log-value">{formatDateTime(log.started_at)}</span>
+                      </div>
+                      <div className="admin-log-line">
+                        <span className="admin-log-label">이름</span>
+                        <span className="admin-log-value">{log.user ? log.user.name : "익명"}</span>
+                      </div>
+                      <div className="admin-log-line">
+                        <span className="admin-log-label">IP</span>
+                        <span className="admin-log-value">{log.ip_address || "-"}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {choiceLogs.length > visibleCounts.choices ? (
-                <button
-                  type="button"
-                  className="admin-log-more"
-                  onClick={() => handleShowMore("choices", choiceLogs.length)}
-                >
-                  더보기
-                </button>
-              ) : null}
-            </div>
-          )}
-
-          <section className="admin-item-section">
-            <div className="admin-item-header">
-              <h3>월드컵 픽 로그</h3>
-            </div>
-          </section>
-          {pickSessions.length === 0 ? (
+                ))}
+                {choiceLogs.length > visibleCounts.choices ? (
+                  <button
+                    type="button"
+                    className="admin-log-more"
+                    onClick={() => handleShowMore("choices", choiceLogs.length)}
+                  >
+                    더보기
+                  </button>
+                ) : null}
+              </div>
+            )
+          ) : pickSessions.length === 0 ? (
             <div className="admin-games-empty">월드컵 픽 로그가 없습니다.</div>
           ) : (
             <div className="admin-log-list">
@@ -339,9 +351,6 @@ export function AdminLogDetailPage() {
                       <span className="admin-log-value">{session.picks.length}판</span>
                     </div>
                   </div>
-                  <div className="admin-log-sub">
-                    <span className="admin-log-helper">세부 보기</span>
-                  </div>
                 </button>
               ))}
               {pickSessions.length > visibleCounts.picks ? (
@@ -355,7 +364,7 @@ export function AdminLogDetailPage() {
               ) : null}
             </div>
           )}
-          {activeModalSession ? (
+          {activeTab === "picks" && activeModalSession ? (
             <div className="admin-modal-backdrop" onClick={() => setModalChoiceId(null)}>
               <div
                 className="admin-modal"
@@ -379,7 +388,7 @@ export function AdminLogDetailPage() {
                     .slice()
                     .sort((a, b) => a.step_index - b.step_index)
                     .map((pick) => (
-                      <div key={pick.id} className="admin-modal-row">
+                      <div key={pick.id}>
                         <div className="admin-modal-step">판 {pick.step_index + 1}</div>
                         <div className="admin-pick-row admin-pick-row-large">
                           <span

@@ -52,7 +52,7 @@ export function AdminShell({
               결과/로그
             </Link>
             <Link className={active === "users" ? "active" : ""} to="/admin/users">
-              유저 프로필
+              유저
             </Link>
           </nav>
         ) : null}

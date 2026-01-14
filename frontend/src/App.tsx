@@ -17,6 +17,7 @@ import { AdminGameDetailPage } from "./pages/admin/AdminGameDetailPage";
 import { AdminLogsPage } from "./pages/admin/AdminLogsPage";
 import { AdminLogDetailPage } from "./pages/admin/AdminLogDetailPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
 import { useAuthUser } from "./hooks/useAuthUser";
 
 function Layout() {
@@ -156,6 +157,7 @@ function Layout() {
             <Route path="/admin/logs" element={<AdminLogsPage />} />
             <Route path="/admin/logs/:gameId" element={<AdminLogDetailPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/users/:userId" element={<AdminUserDetailPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

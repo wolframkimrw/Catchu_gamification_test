@@ -2,11 +2,6 @@
 import { apiClient, requestWithMeta, resolveMediaUrl } from "./http";
 import type { ApiResponse } from "./http";
 
-export interface Topic {
-  id: number;
-  name: string;
-}
-
 export interface Game {
   id: number;
   title: string;
@@ -14,7 +9,6 @@ export interface Game {
   slug?: string;
   type: string;
   thumbnail: string;
-  topic: Topic | null;
 }
 
 export interface GameItem {
@@ -30,7 +24,6 @@ type GameDetailFromApi = {
   description?: string;
   slug?: string;
   type: string;
-  topic: Topic | null;
   thumbnail_image_url?: string;
   items?: GameItem[];
 };
@@ -40,7 +33,6 @@ type GameListItemFromApi = {
   title: string;
   slug?: string;
   type: string;
-  topic: Topic | null;
   thumbnail_image_url?: string;
 };
 
@@ -62,7 +54,7 @@ export async function fetchGameDetail(
     throw new Error("게임 정보를 불러올 수 없습니다.");
   }
 
-  // API 응답: { game: { id, title, type, thumbnail_image_url, topic, items } }
+  // API 응답: { game: { id, title, type, thumbnail_image_url, items } }
   const game = response.game;
   const normalizedItems = Array.isArray(game.items) ? game.items : [];
   const resolvedItems = normalizedItems.map((item) => ({
@@ -91,7 +83,6 @@ export async function fetchGamesList(): Promise<Game[]> {
       title: g.title,
       slug: g.slug,
       type: g.type,
-      topic: g.topic,
       thumbnail: g.thumbnail_image_url ? resolveMediaUrl(g.thumbnail_image_url) : "",
     })) ?? [];
   return games;
@@ -107,7 +98,6 @@ export async function fetchMyGames(): Promise<Game[]> {
       title: g.title,
       slug: g.slug,
       type: g.type,
-      topic: g.topic,
       thumbnail: g.thumbnail_image_url ? resolveMediaUrl(g.thumbnail_image_url) : "",
     })) ?? [];
   return games;
@@ -169,7 +159,6 @@ export type AdminGameDetail = {
   type: string;
   status: string;
   visibility: string;
-  topic: { id: number; name: string } | null;
   thumbnail_image_url: string;
   items: { id: number; name: string; file_name: string; sort_order: number; is_active: boolean }[];
   created_by: { id: number; name: string; email: string } | null;
@@ -392,45 +381,6 @@ export async function fetchGameJsonFile(path: string): Promise<Record<string, un
   return response.content || {};
 }
 
-export type AdminTopic = {
-  id: number;
-  name: string;
-  slug: string;
-  sort_order: number;
-  is_active: boolean;
-};
-
-export async function fetchAdminTopics(): Promise<AdminTopic[]> {
-  const response = await requestWithMeta(
-    apiClient.get<ApiResponse<{ topics: AdminTopic[] }>>("/games/admin/topics/")
-  );
-  return response.topics || [];
-}
-
-export async function updateAdminTopic(params: {
-  topic_id: number;
-  name?: string;
-  sort_order?: number;
-  is_active?: boolean;
-}): Promise<{ id: number; name: string; is_active: boolean }> {
-  const response = await requestWithMeta(
-    apiClient.post<ApiResponse<{ id: number; name: string; is_active: boolean }>>(
-      "/games/admin/topics/update/",
-      params
-    )
-  );
-  return response;
-}
-
-export async function deleteAdminTopic(topicId: number): Promise<{ deleted: boolean }> {
-  const response = await requestWithMeta(
-    apiClient.delete<ApiResponse<{ deleted: boolean }>>(
-      `/games/admin/topics/${topicId}/delete/`
-    )
-  );
-  return response;
-}
-
 export type AdminChoiceLog = {
   id: number;
   game: { id: number; title: string };
@@ -444,6 +394,8 @@ export type AdminPickLog = {
   id: number;
   choice_id: number;
   game: { id: number; title: string };
+  left_item: { id: number; name: string } | null;
+  right_item: { id: number; name: string } | null;
   selected_item: { id: number; name: string } | null;
   step_index: number;
   created_at: string;
@@ -493,25 +445,10 @@ export async function createWorldcupGame(formData: FormData): Promise<{
   return response;
 }
 
-export async function fetchWorldcupTopics(): Promise<Topic[]> {
-  const response = await requestWithMeta(
-    apiClient.get<ApiResponse<{ topics: Topic[] }>>("/games/worldcup/topics/")
-  );
-  return response.topics || [];
-}
-
-export async function createWorldcupTopic(name: string): Promise<Topic> {
-  const response = await requestWithMeta(
-    apiClient.post<ApiResponse<Topic>>("/games/worldcup/topics/create/", { name })
-  );
-  return response;
-}
-
 export type WorldcupDraftPayload = {
   id?: number;
   title?: string;
   description?: string;
-  parent_topic_id?: string;
   thumbnail_url?: string;
   items?: { name?: string; image_url?: string }[];
 };

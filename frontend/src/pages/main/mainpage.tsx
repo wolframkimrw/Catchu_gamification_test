@@ -34,7 +34,6 @@ export function WorldcupListPage() {
     title: "오늘의 사주 운세",
     type: "FORTUNE_TEST",
     thumbnail: "",
-    topic: null,
   };
 
   useEffect(() => {
@@ -344,5 +343,4 @@ const psychoFallbackGames: Game[] = Array.from({ length: 10 }, (_, index) => ({
   type: "PSYCHOLOGICAL",
   thumbnail:
     "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80&auto=format&fit=crop",
-  topic: null,
 }));

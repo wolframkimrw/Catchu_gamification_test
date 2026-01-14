@@ -2,14 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./worldcup-create.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
-import {
-  createWorldcupGame,
-  createWorldcupTopic,
-  fetchWorldcupDraft,
-  fetchWorldcupTopics,
-  saveWorldcupDraft,
-} from "../../api/games";
-import type { Topic } from "../../api/games";
+import { createWorldcupGame, fetchWorldcupDraft, saveWorldcupDraft } from "../../api/games";
 import { useAuthUser } from "../../hooks/useAuthUser";
 
 type WorldcupItemForm = {
@@ -35,10 +28,6 @@ export function WorldcupCreatePage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [parentTopicId, setParentTopicId] = useState("");
-  const [newTopicName, setNewTopicName] = useState("");
-  const [isCreatingTopic, setIsCreatingTopic] = useState(false);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [items, setItems] = useState<WorldcupItemForm[]>([
@@ -51,14 +40,6 @@ export function WorldcupCreatePage() {
   const { user } = useAuthUser();
   const draftTimerRef = useRef<number | null>(null);
   const itemsRef = useRef(items);
-
-  useEffect(() => {
-    fetchWorldcupTopics()
-      .then((data) => setTopics(data))
-      .catch(() => {
-        // 주제 목록 실패는 폼 진행을 막지 않음
-      });
-  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -77,9 +58,6 @@ export function WorldcupCreatePage() {
         }
         if (draft.description) {
           setDescription(draft.description);
-        }
-        if (draft.parent_topic_id) {
-          setParentTopicId(draft.parent_topic_id);
         }
         if (draft.thumbnail_url) {
           setThumbnailUrl(resolveMediaUrl(draft.thumbnail_url));
@@ -185,9 +163,6 @@ export function WorldcupCreatePage() {
       if (description.trim()) {
         formData.append("description", description.trim());
       }
-      if (parentTopicId && parentTopicId !== "new") {
-        formData.append("parent_topic_id", parentTopicId);
-      }
       if (thumbnail) {
         formData.append("thumbnail", thumbnail);
       } else if (thumbnailUrl) {
@@ -222,30 +197,7 @@ export function WorldcupCreatePage() {
         window.clearTimeout(draftTimerRef.current);
       }
     };
-  }, [title, description, parentTopicId, thumbnail, thumbnailUrl, items, user, isSubmitting]);
-
-  const handleCreateTopic = async () => {
-    if (!newTopicName.trim()) {
-      setFormError("새 주제명을 입력해 주세요.");
-      return;
-    }
-    setFormError(null);
-    setIsCreatingTopic(true);
-    try {
-      const topic = await createWorldcupTopic(newTopicName.trim());
-      setTopics((prev) => [...prev, topic]);
-      setParentTopicId(String(topic.id));
-      setNewTopicName("");
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setFormError(err.meta.message || "주제 생성에 실패했습니다.");
-      } else {
-        setFormError("주제 생성에 실패했습니다.");
-      }
-    } finally {
-      setIsCreatingTopic(false);
-    }
-  };
+  }, [title, description, thumbnail, thumbnailUrl, items, user, isSubmitting]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -260,9 +212,6 @@ export function WorldcupCreatePage() {
     formData.append("title", title.trim());
     if (description.trim()) {
       formData.append("description", description.trim());
-    }
-    if (parentTopicId.trim() && parentTopicId !== "new") {
-      formData.append("parent_topic_id", parentTopicId.trim());
     }
     if (thumbnail) {
       formData.append("thumbnail", thumbnail);
@@ -301,7 +250,7 @@ export function WorldcupCreatePage() {
     <div className="worldcup-create-page">
       <header className="worldcup-create-header">
         <h1>월드컵 만들기</h1>
-        <p>주제와 아이템을 입력하면 바로 월드컵이 만들어집니다.</p>
+        <p>정보와 아이템을 입력하면 바로 월드컵이 만들어집니다.</p>
       </header>
 
       <form className="worldcup-create-form" onSubmit={handleSubmit}>
@@ -326,39 +275,6 @@ export function WorldcupCreatePage() {
             onChange={(event) => setDescription(event.target.value)}
           />
         </label>
-
-        <label className="worldcup-create-field">
-          <span>주제 선택 (선택)</span>
-          <select
-            value={parentTopicId}
-            onChange={(event) => setParentTopicId(event.target.value)}
-          >
-            <option value="">선택 안 함</option>
-            {topics.map((topic) => (
-              <option key={topic.id} value={topic.id}>
-                {topic.name}
-              </option>
-            ))}
-            <option value="new">새로 만들기...</option>
-          </select>
-        </label>
-
-        {parentTopicId === "new" ? (
-          <div className="worldcup-create-new-topic">
-            <label>
-              <span>새 주제명</span>
-              <input
-                type="text"
-                placeholder="예: 라면"
-                value={newTopicName}
-                onChange={(event) => setNewTopicName(event.target.value)}
-              />
-            </label>
-            <button type="button" onClick={handleCreateTopic} disabled={isCreatingTopic}>
-              {isCreatingTopic ? "생성 중..." : "주제 만들기"}
-            </button>
-          </div>
-        ) : null}
 
         <label className="worldcup-create-field">
           <span>썸네일 (선택)</span>

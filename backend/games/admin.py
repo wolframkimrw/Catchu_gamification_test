@@ -4,7 +4,6 @@ from django.contrib import admin
 # backend/games/admin.py
 from django.contrib import admin
 from .models import (
-    WorldcupTopic,
     Game,
     GameItem,
     GameChoiceLog,
@@ -14,7 +13,6 @@ from .models import (
     BannerClickLog,
 )
 
-admin.site.register(WorldcupTopic)
 admin.site.register(Game)
 admin.site.register(GameItem)
 admin.site.register(GameChoiceLog)

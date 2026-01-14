@@ -19,7 +19,6 @@ export const LOCAL_WORLDCUP_GAME: Game = {
   title: "라면 월드컵",
   type: "WORLD_CUP",
   thumbnail: ramenThumb,
-  topic: null,
 };
 
 export const getLocalWorldcupDetail = (): GameDetailData => {

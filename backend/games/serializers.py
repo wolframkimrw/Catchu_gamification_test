@@ -7,26 +7,18 @@ from .models import (
     GameResult,
     GameEditRequest,
     WorldcupPickLog,
-    WorldcupTopic,
 )
 
 
 class GameListSerializer(serializers.ModelSerializer):
-    topic = serializers.SerializerMethodField()
     thumbnail_image_url = serializers.CharField()
 
     class Meta:
         model = Game
-        fields = ["id", "title", "slug", "type", "topic", "thumbnail_image_url"]
-
-    def get_topic(self, obj):
-        if obj.parent_topic:
-            return {"id": obj.parent_topic.id, "name": obj.parent_topic.name}
-        return None
+        fields = ["id", "title", "slug", "type", "thumbnail_image_url"]
 
 
 class GameDetailSerializer(serializers.ModelSerializer):
-    topic = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
     thumbnail_image_url = serializers.CharField()
 
@@ -38,15 +30,9 @@ class GameDetailSerializer(serializers.ModelSerializer):
             "description",
             "slug",
             "type",
-            "topic",
             "thumbnail_image_url",
             "items",
         ]
-
-    def get_topic(self, obj):
-        if obj.parent_topic:
-            return {"id": obj.parent_topic.id, "name": obj.parent_topic.name}
-        return None
 
     def get_items(self, obj):
         items = obj.items.filter(is_active=True)
@@ -57,22 +43,6 @@ class GameItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameItem
         fields = ["id", "name", "file_name", "sort_order"]
-
-
-class WorldcupTopicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorldcupTopic
-        fields = ["id", "name"]
-
-
-class WorldcupTopicCreateSerializer(serializers.Serializer):
-    name = serializers.CharField()
-
-    def validate_name(self, value):
-        cleaned = value.strip()
-        if not cleaned:
-            raise serializers.ValidationError("주제명을 입력해 주세요.")
-        return cleaned
 
 
 class GameAdminListSerializer(serializers.ModelSerializer):
@@ -106,7 +76,6 @@ class AdminGameItemSerializer(serializers.ModelSerializer):
 
 
 class AdminGameDetailSerializer(serializers.ModelSerializer):
-    topic = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
     thumbnail_image_url = serializers.CharField()
     created_by = serializers.SerializerMethodField()
@@ -121,16 +90,10 @@ class AdminGameDetailSerializer(serializers.ModelSerializer):
             "type",
             "status",
             "visibility",
-            "topic",
             "thumbnail_image_url",
             "items",
             "created_by",
         ]
-
-    def get_topic(self, obj):
-        if obj.parent_topic:
-            return {"id": obj.parent_topic.id, "name": obj.parent_topic.name}
-        return None
 
     def get_items(self, obj):
         items = obj.items.all().order_by("sort_order", "id")
@@ -141,12 +104,6 @@ class AdminGameDetailSerializer(serializers.ModelSerializer):
         if not user:
             return None
         return {"id": user.id, "name": user.name, "email": user.email}
-
-
-class AdminWorldcupTopicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorldcupTopic
-        fields = ["id", "name", "slug", "sort_order", "is_active"]
 
 
 class AdminGameChoiceLogSerializer(serializers.ModelSerializer):
@@ -170,13 +127,34 @@ class AdminWorldcupPickLogSerializer(serializers.ModelSerializer):
     game = serializers.SerializerMethodField()
     choice_id = serializers.IntegerField()
     selected_item = serializers.SerializerMethodField()
+    left_item = serializers.SerializerMethodField()
+    right_item = serializers.SerializerMethodField()
 
     class Meta:
         model = WorldcupPickLog
-        fields = ["id", "choice_id", "game", "selected_item", "step_index", "created_at"]
+        fields = [
+            "id",
+            "choice_id",
+            "game",
+            "left_item",
+            "right_item",
+            "selected_item",
+            "step_index",
+            "created_at",
+        ]
 
     def get_game(self, obj):
         return {"id": obj.game_id, "title": obj.game.title}
+
+    def get_left_item(self, obj):
+        if not obj.left_item:
+            return None
+        return {"id": obj.left_item.id, "name": obj.left_item.name}
+
+    def get_right_item(self, obj):
+        if not obj.right_item:
+            return None
+        return {"id": obj.right_item.id, "name": obj.right_item.name}
 
     def get_selected_item(self, obj):
         if not obj.selected_item:

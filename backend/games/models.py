@@ -16,25 +16,6 @@ class TimeStampedModel(models.Model):
 
 
 # --------------------------------------------------
-# WorldcupTopic (worldcup_topic)
-# --------------------------------------------------
-class WorldcupTopic(TimeStampedModel):
-    name = models.CharField(max_length=50, verbose_name="주제명")
-    slug = models.SlugField(max_length=50, unique=True, verbose_name="URL 식별자")
-    sort_order = models.IntegerField(default=0, verbose_name="정렬 순서")
-    is_active = models.BooleanField(default=True, verbose_name="활성 여부")
-
-    class Meta:
-        db_table = "gaimification_worldcup_topic"
-        ordering = ["sort_order", "id"]
-        verbose_name = "월드컵 주제"
-        verbose_name_plural = "월드컵 주제"
-
-    def __str__(self) -> str:
-        return self.name
-
-
-# --------------------------------------------------
 # Game (게임 정의 / blueprint)
 # --------------------------------------------------
 class GameType(models.TextChoices):
@@ -74,15 +55,6 @@ class Game(TimeStampedModel):
         choices=GameStatus.choices,
         default=GameStatus.DRAFT,
         verbose_name="상태",
-    )
-
-    parent_topic = models.ForeignKey(
-        WorldcupTopic,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="games",
-        verbose_name="월드컵 주제",
     )
 
     created_by = models.ForeignKey(

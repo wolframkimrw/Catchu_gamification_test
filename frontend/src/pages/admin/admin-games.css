@@ -857,6 +857,17 @@
   gap: 0.6rem;
 }
 
+.admin-log-more {
+  border: 1px solid #d6d9e6;
+  background: #fff;
+  color: #1b1c1f;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
 .admin-log-row {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
@@ -866,6 +877,175 @@
   border-radius: 12px;
   border: 1px solid #e4e6f1;
   font-size: 0.9rem;
+}
+
+.admin-log-header {
+  background: #f5f6fb;
+  font-weight: 700;
+  color: #434654;
+}
+
+.admin-log-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e4e6f1;
+  background: #fff;
+}
+
+.admin-log-card-compact {
+  gap: 0.3rem;
+}
+
+.admin-log-card-button {
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-log-card-button:focus-visible {
+  outline: 2px solid #1b1c1f;
+  outline-offset: 2px;
+}
+
+.admin-log-lines {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.admin-log-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.admin-log-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8a8f9d;
+}
+
+.admin-log-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1b1c1f;
+  text-align: right;
+}
+
+.admin-log-result {
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-log-detail-list {
+  display: grid;
+  gap: 0.35rem;
+  border-top: 1px dashed #e4e6f1;
+  padding-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #4a4f5c;
+}
+
+.admin-log-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.admin-log-detail-label {
+  font-weight: 600;
+  color: #5a5e6b;
+}
+
+.admin-log-detail-value {
+  font-weight: 600;
+  color: #1b1c1f;
+  text-align: right;
+}
+
+.admin-log-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e4e6f1;
+  background: #fff;
+}
+
+.admin-log-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-log-summary strong {
+  font-size: 1rem;
+  color: #1b1c1f;
+}
+
+.admin-log-summary span {
+  font-size: 0.85rem;
+  color: #6a6d77;
+}
+
+.admin-rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.admin-rank-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #e4e6f1;
+  background: #fff;
+}
+
+.admin-rank-order {
+  font-weight: 700;
+  color: #1b1c1f;
+  width: 1.5rem;
+}
+
+.admin-rank-media {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f2f3f8;
+  border: 1px solid #e4e6f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-rank-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-rank-fallback {
+  font-weight: 700;
+  color: #8a8f9d;
+  font-size: 0.7rem;
+}
+
+.admin-rank-name {
+  font-weight: 600;
+  color: #1b1c1f;
+}
+
+.admin-rank-rate {
+  font-weight: 700;
+  color: #1b1c1f;
 }
 
 .admin-item-form {

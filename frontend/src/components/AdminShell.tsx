@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuthUser } from "../hooks/useAuthUser";
 import "./AdminShell.css";
 
-type AdminTabKey = "games" | "topics" | "logs" | "users" | "requests";
+type AdminTabKey = "games" | "logs" | "users" | "requests";
 
 type AdminShellProps = {
   active: AdminTabKey;
@@ -47,9 +47,6 @@ export function AdminShell({
             </Link>
             <Link className={active === "requests" ? "active" : ""} to="/admin/requests">
               수정 요청
-            </Link>
-            <Link className={active === "topics" ? "active" : ""} to="/admin/topics">
-              월드컵 주제
             </Link>
             <Link className={active === "logs" ? "active" : ""} to="/admin/logs">
               결과/로그

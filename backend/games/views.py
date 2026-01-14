@@ -23,7 +23,6 @@ from .models import (
     GameVisibility,
     WorldcupDraft,
     WorldcupPickLog,
-    WorldcupTopic,
 )
 from .serializers import (
     AdminGameEditRequestSerializer,
@@ -33,14 +32,11 @@ from .serializers import (
     AdminGameChoiceLogSerializer,
     AdminGameResultSerializer,
     AdminWorldcupPickLogSerializer,
-    AdminWorldcupTopicSerializer,
     GameListSerializer,
     GameDetailSerializer,
     GameChoiceLogCreateSerializer,
     GameResultCreateSerializer,
     WorldcupPickLogCreateSerializer,
-    WorldcupTopicCreateSerializer,
-    WorldcupTopicSerializer,
 )
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
@@ -207,99 +203,6 @@ def _require_staff(view, request):
     return None
 
 
-class WorldcupTopicListView(BaseAPIView):
-    api_name = "games.worldcup.topics"
-
-    def get(self, request, *args, **kwargs):
-        qs = WorldcupTopic.objects.filter(is_active=True).order_by("sort_order", "id")
-        serializer = WorldcupTopicSerializer(qs, many=True)
-        return self.respond(data={"topics": serializer.data})
-
-
-class WorldcupTopicCreateView(BaseAPIView):
-    api_name = "games.worldcup.topics.create"
-
-    def _build_unique_slug(self, name: str) -> str:
-        base = slugify(name) or "topic"
-        while True:
-            suffix = uuid.uuid4().hex[:6]
-            slug = f"{base}-{suffix}"
-            if not WorldcupTopic.objects.filter(slug=slug).exists():
-                return slug
-
-    def post(self, request, *args, **kwargs):
-        serializer = WorldcupTopicCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        name = serializer.validated_data["name"]
-        slug = self._build_unique_slug(name)
-        topic = WorldcupTopic.objects.create(
-            name=name,
-            slug=slug,
-            sort_order=0,
-            is_active=True,
-        )
-        return self.respond(
-            data={"id": topic.id, "name": topic.name},
-            status_code=201,
-        )
-
-
-class AdminWorldcupTopicListView(BaseAPIView):
-    api_name = "admin.topics.list"
-
-    def get(self, request, *args, **kwargs):
-        denied = _require_staff(self, request)
-        if denied:
-            return denied
-        qs = WorldcupTopic.objects.all().order_by("sort_order", "id")
-        serializer = AdminWorldcupTopicSerializer(qs, many=True)
-        return self.respond(data={"topics": serializer.data})
-
-
-class AdminWorldcupTopicUpdateView(BaseAPIView):
-    api_name = "admin.topics.update"
-
-    def post(self, request, *args, **kwargs):
-        denied = _require_staff(self, request)
-        if denied:
-            return denied
-        topic_id = request.data.get("topic_id")
-        if not topic_id:
-            raise ValidationError({"topic_id": "주제 ID가 필요합니다."})
-        topic = get_object_or_404(WorldcupTopic, pk=topic_id)
-        updates = []
-        name = request.data.get("name")
-        if name is not None:
-            cleaned = str(name).strip()
-            if not cleaned:
-                raise ValidationError({"name": "주제명을 입력해 주세요."})
-            topic.name = cleaned
-            updates.append("name")
-        is_active = request.data.get("is_active")
-        if is_active is not None:
-            topic.is_active = bool(is_active) if isinstance(is_active, bool) else str(is_active).lower() == "true"
-            updates.append("is_active")
-        sort_order = request.data.get("sort_order")
-        if sort_order is not None:
-            topic.sort_order = int(sort_order)
-            updates.append("sort_order")
-        if updates:
-            topic.save(update_fields=updates)
-        return self.respond(data={"id": topic.id, "name": topic.name, "is_active": topic.is_active})
-
-
-class AdminWorldcupTopicDeleteView(BaseAPIView):
-    api_name = "admin.topics.delete"
-
-    def delete(self, request, topic_id: int, *args, **kwargs):
-        denied = _require_staff(self, request)
-        if denied:
-            return denied
-        topic = get_object_or_404(WorldcupTopic, pk=topic_id)
-        topic.delete()
-        return self.respond(data={"deleted": True})
-
-
 class WorldcupCreateView(BaseAPIView):
     api_name = "games.worldcup.create"
     parser_classes = (MultiPartParser, FormParser)
@@ -376,11 +279,6 @@ class WorldcupCreateView(BaseAPIView):
         if not title:
             raise ValidationError({"title": "게임 제목을 입력해 주세요."})
         description = (request.data.get("description") or "").strip()
-        parent_topic_id = request.data.get("parent_topic_id")
-        parent_topic = None
-        if parent_topic_id:
-            parent_topic = get_object_or_404(WorldcupTopic, pk=parent_topic_id)
-
         items = self._parse_items(request)
         if len(items) < 2:
             raise ValidationError({"items": "아이템은 최소 2개 필요합니다."})
@@ -403,7 +301,6 @@ class WorldcupCreateView(BaseAPIView):
                 slug=slug,
                 type="WORLD_CUP",
                 status="ACTIVE",
-                parent_topic=parent_topic,
                 created_by=request.user if request.user.is_authenticated else None,
                 visibility="PRIVATE",
                 thumbnail_image_url="",
@@ -519,7 +416,6 @@ class WorldcupDraftView(BaseAPIView):
         payload = {
             "title": (request.data.get("title") or "").strip(),
             "description": (request.data.get("description") or "").strip(),
-            "parent_topic_id": request.data.get("parent_topic_id") or "",
             "thumbnail_url": thumbnail_url,
             "items": items,
         }

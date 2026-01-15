@@ -84,7 +84,16 @@ const getNextQuestionId = (template: PsychoTemplate, currentId: string) => {
   return template.questions[index + 1]?.id ?? "";
 };
 
-const computeScores = (template: PsychoTemplate, answers: PsychoAnswer[]) => {
+type PsychoScoreResult = {
+  scores: Record<string, number>;
+  points: Record<string, number>;
+  totalScore?: number;
+};
+
+const computeScores = (
+  template: PsychoTemplate,
+  answers: PsychoAnswer[]
+): PsychoScoreResult => {
   if (template.scoring?.mode === "TOTAL") {
     const optionMap = new Map<string, PsychoOption>();
     template.questions.forEach((question) => {
@@ -99,7 +108,8 @@ const computeScores = (template: PsychoTemplate, answers: PsychoAnswer[]) => {
       }
       return acc + Number(option.score || 0);
     }, 0);
-    return { scores: {}, points: {}, totalScore };
+    const emptyScores: Record<string, number> = {};
+    return { scores: emptyScores, points: emptyScores, totalScore };
   }
 
   const points = Object.fromEntries(template.cards.map((card) => [card.id, 0])) as Record<

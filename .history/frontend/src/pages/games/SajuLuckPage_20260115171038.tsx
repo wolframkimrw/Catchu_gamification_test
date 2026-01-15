@@ -27,14 +27,6 @@ export function SajuLuckPage() {
   const lastResultSessionRef = useRef<number | null>(null);
   const { sessionId, startSession } = useGameSessionStart(gameId, "saju_start");
 
-  const splitMessageByDiamond = (message: string) => {
-    const parts = message.split("🔹");
-    return {
-      beforeDiamond: parts[0] || "",
-      afterDiamond: parts.slice(1).join("🔹"),
-    };
-  };
-
   const canSubmit = useMemo(
     () => Boolean(gender) && Boolean(birthDate),
     [gender, birthDate]
@@ -249,10 +241,6 @@ export function SajuLuckPage() {
                           {result.idiom.text} ({result.idiom.reading})
                         </p>
                         <p className="saju-group-value">{result.idiom.meaning}</p>
-                        <p className="saju-group-label">&nbsp;</p>
-                        <p className="saju-group-value">
-                          {splitMessageByDiamond(result.idiom.message).beforeDiamond}
-                        </p>
                       </>
                     ) : null}
                   </div>
@@ -280,9 +268,10 @@ export function SajuLuckPage() {
                 <section className="saju-card saju-result">
                   <div className="saju-group">
                     {result.idiom ? (
-                      <p className="saju-group-value">
-                        🔹{splitMessageByDiamond(result.idiom.message).afterDiamond}
-                      </p>
+                      <>
+                        <p className="saju-group-label">&nbsp;</p>
+                        <p className="saju-group-value">{result.idiom.message}</p>
+                      </>
                     ) : null}
                   </div>
                   <div className="saju-nav-buttons">

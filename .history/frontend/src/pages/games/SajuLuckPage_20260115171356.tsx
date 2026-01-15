@@ -296,28 +296,6 @@ export function SajuLuckPage() {
                     <button
                       className="btn btn-primary"
                       type="button"
-                      onClick={() => setResultStep(4)}
-                    >
-                      다음
-                    </button>
-                  </div>
-                </section>
-              ) : resultStep === 4 ? (
-                <section className="saju-card saju-result">
-                  <div className="saju-group">
-                    <p className="saju-group-value saju-common-value">{result.message}</p>
-                  </div>
-                  <div className="saju-nav-buttons">
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => setResultStep(3)}
-                    >
-                      이전
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
                       onClick={() => {
                         setResult(null);
                         setResultStep(0);

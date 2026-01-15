@@ -27,14 +27,6 @@ export function SajuLuckPage() {
   const lastResultSessionRef = useRef<number | null>(null);
   const { sessionId, startSession } = useGameSessionStart(gameId, "saju_start");
 
-  const splitMessageByDiamond = (message: string) => {
-    const parts = message.split("🔹");
-    return {
-      beforeDiamond: parts[0] || "",
-      afterDiamond: parts.slice(1).join("🔹"),
-    };
-  };
-
   const canSubmit = useMemo(
     () => Boolean(gender) && Boolean(birthDate),
     [gender, birthDate]
@@ -250,9 +242,7 @@ export function SajuLuckPage() {
                         </p>
                         <p className="saju-group-value">{result.idiom.meaning}</p>
                         <p className="saju-group-label">&nbsp;</p>
-                        <p className="saju-group-value">
-                          {splitMessageByDiamond(result.idiom.message).beforeDiamond}
-                        </p>
+                        <p className="saju-group-value">{result.idiom.message}</p>
                       </>
                     ) : null}
                   </div>
@@ -279,39 +269,13 @@ export function SajuLuckPage() {
               ) : resultStep === 3 ? (
                 <section className="saju-card saju-result">
                   <div className="saju-group">
-                    {result.idiom ? (
-                      <p className="saju-group-value">
-                        🔹{splitMessageByDiamond(result.idiom.message).afterDiamond}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="saju-nav-buttons">
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => setResultStep(2)}
-                    >
-                      이전
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => setResultStep(4)}
-                    >
-                      다음
-                    </button>
-                  </div>
-                </section>
-              ) : resultStep === 4 ? (
-                <section className="saju-card saju-result">
-                  <div className="saju-group">
                     <p className="saju-group-value saju-common-value">{result.message}</p>
                   </div>
                   <div className="saju-nav-buttons">
                     <button
                       className="btn"
                       type="button"
-                      onClick={() => setResultStep(3)}
+                      onClick={() => setResultStep(2)}
                     >
                       이전
                     </button>

@@ -27,14 +27,6 @@ export function SajuLuckPage() {
   const lastResultSessionRef = useRef<number | null>(null);
   const { sessionId, startSession } = useGameSessionStart(gameId, "saju_start");
 
-  const splitMessageByDiamond = (message: string) => {
-    const parts = message.split("🔹");
-    return {
-      beforeDiamond: parts[0] || "",
-      afterDiamond: parts.slice(1).join("🔹"),
-    };
-  };
-
   const canSubmit = useMemo(
     () => Boolean(gender) && Boolean(birthDate),
     [gender, birthDate]
@@ -76,7 +68,7 @@ export function SajuLuckPage() {
       idiomsData: idiomsData ?? undefined,
     });
     setResult(next);
-    setResultStep(2);
+    setResultStep(1);
   };
 
   useEffect(() => {
@@ -168,91 +160,103 @@ export function SajuLuckPage() {
         />
       ) : (
         <div className="saju-page saju-game-started">
-          {!result ? (
-            <section className="saju-card">
-              <h2>나의 정보 입력</h2>
-              <div className="saju-form">
-                <div className="saju-field">
-                  <label>성별</label>
-                  <div className="saju-toggle">
-                    <button
-                      type="button"
-                      className={gender === "male" ? "active" : ""}
-                      onClick={() => setGender("male")}
-                    >
-                      남
-                    </button>
-                    <button
-                      type="button"
-                      className={gender === "female" ? "active" : ""}
-                      onClick={() => setGender("female")}
-                    >
-                      여
-                    </button>
-                  </div>
-                </div>
-
-                <div className="saju-field">
-                  <label>달력 선택</label>
-                  <div className="saju-toggle">
-                    <button
-                      type="button"
-                      className={calendarType === "SOLAR" ? "active" : ""}
-                      onClick={() => setCalendarType("SOLAR")}
-                    >
-                      양력
-                    </button>
-                    <button
-                      type="button"
-                      className={calendarType === "LUNAR" ? "active" : ""}
-                      onClick={() => setCalendarType("LUNAR")}
-                    >
-                      음력
-                    </button>
-                  </div>
-                  <p className="saju-hint">음력 선택은 MVP에서는 계산에 반영되지 않습니다.</p>
-                </div>
-
-                <div className="saju-field">
-                  <label htmlFor="birthDate">생년월일</label>
-                  <input
-                    id="birthDate"
-                    type="date"
-                    value={birthDate}
-                    onChange={(event) => setBirthDate(event.target.value)}
-                  />
+          <section className="saju-card">
+            <h2>나의 정보 입력</h2>
+            <div className="saju-form">
+              <div className="saju-field">
+                <label>성별</label>
+                <div className="saju-toggle">
+                  <button
+                    type="button"
+                    className={gender === "male" ? "active" : ""}
+                    onClick={() => setGender("male")}
+                  >
+                    남
+                  </button>
+                  <button
+                    type="button"
+                    className={gender === "female" ? "active" : ""}
+                    onClick={() => setGender("female")}
+                  >
+                    여
+                  </button>
                 </div>
               </div>
 
-              {error ? <p className="saju-error">{error}</p> : null}
+              <div className="saju-field">
+                <label>달력 선택</label>
+                <div className="saju-toggle">
+                  <button
+                    type="button"
+                    className={calendarType === "SOLAR" ? "active" : ""}
+                    onClick={() => setCalendarType("SOLAR")}
+                  >
+                    양력
+                  </button>
+                  <button
+                    type="button"
+                    className={calendarType === "LUNAR" ? "active" : ""}
+                    onClick={() => setCalendarType("LUNAR")}
+                  >
+                    음력
+                  </button>
+                </div>
+                <p className="saju-hint">음력 선택은 MVP에서는 계산에 반영되지 않습니다.</p>
+              </div>
 
-              <button
-                className="btn btn-primary saju-submit"
-                type="button"
-                onClick={handleSubmit}
-                disabled={!canSubmit}
-              >
-                운세 보기
-              </button>
-            </section>
-          ) : (
+              <div className="saju-field">
+                <label htmlFor="birthDate">생년월일</label>
+                <input
+                  id="birthDate"
+                  type="date"
+                  value={birthDate}
+                  onChange={(event) => setBirthDate(event.target.value)}
+                />
+              </div>
+            </div>
+
+            {error ? <p className="saju-error">{error}</p> : null}
+
+            <button
+              className="btn btn-primary saju-submit"
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+            >
+              운세 보기
+            </button>
+          </section>
+
+          {result ? (
             <>
-              {resultStep === 2 ? (
+              {resultStep === 1 ? (
                 <section className="saju-card saju-result">
                   <div className="saju-group">
                     <p className="saju-group-label">&nbsp;</p>
                     <p className="saju-group-value saju-emphasis">오늘의 운세는...</p>
-                    <p className="saju-group-label">&nbsp;</p>
+                  </div>
+                  <div className="saju-nav-buttons">
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={() => setResultStep(2)}
+                    >
+                      다음
+                    </button>
+                  </div>
+                </section>
+              ) : resultStep === 2 ? (
+                <section className="saju-card saju-result">
+                  <div className="saju-group">
                     {result.idiom ? (
                       <>
+                        <p className="saju-group-label">&nbsp;</p>
                         <p className="saju-group-value saju-emphasis saju-idiom-value">
                           {result.idiom.text} ({result.idiom.reading})
                         </p>
                         <p className="saju-group-value">{result.idiom.meaning}</p>
                         <p className="saju-group-label">&nbsp;</p>
-                        <p className="saju-group-value">
-                          {splitMessageByDiamond(result.idiom.message).beforeDiamond}
-                        </p>
+                        <p className="saju-group-value">{result.idiom.message}</p>
                       </>
                     ) : null}
                   </div>
@@ -260,12 +264,9 @@ export function SajuLuckPage() {
                     <button
                       className="btn"
                       type="button"
-                      onClick={() => {
-                        setResult(null);
-                        setResultStep(0);
-                      }}
+                      onClick={() => setResultStep(1)}
                     >
-                      뒤로
+                      이전
                     </button>
                     <button
                       className="btn btn-primary"
@@ -279,39 +280,13 @@ export function SajuLuckPage() {
               ) : resultStep === 3 ? (
                 <section className="saju-card saju-result">
                   <div className="saju-group">
-                    {result.idiom ? (
-                      <p className="saju-group-value">
-                        🔹{splitMessageByDiamond(result.idiom.message).afterDiamond}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="saju-nav-buttons">
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => setResultStep(2)}
-                    >
-                      이전
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => setResultStep(4)}
-                    >
-                      다음
-                    </button>
-                  </div>
-                </section>
-              ) : resultStep === 4 ? (
-                <section className="saju-card saju-result">
-                  <div className="saju-group">
                     <p className="saju-group-value saju-common-value">{result.message}</p>
                   </div>
                   <div className="saju-nav-buttons">
                     <button
                       className="btn"
                       type="button"
-                      onClick={() => setResultStep(3)}
+                      onClick={() => setResultStep(2)}
                     >
                       이전
                     </button>
@@ -329,7 +304,7 @@ export function SajuLuckPage() {
                 </section>
               ) : null}
             </>
-          )}
+          ) : null}
         </div>
       )}
     </>

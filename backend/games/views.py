@@ -398,6 +398,28 @@ class WorldcupCreateView(BaseAPIView):
     api_name = "games.worldcup.create"
     parser_classes = (MultiPartParser, FormParser)
 
+    def _get_max_round_size(self, count: int) -> int:
+        size = 1
+        while size * 2 <= count:
+            size *= 2
+        return max(size, 2)
+
+    def _parse_round_size(self, value, items_count: int) -> int:
+        max_size = self._get_max_round_size(items_count)
+        if value in (None, ""):
+            return max_size
+        try:
+            size = int(value)
+        except (TypeError, ValueError):
+            raise ValidationError({"round_size": "강수는 숫자로 입력해 주세요."})
+        if size < 2:
+            raise ValidationError({"round_size": "강수는 2 이상이어야 합니다."})
+        if size > max_size:
+            raise ValidationError({"round_size": f"강수는 최대 {max_size}까지 가능합니다."})
+        if size & (size - 1) != 0:
+            raise ValidationError({"round_size": "강수는 2의 거듭제곱이어야 합니다."})
+        return size
+
     def _parse_items(self, request):
         items = []
         index = 0
@@ -473,6 +495,7 @@ class WorldcupCreateView(BaseAPIView):
         items = self._parse_items(request)
         if len(items) < 2:
             raise ValidationError({"items": "아이템은 최소 2개 필요합니다."})
+        round_size = self._parse_round_size(request.data.get("round_size"), len(items))
 
         thumbnail = request.FILES.get("thumbnail")
         thumbnail_url = request.data.get("thumbnail_url")
@@ -494,6 +517,7 @@ class WorldcupCreateView(BaseAPIView):
                 status="ACTIVE",
                 created_by=request.user if request.user.is_authenticated else None,
                 is_official=bool(request.user.is_authenticated and request.user.is_staff),
+                worldcup_round_size=round_size,
                 visibility="PRIVATE",
                 thumbnail_image_url="",
                 storage_prefix=storage_prefix,
@@ -610,7 +634,14 @@ class WorldcupDraftView(BaseAPIView):
             "description": (request.data.get("description") or "").strip(),
             "thumbnail_url": thumbnail_url,
             "items": items,
+            "round_size": None,
         }
+        round_size = request.data.get("round_size")
+        if round_size not in (None, ""):
+            try:
+                payload["round_size"] = int(round_size)
+            except (TypeError, ValueError):
+                payload["round_size"] = None
         return draft_prefix, payload
 
     def get(self, request, *args, **kwargs):

@@ -49,6 +49,7 @@ export function WorldcupArenaPage() {
   const [currentRound, setCurrentRound] = useState<GameItem[]>([]);
   const [nextRound, setNextRound] = useState<GameItem[]>([]);
   const [matchIndex, setMatchIndex] = useState(0);
+  const [playItems, setPlayItems] = useState<GameItem[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const isSelecting = selectedId !== null;
@@ -73,6 +74,42 @@ export function WorldcupArenaPage() {
     setNextRound(carry ? [carry] : []);
     setMatchIndex(0);
   }, []);
+
+  const getMaxRoundSize = (count: number) => {
+    let size = 1;
+    while (size * 2 <= count) {
+      size *= 2;
+    }
+    return Math.max(size, 2);
+  };
+
+  const resolveRoundSize = (preferred: number | undefined, count: number) => {
+    if (count <= 0) {
+      return 0;
+    }
+    const maxSize = getMaxRoundSize(count);
+    if (!preferred) {
+      return maxSize;
+    }
+    const capped = Math.min(preferred, maxSize);
+    let size = 1;
+    while (size * 2 <= capped) {
+      size *= 2;
+    }
+    return Math.max(size, 2);
+  };
+
+  const pickRandomItems = (items: GameItem[], count: number) => {
+    if (count <= 0 || items.length <= count) {
+      return [...items];
+    }
+    const pool = [...items];
+    for (let i = pool.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, count);
+  };
 
   const startNewSession = useCallback(
     async (source: string) => {
@@ -99,8 +136,14 @@ export function WorldcupArenaPage() {
     fetchGameDetail(parsedGameId)
       .then((data) => {
         setState({ status: "success", data });
-        const shuffled = [...data.items].sort(() => Math.random() - 0.5);
+        const resolvedSize = resolveRoundSize(
+          data.game.worldcup_round_size,
+          data.items.length
+        );
+        const selectedItems = pickRandomItems(data.items, resolvedSize);
+        const shuffled = [...selectedItems].sort(() => Math.random() - 0.5);
         pickIndexRef.current = 0;
+        setPlayItems(selectedItems);
         startRound(shuffled, 1);
       })
       .catch((err: unknown) => {
@@ -171,9 +214,8 @@ export function WorldcupArenaPage() {
   const resolvedState: PageState = state;
 
   const resolvedGame = resolvedState.status === "success" ? resolvedState.data.game : null;
-  const itemsCount =
-    resolvedState.status === "success" ? resolvedState.data.items.length : 0;
-  const allItems = resolvedState.status === "success" ? resolvedState.data.items : [];
+  const itemsCount = playItems.length;
+  const allItems = playItems;
 
   useEffect(() => {
     if (!champion || parsedGameId === null || !resolvedGame) {

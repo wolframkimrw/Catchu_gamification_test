@@ -67,6 +67,12 @@ class Game(TimeStampedModel):
     )
 
     is_official = models.BooleanField(default=False, verbose_name="공식 게임 여부")
+    worldcup_round_size = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="월드컵 강수",
+        help_text="월드컵 진행 시 사용할 강수(참가 아이템 수 기준)",
+    )
     visibility = models.CharField(
         max_length=20,
         choices=GameVisibility.choices,

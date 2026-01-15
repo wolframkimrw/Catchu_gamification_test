@@ -32,6 +32,7 @@ class GameDetailSerializer(serializers.ModelSerializer):
             "slug",
             "type",
             "thumbnail_image_url",
+            "worldcup_round_size",
             "items",
         ]
 

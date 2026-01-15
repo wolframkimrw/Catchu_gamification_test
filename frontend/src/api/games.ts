@@ -9,6 +9,7 @@ export interface Game {
   slug?: string;
   type: string;
   thumbnail: string;
+  worldcup_round_size?: number;
 }
 
 export interface GameItem {
@@ -25,6 +26,7 @@ type GameDetailFromApi = {
   slug?: string;
   type: string;
   thumbnail_image_url?: string;
+  worldcup_round_size?: number | null;
   items?: GameItem[];
 };
 
@@ -64,6 +66,7 @@ export async function fetchGameDetail(
   const normalizedGame: Game & { items: GameItem[] } = {
     ...game,
     thumbnail: game.thumbnail_image_url ? resolveMediaUrl(game.thumbnail_image_url) : "",
+    worldcup_round_size: game.worldcup_round_size ?? undefined,
     items: resolvedItems,
   };
 
@@ -606,6 +609,7 @@ export type WorldcupDraftPayload = {
   description?: string;
   thumbnail_url?: string;
   items?: { name?: string; image_url?: string }[];
+  round_size?: number | null;
 };
 
 export async function fetchWorldcupDraft(): Promise<WorldcupDraftPayload | null> {

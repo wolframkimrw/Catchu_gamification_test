@@ -69,7 +69,7 @@
   /* background: #fff; */
   border-radius: 16px;
   padding: 18px;
-  /* box-shadow: 0 10px 26px rgba(27, 31, 59, 0.12); */
+  box-shadow: 0 10px 26px rgba(27, 31, 59, 0.12);
 }
 
 .saju-card h2 {

@@ -290,7 +290,44 @@ class GameResultDetailView(BaseAPIView):
         if not result:
             return self.respond(data={"result": None})
         serializer = GameResultDetailSerializer(result)
-        return self.respond(data={"result": serializer.data})
+        data = serializer.data
+        payload = data.get("result_payload")
+        if result.game.type == "WORLD_CUP":
+            payload_dict = payload if isinstance(payload, dict) else {}
+            logs = WorldcupPickLog.objects.select_related("game").filter(game_id=result.game_id)
+            items = list(result.game.items.all().order_by("sort_order", "id"))
+            counts = {
+                row["selected_item_id"]: row["wins"]
+                for row in logs.values("selected_item_id")
+                .exclude(selected_item_id__isnull=True)
+                .annotate(wins=models.Count("id"))
+            }
+            ranking = [
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "file_name": item.file_name or "",
+                    "sort_order": item.sort_order,
+                    "wins": int(counts.get(item.id, 0) or 0),
+                }
+                for item in items
+            ]
+            ranking.sort(key=lambda entry: (-entry["wins"], entry["sort_order"], entry["id"]))
+            total_items = len(items)
+            round_count = 0
+            if total_items > 0:
+                import math
+
+                round_count = int(math.ceil(math.log2(total_items)))
+            if not payload_dict.get("total_items"):
+                payload_dict["total_items"] = total_items
+            if not payload_dict.get("round"):
+                payload_dict["round"] = round_count
+            if not payload_dict.get("champion"):
+                payload_dict["champion"] = ranking[0] if ranking else None
+            payload_dict["ranking"] = ranking
+            data["result_payload"] = payload_dict
+        return self.respond(data={"result": data})
 
 
 class PsychoTemplateSaveView(BaseAPIView):
@@ -398,28 +435,6 @@ class WorldcupCreateView(BaseAPIView):
     api_name = "games.worldcup.create"
     parser_classes = (MultiPartParser, FormParser)
 
-    def _get_max_round_size(self, count: int) -> int:
-        size = 1
-        while size * 2 <= count:
-            size *= 2
-        return max(size, 2)
-
-    def _parse_round_size(self, value, items_count: int) -> int:
-        max_size = self._get_max_round_size(items_count)
-        if value in (None, ""):
-            return max_size
-        try:
-            size = int(value)
-        except (TypeError, ValueError):
-            raise ValidationError({"round_size": "강수는 숫자로 입력해 주세요."})
-        if size < 2:
-            raise ValidationError({"round_size": "강수는 2 이상이어야 합니다."})
-        if size > max_size:
-            raise ValidationError({"round_size": f"강수는 최대 {max_size}까지 가능합니다."})
-        if size & (size - 1) != 0:
-            raise ValidationError({"round_size": "강수는 2의 거듭제곱이어야 합니다."})
-        return size
-
     def _parse_items(self, request):
         items = []
         index = 0
@@ -495,7 +510,6 @@ class WorldcupCreateView(BaseAPIView):
         items = self._parse_items(request)
         if len(items) < 2:
             raise ValidationError({"items": "아이템은 최소 2개 필요합니다."})
-        round_size = self._parse_round_size(request.data.get("round_size"), len(items))
 
         thumbnail = request.FILES.get("thumbnail")
         thumbnail_url = request.data.get("thumbnail_url")
@@ -517,7 +531,6 @@ class WorldcupCreateView(BaseAPIView):
                 status="ACTIVE",
                 created_by=request.user if request.user.is_authenticated else None,
                 is_official=bool(request.user.is_authenticated and request.user.is_staff),
-                worldcup_round_size=round_size,
                 visibility="PRIVATE",
                 thumbnail_image_url="",
                 storage_prefix=storage_prefix,
@@ -634,14 +647,7 @@ class WorldcupDraftView(BaseAPIView):
             "description": (request.data.get("description") or "").strip(),
             "thumbnail_url": thumbnail_url,
             "items": items,
-            "round_size": None,
         }
-        round_size = request.data.get("round_size")
-        if round_size not in (None, ""):
-            try:
-                payload["round_size"] = int(round_size)
-            except (TypeError, ValueError):
-                payload["round_size"] = None
         return draft_prefix, payload
 
     def get(self, request, *args, **kwargs):

@@ -159,9 +159,11 @@
   position: absolute;
   inset: auto 0 0 0;
   padding: 0.85rem 1rem;
-  background: linear-gradient(180deg,
-      rgba(20, 22, 30, 0) 0%,
-      rgba(20, 22, 30, 0.7) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 22, 30, 0) 0%,
+    rgba(20, 22, 30, 0.7) 100%
+  );
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
@@ -1054,7 +1056,7 @@
   text-align: center;
   background: #181b25;
   border-radius: 14px;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 20px;
 }
 
 .arena-shell {
@@ -1092,15 +1094,8 @@
   margin: 0;
   box-sizing: border-box;
   overflow-x: hidden;
-  overflow-y: hidden;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.worldcup-result-page::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  overflow-y: auto;
+  padding: 24px;
 }
 
 .worldcup-dashboard {
@@ -1109,8 +1104,6 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  flex: 1;
-  min-height: 0;
 }
 
 .worldcup-dashboard-header {
@@ -1119,7 +1112,6 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  min-width: 0;
 }
 
 .worldcup-dashboard-title {
@@ -1136,21 +1128,15 @@
 .worldcup-dashboard-grid {
   display: grid;
   gap: 16px;
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  flex: 1;
-  min-height: 0;
 }
 
 .worldcup-dashboard-rank {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  padding: 10px;
+  padding: 18px;
   display: grid;
   gap: 12px;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-width: 0;
-  min-height: 0;
 }
 
 .worldcup-dashboard-rank h3 {
@@ -1161,52 +1147,22 @@
 .worldcup-rank-table {
   display: grid;
   gap: 10px;
-  overflow-y: auto;
-  min-height: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-right: 4px;
-}
-
-.worldcup-rank-table::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 .worldcup-rank-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 32px 44px 1fr auto;
   gap: 10px;
   align-items: center;
-  /* padding: 8px 10px; */
+  padding: 8px 10px;
   border-radius: 12px;
-  /* background: rgba(255, 255, 255, 0.05); */
-  min-width: 0;
-}
-
-.worldcup-rank-content {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-.worldcup-rank-top {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.worldcup-rank-main {
-  display: contents;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .worldcup-rank-order {
   font-weight: 800;
   color: #ffcf6b;
-  text-align: left;
-  justify-self: start;
+  text-align: center;
 }
 
 .worldcup-rank-media {
@@ -1248,19 +1204,11 @@
 .worldcup-rank-name {
   font-weight: 600;
   color: #f1f1f5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-  width: 100%;
 }
 
 .worldcup-rank-score {
   color: #c4c6d3;
   font-size: 13px;
-  white-space: nowrap;
-  font-weight: 700;
-  justify-self: start;
 }
 
 .worldcup-dashboard-hero {
@@ -1271,13 +1219,11 @@
   text-align: center;
   display: grid;
   gap: 12px;
-  min-width: 0;
-  min-height: 0;
 }
 
 .worldcup-dashboard-stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1344,21 +1290,6 @@
   .worldcup-dashboard-summary {
     grid-column: 1 / -1;
   }
-}
-
-.worldcup-result-page .worldcup-dashboard-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: stretch;
-}
-
-.worldcup-result-page .worldcup-dashboard-stats {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-column: 1 / -1;
-}
-
-.worldcup-result-page .worldcup-dashboard-rank,
-.worldcup-result-page .worldcup-dashboard-hero {
-  height: 100%;
 }
 
 .worldcup-result-meta {
@@ -1650,11 +1581,11 @@
 }
 
 .arena-play.selecting .arena-full-card.selecting[data-pos="top"] {
-  animation: winner-from-top 220ms ease forwards;
+  animation: winner-from-top 900ms ease forwards;
 }
 
 .arena-play.selecting .arena-full-card.selecting[data-pos="bottom"] {
-  animation: winner-from-bottom 220ms ease forwards;
+  animation: winner-from-bottom 900ms ease forwards;
 }
 
 .arena-full-card.exiting {
@@ -1673,10 +1604,11 @@
     transform: translate(-50%, -50%) translateY(-20px);
   }
 
-  85% {
+  73% {
     transform: translate(-50%, -50%) scale(1.06);
   }
 
+  80%,
   100% {
     transform: translate(-50%, -50%) scale(1);
   }
@@ -1691,10 +1623,11 @@
     transform: translate(-50%, -50%) translateY(20px);
   }
 
-  85% {
+  73% {
     transform: translate(-50%, -50%) scale(1.06);
   }
 
+  80%,
   100% {
     transform: translate(-50%, -50%) scale(1);
   }
@@ -1742,7 +1675,7 @@
 .result-media video {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
 }
 

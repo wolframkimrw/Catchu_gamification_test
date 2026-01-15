@@ -133,7 +133,6 @@ export function WorldcupPlayPage() {
       ) : !started && !champion ? (
         <GameStartScreen
           title={game.title}
-          description="메인에서 바로 시작! 라운드 선택 없이 일단 플레이해요."
           tags={[
             {
               label: getTypeLabel(game.type),

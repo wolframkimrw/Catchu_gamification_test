@@ -41,7 +41,6 @@ export function WorldcupCreatePage() {
     { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
     { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
   ]);
-  const [roundSize, setRoundSize] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<number | null>(null);
@@ -84,9 +83,6 @@ export function WorldcupCreatePage() {
             })
           );
         }
-        if (draft.round_size) {
-          setRoundSize(draft.round_size);
-        }
       })
       .catch(() => {
         // 드래프트 불러오기 실패는 진행을 막지 않음
@@ -98,33 +94,6 @@ export function WorldcupCreatePage() {
     if (items.length < 2) return false;
     return items.every((item) => item.imageFile || item.imageUrl);
   }, [items, title]);
-
-  const imageCount = useMemo(
-    () => items.filter((item) => item.imageFile || item.imageUrl).length,
-    [items]
-  );
-
-  const availableRoundSizes = useMemo(() => {
-    const sizes: number[] = [];
-    let size = 2;
-    while (size <= imageCount) {
-      sizes.push(size);
-      size *= 2;
-    }
-    return sizes.reverse();
-  }, [imageCount]);
-
-  const maxRoundSize = availableRoundSizes[0] ?? 2;
-
-  useEffect(() => {
-    if (availableRoundSizes.length === 0) {
-      setRoundSize(null);
-      return;
-    }
-    setRoundSize((prev) =>
-      prev && availableRoundSizes.includes(prev) ? prev : maxRoundSize
-    );
-  }, [availableRoundSizes, maxRoundSize]);
 
   const updateItem = (
     index: number,
@@ -245,9 +214,6 @@ export function WorldcupCreatePage() {
       } else if (thumbnailUrl) {
         formData.append("thumbnail_url", thumbnailUrl);
       }
-      if (roundSize) {
-        formData.append("round_size", String(roundSize));
-      }
       items.forEach((item, index) => {
         if (item.name.trim()) {
           formData.append(`items[${index}].name`, item.name.trim());
@@ -268,7 +234,7 @@ export function WorldcupCreatePage() {
           // 드래프트 저장 실패는 진행을 막지 않음
         });
     }, 800);
-  }, [description, isSubmitting, items, roundSize, thumbnail, thumbnailUrl, title, user]);
+  }, [description, isSubmitting, items, thumbnail, thumbnailUrl, title, user]);
 
   useEffect(() => {
     scheduleDraftSave();
@@ -297,9 +263,6 @@ export function WorldcupCreatePage() {
       formData.append("thumbnail", thumbnail);
     } else if (thumbnailUrl) {
       formData.append("thumbnail_url", thumbnailUrl);
-    }
-    if (roundSize) {
-      formData.append("round_size", String(roundSize));
     }
     items.forEach((item, index) => {
       if (item.name.trim()) {
@@ -380,26 +343,6 @@ export function WorldcupCreatePage() {
             <img src={thumbnailUrl} alt="Draft thumbnail" />
           </div>
         ) : null}
-
-        <label className="worldcup-create-field">
-          <span>진행 강수</span>
-          <select
-            value={roundSize ?? ""}
-            onChange={(event) => setRoundSize(Number(event.target.value))}
-            disabled={availableRoundSizes.length === 0}
-          >
-            {availableRoundSizes.map((size) => (
-              <option key={size} value={size}>
-                {size}강
-              </option>
-            ))}
-          </select>
-          {availableRoundSizes.length === 0 ? (
-            <small>이미지를 2개 이상 등록하면 선택할 수 있습니다.</small>
-          ) : (
-            <small>현재 이미지 {imageCount}개 기준 최대 {maxRoundSize}강</small>
-          )}
-        </label>
 
         <div className="worldcup-create-items">
           <div className="worldcup-create-items-header">

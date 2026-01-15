@@ -1,6 +1,6 @@
 // src/pages/WorldcupArenaPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import "./worldcup.css";
 import { ApiError } from "../../api/http";
 import { fetchGameDetail } from "../../api/games";
@@ -50,6 +50,12 @@ export function WorldcupArenaPage() {
   const [nextRound, setNextRound] = useState<GameItem[]>([]);
   const [matchIndex, setMatchIndex] = useState(0);
   const [playItems, setPlayItems] = useState<GameItem[]>([]);
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [isRoundModalOpen, setIsRoundModalOpen] = useState(false);
+  const [roundConfirmed, setRoundConfirmed] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<{ width: number; height: number } | null>(
+    null
+  );
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const isSelecting = selectedId !== null;
@@ -57,7 +63,14 @@ export function WorldcupArenaPage() {
   const winCountsRef = useRef<Record<number, number>>({});
   const resultPayloadRef = useRef<WorldcupResultPayload | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const hasNavigatedRef = useRef(false);
+  const roundSizeParam = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const raw = params.get("round");
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [location.search]);
 
   const startRound = useCallback((roundItems: GameItem[], round: number) => {
     if (roundItems.length === 0) {
@@ -80,7 +93,7 @@ export function WorldcupArenaPage() {
     while (size * 2 <= count) {
       size *= 2;
     }
-    return Math.max(size, 2);
+    return Math.min(Math.max(size, 2), 64);
   };
 
   const resolveRoundSize = (preferred: number | undefined, count: number) => {
@@ -136,15 +149,6 @@ export function WorldcupArenaPage() {
     fetchGameDetail(parsedGameId)
       .then((data) => {
         setState({ status: "success", data });
-        const resolvedSize = resolveRoundSize(
-          data.game.worldcup_round_size,
-          data.items.length
-        );
-        const selectedItems = pickRandomItems(data.items, resolvedSize);
-        const shuffled = [...selectedItems].sort(() => Math.random() - 0.5);
-        pickIndexRef.current = 0;
-        setPlayItems(selectedItems);
-        startRound(shuffled, 1);
       })
       .catch((err: unknown) => {
         const message =
@@ -153,7 +157,69 @@ export function WorldcupArenaPage() {
           "게임 정보를 불러오지 못했습니다.";
         setState({ status: "error", message });
       });
-  }, [parsedGameId, startRound]);
+  }, [parsedGameId]);
+
+  useEffect(() => {
+    if (!roundSizeParam) {
+      return;
+    }
+    setSelectedRound(roundSizeParam);
+    setRoundConfirmed(true);
+  }, [roundSizeParam]);
+
+  useEffect(() => {
+    if (state.status !== "success") {
+      return;
+    }
+    const { items } = state.data;
+    if (!items.length) {
+      return;
+    }
+    const options: number[] = [];
+    let size = 2;
+    while (size <= items.length && size <= 64) {
+      options.push(size);
+      size *= 2;
+    }
+    if (options.length === 0) {
+      setSelectedRound(null);
+      return;
+    }
+    if (selectedRound && !options.includes(selectedRound)) {
+      setSelectedRound(null);
+      setRoundConfirmed(false);
+    }
+  }, [selectedRound, state]);
+
+  useEffect(() => {
+    if (state.status !== "success") {
+      return;
+    }
+    if (!selectedRound || !roundConfirmed) {
+      return;
+    }
+    if (currentRound.length || champion) {
+      return;
+    }
+    const { items } = state.data;
+    const resolvedSize = resolveRoundSize(selectedRound, items.length);
+    const selectedItems = pickRandomItems(items, resolvedSize);
+    const shuffled = [...selectedItems].sort(() => Math.random() - 0.5);
+    pickIndexRef.current = 0;
+    setPlayItems(selectedItems);
+    startRound(shuffled, 1);
+  }, [champion, currentRound.length, roundConfirmed, selectedRound, startRound, state]);
+
+  useEffect(() => {
+    if (state.status !== "success") {
+      return;
+    }
+    if (selectedRound && roundConfirmed) {
+      setIsRoundModalOpen(false);
+      return;
+    }
+    setIsRoundModalOpen(true);
+  }, [roundConfirmed, selectedRound, state.status]);
 
   useEffect(() => {
     if (parsedGameId === null) {
@@ -165,7 +231,13 @@ export function WorldcupArenaPage() {
     }
   }, [parsedGameId]);
 
-  const handleSelect = (winner: GameItem) => {
+  const handleSelect = (winner: GameItem, target: HTMLElement | null) => {
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      setSelectedSize({ width: rect.width, height: rect.height });
+    } else {
+      setSelectedSize(null);
+    }
     setSelectedId(winner.id);
     winCountsRef.current[winner.id] = (winCountsRef.current[winner.id] || 0) + 1;
     const left = a;
@@ -195,20 +267,23 @@ export function WorldcupArenaPage() {
           setCurrentRound([]);
           setNextRound([]);
           setMatchIndex(0);
-          setSelectedId(null);
-          return;
-        }
-        setNextRound([]);
-        setSelectedId(null);
-        startRound(next, roundNumber + 1);
-      }, transitionMs);
-    } else {
-      setTimeout(() => {
-        setNextRound(next);
-        setMatchIndex((idx) => idx + 1);
-        setSelectedId(null);
-      }, transitionMs);
-    }
+                  setSelectedId(null);
+                  setSelectedSize(null);
+                  return;
+                }
+                setNextRound([]);
+                setSelectedId(null);
+                setSelectedSize(null);
+                startRound(next, roundNumber + 1);
+              }, transitionMs);
+            } else {
+              setTimeout(() => {
+                setNextRound(next);
+                setMatchIndex((idx) => idx + 1);
+                setSelectedId(null);
+                setSelectedSize(null);
+              }, transitionMs);
+            }
   };
 
   const resolvedState: PageState = state;
@@ -300,6 +375,13 @@ export function WorldcupArenaPage() {
   const totalMatches = currentRound.length / 2;
   const a = currentRound[matchIndex * 2];
   const b = currentRound[matchIndex * 2 + 1];
+  const roundOptions: number[] = [];
+  let roundSize = 2;
+  while (roundSize <= items.length && roundSize <= 64) {
+    roundOptions.push(roundSize);
+    roundSize *= 2;
+  }
+  roundOptions.reverse();
 
   const getMediaUrl = (item: GameItem) => {
     const url = item.file_name;
@@ -334,7 +416,65 @@ export function WorldcupArenaPage() {
         </div>
       </header>
 
-      {champion ? (
+      {isRoundModalOpen ? (
+        <div className="arena-round-modal">
+          <div className="arena-round-backdrop" />
+          <div className="arena-round-card" role="dialog" aria-modal="true">
+            <div className="arena-round-hero">
+              <div className="arena-round-icon">🏆</div>
+              <h2>{game.title}</h2>
+              <p>{game.description || "설명을 입력해 주세요."}</p>
+            </div>
+            <div className="arena-round-body">
+              <strong>총 라운드를 선택하세요.</strong>
+              <label>
+                <select
+                  value={selectedRound ?? ""}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    setSelectedRound(Number.isFinite(value) ? value : null);
+                    setRoundConfirmed(false);
+                  }}
+                >
+                  <option value="" disabled>
+                    선택
+                  </option>
+                  {roundOptions.map((size) => (
+                    <option key={size} value={size}>
+                      {size === 2 ? "결승" : `${size}강`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedRound ? (
+                <span>
+                  총 {items.length}개의 후보 중 무작위 {selectedRound}명이 대결합니다.
+                </span>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary arena-round-start"
+              onClick={() => {
+                if (!selectedRound) {
+                  return;
+                }
+                setRoundConfirmed(true);
+              }}
+              disabled={!selectedRound}
+            >
+              시작하기
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost arena-round-cancel"
+              onClick={() => setIsRoundModalOpen(false)}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      ) : champion ? (
         <div className="arena-result">
           <div className="arena-result-card">
             <div className="result-badges">
@@ -366,10 +506,12 @@ export function WorldcupArenaPage() {
                 className="btn btn-primary"
                 type="button"
                 onClick={() => {
-                  const shuffled = [...items].sort(() => Math.random() - 0.5);
+                  const baseItems = playItems.length ? playItems : items;
+                  const shuffled = [...baseItems].sort(() => Math.random() - 0.5);
                   pickIndexRef.current = 0;
                   void startNewSession("worldcup_restart");
                   setChampion(null);
+                  setSelectedSize(null);
                   startRound(shuffled, 1);
                 }}
               >
@@ -394,7 +536,12 @@ export function WorldcupArenaPage() {
                 }`}
                 data-pos={idx === 0 ? "top" : "bottom"}
                 type="button"
-                onClick={() => handleSelect(contestant)}
+                onClick={(event) => handleSelect(contestant, event.currentTarget)}
+                style={
+                  isSelected && selectedSize
+                    ? { width: selectedSize.width, height: selectedSize.height }
+                    : undefined
+                }
               >
                 {(() => {
                   const mediaUrl = getMediaUrl(contestant);

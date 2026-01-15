@@ -35,6 +35,7 @@ export function WorldcupPlayPage() {
   const [started, setStarted] = useState(false);
   const [champion, setChampion] = useState<GameItem | null>(null);
   const [roundNumber, setRoundNumber] = useState(0);
+  const [roundSize, setRoundSize] = useState(0);
   const [currentRound, setCurrentRound] = useState<GameItem[]>([]);
   const [nextRound, setNextRound] = useState<GameItem[]>([]);
   const [matchIndex, setMatchIndex] = useState(0);
@@ -85,6 +86,7 @@ export function WorldcupPlayPage() {
     }
     setChampion(null);
     setRoundNumber(round);
+    setRoundSize(roundItems.length);
     setCurrentRound(candidates);
     setNextRound(carry ? [carry] : []);
     setMatchIndex(0);
@@ -195,7 +197,7 @@ export function WorldcupPlayPage() {
         <div className="play-start-section">
           <div className="play-round">
             <div className="round-meta">
-              <span className="badge badge-hot">ROUND {roundNumber || 1}</span>
+              <span className="badge badge-hot">{roundSize ? `${roundSize}강` : "대기"}</span>
               <span className="round-progress">
                 {totalMatches ? `${matchIndex + 1}/${totalMatches} 경기` : "시작 전"}
               </span>

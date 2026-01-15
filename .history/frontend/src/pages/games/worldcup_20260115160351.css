@@ -1650,11 +1650,11 @@
 }
 
 .arena-play.selecting .arena-full-card.selecting[data-pos="top"] {
-  animation: winner-from-top 900ms ease forwards;
+  animation: winner-from-top 220ms ease forwards;
 }
 
 .arena-play.selecting .arena-full-card.selecting[data-pos="bottom"] {
-  animation: winner-from-bottom 900ms ease forwards;
+  animation: winner-from-bottom 220ms ease forwards;
 }
 
 .arena-full-card.exiting {

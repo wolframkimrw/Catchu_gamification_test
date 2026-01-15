@@ -146,6 +146,7 @@ export function WorldcupResultPage() {
           sessionId ? fetchGameResult(sessionId) : Promise.resolve(null),
         ]);
         const summary = summaryResponse.summary;
+        const summaryTotalItems = Number(summary?.total_items ?? 0);
         const mapped = resultResponse?.result ? mapResultFromApi(resultResponse.result) : null;
         setResult((prev) => {
           const base = mapped || prev;
@@ -153,7 +154,13 @@ export function WorldcupResultPage() {
           if (!championSource) {
             return prev;
           }
-          const totalItems = base?.totalItems ?? prev?.totalItems ?? 0;
+          const totalItems =
+            base?.totalItems ??
+            (Number.isFinite(summaryTotalItems) && summaryTotalItems > 0 ? summaryTotalItems : undefined) ??
+            prev?.totalItems ??
+            summary?.ranking?.length ??
+            base?.ranking?.length ??
+            0;
           const ranking = summary?.ranking?.length ? summary.ranking : base?.ranking || [];
           return {
             gameId: parsedGameId,
@@ -203,6 +210,8 @@ export function WorldcupResultPage() {
 
   const mediaUrl = getMediaUrl(result.champion.file_name);
   const video = isVideo(mediaUrl);
+  const selectedRound = result.round || result.totalItems;
+  const productCount = result.totalItems || result.ranking.length;
 
   return (
     <div className="worldcup-result-page">
@@ -276,11 +285,11 @@ export function WorldcupResultPage() {
           <section className="worldcup-dashboard-stats">
             <div className="worldcup-stat-card">
               <span>선택 강수</span>
-              <strong>{result.totalItems}강</strong>
+              <strong>{selectedRound}강</strong>
             </div>
             <div className="worldcup-stat-card">
               <span>상품 갯수</span>
-              <strong>{result.ranking.length}개</strong>
+              <strong>{productCount}개</strong>
             </div>
           </section>
         </div>

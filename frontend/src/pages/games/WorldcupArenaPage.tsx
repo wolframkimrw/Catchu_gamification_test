@@ -46,6 +46,7 @@ export function WorldcupArenaPage() {
   const [state, setState] = useState<PageState>({ status: "loading" });
   const [champion, setChampion] = useState<GameItem | null>(null);
   const [roundNumber, setRoundNumber] = useState(0);
+  const [roundSize, setRoundSize] = useState(0);
   const [currentRound, setCurrentRound] = useState<GameItem[]>([]);
   const [nextRound, setNextRound] = useState<GameItem[]>([]);
   const [matchIndex, setMatchIndex] = useState(0);
@@ -83,6 +84,7 @@ export function WorldcupArenaPage() {
     }
     setChampion(null);
     setRoundNumber(round);
+    setRoundSize(roundItems.length);
     setCurrentRound(candidates);
     setNextRound(carry ? [carry] : []);
     setMatchIndex(0);
@@ -314,11 +316,12 @@ export function WorldcupArenaPage() {
         return a.sort_order - b.sort_order;
       });
 
+    const selectedRoundValue = selectedRound ?? itemsCount;
     const payload = {
       gameId: parsedGameId,
       gameTitle: resolvedGame.title,
       choiceId: sessionId ?? null,
-      round: roundNumber,
+      round: selectedRoundValue,
       totalItems: itemsCount,
       champion: {
         id: champion.id,
@@ -332,7 +335,7 @@ export function WorldcupArenaPage() {
     sessionStorage.setItem(`worldcup-result-${parsedGameId}`, JSON.stringify(payload));
     hasNavigatedRef.current = true;
     navigate(`/worldcup/${parsedGameId}/result`, { replace: true, state: payload });
-  }, [allItems, champion, itemsCount, navigate, parsedGameId, resolvedGame, roundNumber]);
+  }, [allItems, champion, itemsCount, navigate, parsedGameId, resolvedGame, selectedRound]);
 
   useEffect(() => {
     if (!champion || parsedGameId === null || !sessionId) {
@@ -342,6 +345,7 @@ export function WorldcupArenaPage() {
       ? `${resolvedGame.title} 우승`
       : "월드컵 우승";
     const payload = resultPayloadRef.current;
+    const selectedRoundValue = selectedRound ?? itemsCount;
     void createGameResult({
       choice_id: sessionId,
       game_id: parsedGameId,
@@ -349,7 +353,7 @@ export function WorldcupArenaPage() {
       result_title: resultTitle,
       result_code: "WORLD_CUP",
       result_payload: {
-        round: roundNumber,
+        round: selectedRoundValue,
         total_items: payload?.totalItems ?? itemsCount,
         champion: payload?.champion,
         ranking: payload?.ranking,
@@ -357,7 +361,7 @@ export function WorldcupArenaPage() {
     }).catch(() => {
       // 결과 로그 실패는 진행을 막지 않음
     });
-  }, [champion, itemsCount, parsedGameId, resolvedGame, roundNumber, sessionId]);
+  }, [champion, itemsCount, parsedGameId, resolvedGame, selectedRound, sessionId]);
 
   if (parsedGameId === null) {
     return <div className="arena-shell">잘못된 게임 ID 입니다.</div>;
@@ -376,10 +380,10 @@ export function WorldcupArenaPage() {
   const a = currentRound[matchIndex * 2];
   const b = currentRound[matchIndex * 2 + 1];
   const roundOptions: number[] = [];
-  let roundSize = 2;
-  while (roundSize <= items.length && roundSize <= 64) {
-    roundOptions.push(roundSize);
-    roundSize *= 2;
+  let roundOptionSize = 2;
+  while (roundOptionSize <= items.length && roundOptionSize <= 64) {
+    roundOptions.push(roundOptionSize);
+    roundOptionSize *= 2;
   }
   roundOptions.reverse();
 
@@ -405,7 +409,7 @@ export function WorldcupArenaPage() {
   return (
     <div className="arena-shell">
       <header className="arena-topbar">
-        <div className="badge badge-hot">ROUND {roundNumber || 1}</div>
+        <div className="badge badge-hot">{roundSize ? `${roundSize}강` : "대기"}</div>
         <div className="arena-title">{game.title}</div>
         <div className="arena-progress">
           {champion

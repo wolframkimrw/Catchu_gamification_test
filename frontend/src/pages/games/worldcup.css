@@ -1331,7 +1331,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   grid-auto-rows: minmax(0, 1fr);
-  gap: clamp(10px, 3vw, 18px);
+  gap: clamp(16px, 4vh, 28px);
   align-items: stretch;
   padding: clamp(12px, 3vw, 20px);
   position: relative;
@@ -1389,12 +1389,20 @@
 }
 
 .vs-badge.large {
-  font-size: 24px;
-  padding: 12px 18px;
+  font-size: clamp(16px, 4vw, 22px);
+  padding: 10px 14px;
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+}
+
+@media (max-width: 540px) {
+  .arena-play {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: clamp(18px, 7vh, 36px);
+  }
 }
 
 .arena-finish {

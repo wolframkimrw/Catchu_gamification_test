@@ -48,7 +48,7 @@ from .serializers import (
 )
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 import uuid
 
 # Create your views here.
@@ -1159,7 +1159,7 @@ class AdminGameEditRequestDetailView(BaseAPIView):
 
 class AdminGameEditRequestApproveView(WorldcupCreateView):
     api_name = "admin.edit_requests.approve"
-    parser_classes = (FormParser, MultiPartParser)
+    parser_classes = (JSONParser, FormParser, MultiPartParser)
 
     def _normalize_image_url(self, storage, game: Game, image_url: str) -> str:
         if not image_url:

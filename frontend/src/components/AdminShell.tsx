@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuthUser } from "../hooks/useAuthUser";
 import "./AdminShell.css";
 
-type AdminTabKey = "games" | "logs" | "users" | "requests" | "today";
+type AdminTabKey = "games" | "logs" | "users" | "requests" | "today" | "banners";
 
 type AdminShellProps = {
   active: AdminTabKey;
@@ -37,7 +37,6 @@ export function AdminShell({
   return (
     <div className="admin-shell">
       <header className="admin-shell-header">
-        {headerTop ? <div className="admin-shell-header-top">{headerTop}</div> : null}
         {title ? <h1>{title}</h1> : null}
         {description ? <p>{description}</p> : null}
         {showTabs ? (
@@ -47,6 +46,9 @@ export function AdminShell({
             </Link>
             <Link className={active === "today" ? "active" : ""} to="/admin/today-pick">
               오늘의 추천
+            </Link>
+            <Link className={active === "banners" ? "active" : ""} to="/admin/banners">
+              배너
             </Link>
             <Link className={active === "requests" ? "active" : ""} to="/admin/requests">
               수정 요청
@@ -59,6 +61,7 @@ export function AdminShell({
             </Link>
           </nav>
         ) : null}
+        {headerTop ? <div className="admin-shell-header-top">{headerTop}</div> : null}
       </header>
       {children}
     </div>

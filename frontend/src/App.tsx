@@ -21,6 +21,7 @@ import { AdminLogDetailPage } from "./pages/admin/AdminLogDetailPage";
 import { AdminTodayPickPage } from "./pages/admin/AdminTodayPickPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
+import { AdminBannersPage } from "./pages/admin/AdminBannersPage";
 import { useAuthUser } from "./hooks/useAuthUser";
 
 function Layout() {
@@ -159,6 +160,7 @@ function Layout() {
             <Route path="/admin/games" element={<AdminGamesPage />} />
             <Route path="/admin/games/:gameId" element={<AdminGameDetailPage />} />
             <Route path="/admin/today-pick" element={<AdminTodayPickPage />} />
+            <Route path="/admin/banners" element={<AdminBannersPage />} />
             <Route path="/admin/requests" element={<AdminEditRequestsPage />} />
             <Route path="/admin/requests/:requestId" element={<AdminEditRequestDetailPage />} />
             <Route path="/admin/logs" element={<AdminLogsPage />} />

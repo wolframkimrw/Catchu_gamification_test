@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from config.views import BaseAPIView
 from .models import (
@@ -22,6 +23,9 @@ from .models import (
     GameResult,
     GameStatus,
     GameVisibility,
+    Banner,
+    BannerLinkType,
+    BannerPosition,
     WorldcupDraft,
     WorldcupPickLog,
 )
@@ -38,6 +42,8 @@ from .serializers import (
     GameChoiceLogCreateSerializer,
     GameResultCreateSerializer,
     GameResultDetailSerializer,
+    BannerSerializer,
+    AdminBannerSerializer,
     WorldcupPickLogCreateSerializer,
 )
 from django.shortcuts import get_object_or_404
@@ -320,6 +326,35 @@ def _require_staff(view, request):
     return None
 
 
+def _parse_bool(value, default=False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).lower() in ("true", "1", "yes", "y", "on")
+
+
+def _parse_optional_datetime(value, field_name: str):
+    if value in (None, ""):
+        return None
+    parsed = parse_datetime(str(value))
+    if not parsed:
+        raise ValidationError({field_name: "날짜 형식이 올바르지 않습니다."})
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+def _validate_link_url(value: str, field_name: str):
+    if not value:
+        raise ValidationError({field_name: "링크 URL이 필요합니다."})
+    if value.startswith("/"):
+        return value
+    if value.startswith("http://") or value.startswith("https://"):
+        return value
+    raise ValidationError({field_name: "http(s) 또는 / 로 시작해야 합니다."})
+
+
 class WorldcupCreateView(BaseAPIView):
     api_name = "games.worldcup.create"
     parser_classes = (MultiPartParser, FormParser)
@@ -557,6 +592,218 @@ class WorldcupDraftView(BaseAPIView):
             payload=payload,
         )
         return self.respond(data={"draft": {"id": draft.id, **payload}}, status_code=201)
+
+
+class BannerListView(BaseAPIView):
+    api_name = "banners.list"
+
+    def get(self, request, *args, **kwargs):
+        position = request.query_params.get("position")
+        now = timezone.now()
+        qs = Banner.objects.filter(is_active=True).filter(
+            models.Q(start_at__isnull=True) | models.Q(start_at__lte=now),
+            models.Q(end_at__isnull=True) | models.Q(end_at__gte=now),
+        )
+        if position:
+            qs = qs.filter(position=position)
+        qs = qs.order_by("priority", "-created_at", "id")
+        serializer = BannerSerializer(qs, many=True)
+        return self.respond(data={"banners": serializer.data})
+
+
+class AdminBannerListView(WorldcupCreateView):
+    api_name = "admin.banners.list"
+    parser_classes = (MultiPartParser, FormParser)
+
+    def get(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        qs = Banner.objects.all().select_related("game").order_by("-created_at")
+        serializer = AdminBannerSerializer(qs, many=True)
+        return self.respond(data={"banners": serializer.data})
+
+    def post(self, request, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+
+        name = (request.data.get("name") or "").strip()
+        if not name:
+            raise ValidationError({"name": "배너 이름이 필요합니다."})
+        position = (request.data.get("position") or "").strip()
+        if not position:
+            raise ValidationError({"position": "배너 위치가 필요합니다."})
+        if position not in BannerPosition.values:
+            raise ValidationError({"position": "올바른 배너 위치가 아닙니다."})
+
+        link_type = request.data.get("link_type") or BannerLinkType.URL
+        if link_type not in BannerLinkType.values:
+            raise ValidationError({"link_type": "올바른 링크 타입이 아닙니다."})
+
+        game_id = request.data.get("game_id")
+        link_url = (request.data.get("link_url") or "").strip()
+
+        game = None
+        if link_type == BannerLinkType.GAME:
+            if not game_id:
+                raise ValidationError({"game_id": "게임 선택이 필요합니다."})
+            game = get_object_or_404(Game, pk=game_id)
+            link_url = ""
+        else:
+            link_url = _validate_link_url(link_url, "link_url")
+
+        image = request.FILES.get("image")
+        image_url = (request.data.get("image_url") or "").strip()
+        if image is None and not image_url:
+            raise ValidationError({"image": "이미지 업로드 또는 URL이 필요합니다."})
+
+        storage = FileSystemStorage(
+            location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL
+        )
+        storage_prefix = "wc-banner-media/"
+
+        if image is not None:
+            self._ensure_image(image, "image")
+            final_image_url = self._save_file(storage, storage_prefix, image, "banner")
+        else:
+            final_image_url = self._copy_from_media_url(
+                storage, storage_prefix, image_url
+            )
+
+        is_active = _parse_bool(request.data.get("is_active"), default=True)
+        priority = request.data.get("priority")
+        priority_value = int(priority) if priority not in (None, "") else 0
+
+        start_at = _parse_optional_datetime(request.data.get("start_at"), "start_at")
+        end_at = _parse_optional_datetime(request.data.get("end_at"), "end_at")
+
+        banner = Banner.objects.create(
+            name=name,
+            position=position,
+            image_url=final_image_url,
+            link_type=link_type,
+            game=game,
+            link_url=link_url,
+            is_active=is_active,
+            priority=priority_value,
+            start_at=start_at,
+            end_at=end_at,
+        )
+        serializer = AdminBannerSerializer(banner)
+        return self.respond(data={"banner": serializer.data}, status_code=201)
+
+
+class AdminBannerDetailView(WorldcupCreateView):
+    api_name = "admin.banners.detail"
+    parser_classes = (MultiPartParser, FormParser)
+
+    def patch(self, request, banner_id: int, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        banner = get_object_or_404(Banner, pk=banner_id)
+        updates = []
+
+        name = request.data.get("name")
+        if name is not None:
+            banner.name = str(name).strip()
+            updates.append("name")
+
+        position = request.data.get("position")
+        if position is not None:
+            position_value = str(position).strip()
+            if position_value not in BannerPosition.values:
+                raise ValidationError({"position": "올바른 배너 위치가 아닙니다."})
+            banner.position = position_value
+            updates.append("position")
+
+        link_type = request.data.get("link_type")
+        game_id = request.data.get("game_id")
+        link_url = request.data.get("link_url")
+        if link_type is not None and link_type not in BannerLinkType.values:
+            raise ValidationError({"link_type": "올바른 링크 타입이 아닙니다."})
+
+        if link_type is not None or game_id is not None or link_url is not None:
+            next_link_type = link_type or banner.link_type
+            next_game_id = game_id if game_id not in (None, "") else banner.game_id
+            next_link_url = (
+                str(link_url).strip()
+                if link_url is not None
+                else (banner.link_url or "")
+            )
+
+            if next_link_type == BannerLinkType.GAME:
+                if not next_game_id:
+                    raise ValidationError({"game_id": "게임 선택이 필요합니다."})
+                banner.game = get_object_or_404(Game, pk=next_game_id)
+                banner.link_type = BannerLinkType.GAME
+                banner.link_url = ""
+            else:
+                next_link_url = _validate_link_url(next_link_url, "link_url")
+                banner.link_type = BannerLinkType.URL
+                banner.game = None
+                banner.link_url = next_link_url
+            updates.extend(["link_type", "game", "link_url"])
+
+        image = request.FILES.get("image")
+        image_url = request.data.get("image_url")
+        if image is not None or image_url is not None:
+            storage = FileSystemStorage(
+                location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL
+            )
+            storage_prefix = "wc-banner-media/"
+            if image is not None:
+                self._ensure_image(image, "image")
+                banner.image_url = self._save_file(
+                    storage, storage_prefix, image, "banner"
+                )
+            else:
+                image_url_value = str(image_url).strip()
+                if not image_url_value:
+                    raise ValidationError({"image_url": "이미지 URL이 필요합니다."})
+                banner.image_url = self._copy_from_media_url(
+                    storage, storage_prefix, image_url_value
+                )
+            updates.append("image_url")
+
+        if "is_active" in request.data:
+            banner.is_active = _parse_bool(
+                request.data.get("is_active"), default=banner.is_active
+            )
+            updates.append("is_active")
+
+        if "priority" in request.data:
+            priority = request.data.get("priority")
+            banner.priority = int(priority) if priority not in (None, "") else 0
+            updates.append("priority")
+
+        if "start_at" in request.data:
+            banner.start_at = _parse_optional_datetime(
+                request.data.get("start_at"), "start_at"
+            )
+            updates.append("start_at")
+
+        if "end_at" in request.data:
+            banner.end_at = _parse_optional_datetime(
+                request.data.get("end_at"), "end_at"
+            )
+            updates.append("end_at")
+
+        if not updates:
+            raise ValidationError({"detail": "수정할 값이 없습니다."})
+
+        banner.save(update_fields=list(set(updates)))
+        serializer = AdminBannerSerializer(banner)
+        return self.respond(data={"banner": serializer.data})
+
+    def delete(self, request, banner_id: int, *args, **kwargs):
+        denied = _require_staff(self, request)
+        if denied:
+            return denied
+        banner = get_object_or_404(Banner, pk=banner_id)
+        banner.delete()
+        return self.respond(data={"deleted": True})
 
 
 class MyGameListView(BaseAPIView):

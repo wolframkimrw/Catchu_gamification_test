@@ -118,6 +118,103 @@ export async function fetchMyGames(): Promise<Game[]> {
   return games;
 }
 
+export type BannerLinkType = "GAME" | "URL";
+
+export type BannerItem = {
+  id: number;
+  name: string;
+  position: string;
+  image_url: string;
+  link_type: BannerLinkType;
+  link_url: string;
+  game: { id: number; title: string; type: string; slug?: string } | null;
+};
+
+type BannerItemFromApi = BannerItem;
+
+export async function fetchBanners(position?: string): Promise<BannerItem[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ banners: BannerItemFromApi[] }>>("/games/banners/", {
+      params: position ? { position } : undefined,
+    })
+  );
+  return (response.banners || []).map((banner) => ({
+    ...banner,
+    image_url: banner.image_url ? resolveMediaUrl(banner.image_url) : "",
+  }));
+}
+
+export type AdminBanner = {
+  id: number;
+  name: string;
+  position: string;
+  image_url: string;
+  link_type: BannerLinkType;
+  link_url: string;
+  game: { id: number; title: string; type: string; slug?: string } | null;
+  is_active: boolean;
+  priority: number;
+  start_at: string | null;
+  end_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function fetchAdminBanners(): Promise<AdminBanner[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ banners: AdminBanner[] }>>("/games/admin/banners/")
+  );
+  return (response.banners || []).map((banner) => ({
+    ...banner,
+    image_url: banner.image_url ? resolveMediaUrl(banner.image_url) : "",
+  }));
+}
+
+export async function createAdminBanner(payload: FormData): Promise<AdminBanner> {
+  const response = await requestWithMeta(
+    apiClient.post<ApiResponse<{ banner: AdminBanner }>>(
+      "/games/admin/banners/",
+      payload,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    )
+  );
+  return {
+    ...response.banner,
+    image_url: response.banner.image_url
+      ? resolveMediaUrl(response.banner.image_url)
+      : "",
+  };
+}
+
+export async function updateAdminBanner(
+  bannerId: number,
+  payload: FormData
+): Promise<AdminBanner> {
+  const response = await requestWithMeta(
+    apiClient.patch<ApiResponse<{ banner: AdminBanner }>>(
+      `/games/admin/banners/${bannerId}/`,
+      payload,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    )
+  );
+  return {
+    ...response.banner,
+    image_url: response.banner.image_url
+      ? resolveMediaUrl(response.banner.image_url)
+      : "",
+  };
+}
+
+export async function deleteAdminBanner(
+  bannerId: number
+): Promise<{ deleted: boolean }> {
+  return requestWithMeta(
+    apiClient.delete<ApiResponse<{ deleted: boolean }>>(
+      `/games/admin/banners/${bannerId}/`
+    )
+  );
+}
+
 export type AdminGame = {
   id: number;
   title: string;

@@ -1,9 +1,9 @@
 // src/pages/main/mainpage.tsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { Link } from "react-router-dom";
 import "../games/worldcup.css";
-import type { Game } from "../../api/games";
-import { fetchGamesList, fetchTodayPick } from "../../api/games";
+import type { BannerItem, Game } from "../../api/games";
+import { fetchBanners, fetchGamesList, fetchTodayPick } from "../../api/games";
 
 
 const categories = [
@@ -23,6 +23,10 @@ export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
   const [todayPick, setTodayPick] = useState<Game[]>([]);
+  const [banners, setBanners] = useState<BannerItem[]>([]);
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const bannerTouchStartX = useRef<number | null>(null);
+  const bannerTouchLastX = useRef<number | null>(null);
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
   const psychoRef = useRef<HTMLDivElement | null>(null);
@@ -41,7 +45,16 @@ export function WorldcupListPage() {
       .catch(() => {
         setTodayPick([]);
       });
+    fetchBanners("TOP_GLOBAL")
+      .then((items) => setBanners(items))
+      .catch(() => setBanners([]));
   }, []);
+
+  useEffect(() => {
+    if (bannerIndex >= banners.length) {
+      setBannerIndex(0);
+    }
+  }, [banners.length, bannerIndex]);
 
   const catalogGames = useMemo(() => apiGames, [apiGames]);
 
@@ -56,33 +69,6 @@ export function WorldcupListPage() {
   const resolvedPsychoGames =
     psychoGames.length > 0 ? psychoGames : psychoFallbackGames;
 
-  const bannerTarget = useMemo(() => {
-    const worldcup = worldcupGames[0];
-    if (worldcup) {
-      return {
-        title: worldcup.title,
-        subtitle: "오늘의 월드컵 추천",
-        image: worldcup.thumbnail,
-        link: `/worldcup/${worldcup.id}/play`,
-      };
-    }
-    const fortune = fortuneGames[0];
-    if (fortune) {
-      return {
-        title: fortune.title,
-        subtitle: "오늘의 운게임",
-        image: fortune.thumbnail,
-        link: "/saju",
-      };
-    }
-    return {
-      title: "오늘의 사주 운세",
-      subtitle: "오늘의 운게임",
-      image: "",
-      link: "/saju",
-    };
-  }, [fortuneGames, worldcupGames]);
-
   const resolveGameLink = (game: Game) => {
     if (game.type === "WORLD_CUP") {
       return `/worldcup/${game.id}/play`;
@@ -96,25 +82,174 @@ export function WorldcupListPage() {
     return "/";
   };
 
+  const bannerTarget = useMemo(() => {
+    const banner = banners[bannerIndex];
+    if (banner) {
+      if (banner.link_type === "GAME" && banner.game) {
+        return {
+          title: banner.name || banner.game.title,
+          subtitle: "",
+          image: banner.image_url,
+          link: resolveGameLink({
+            id: banner.game.id,
+            title: banner.game.title,
+            slug: banner.game.slug,
+            type: banner.game.type,
+            thumbnail: "",
+          }),
+          isExternal: false,
+          useContent: false,
+        };
+      }
+      return {
+        title: banner.name,
+        subtitle: "",
+        image: banner.image_url,
+        link: banner.link_url || "/",
+        isExternal: banner.link_url?.startsWith("http") ?? false,
+        useContent: false,
+      };
+    }
+    const worldcup = worldcupGames[0];
+    if (worldcup) {
+      return {
+        title: worldcup.title,
+        subtitle: "오늘의 월드컵 추천",
+        image: worldcup.thumbnail,
+        link: `/worldcup/${worldcup.id}/play`,
+        isExternal: false,
+        useContent: true,
+      };
+    }
+    const fortune = fortuneGames[0];
+    if (fortune) {
+      return {
+        title: fortune.title,
+        subtitle: "오늘의 운게임",
+        image: fortune.thumbnail,
+        link: "/saju",
+        isExternal: false,
+        useContent: true,
+      };
+    }
+    return {
+      title: "오늘의 사주 운세",
+      subtitle: "오늘의 운게임",
+      image: "",
+      link: "/saju",
+      isExternal: false,
+      useContent: true,
+    };
+  }, [banners, bannerIndex, fortuneGames, worldcupGames]);
+
+  const bumpBannerIndex = (direction: number) => {
+    if (banners.length === 0) {
+      return;
+    }
+    setBannerIndex((prev) => (prev + direction + banners.length) % banners.length);
+  };
+
+  const handleBannerTouchStart = (
+    event: TouchEvent<HTMLAnchorElement | HTMLDivElement>
+  ) => {
+    const touch = event.touches[0];
+    bannerTouchStartX.current = touch?.clientX ?? null;
+    bannerTouchLastX.current = touch?.clientX ?? null;
+  };
+
+  const handleBannerTouchMove = (
+    event: TouchEvent<HTMLAnchorElement | HTMLDivElement>
+  ) => {
+    const touch = event.touches[0];
+    bannerTouchLastX.current = touch?.clientX ?? null;
+  };
+
+  const handleBannerTouchEnd = () => {
+    if (bannerTouchStartX.current === null || bannerTouchLastX.current === null) {
+      bannerTouchStartX.current = null;
+      bannerTouchLastX.current = null;
+      return;
+    }
+    const delta = bannerTouchLastX.current - bannerTouchStartX.current;
+    if (Math.abs(delta) > 40) {
+      bumpBannerIndex(delta > 0 ? -1 : 1);
+    }
+    bannerTouchStartX.current = null;
+    bannerTouchLastX.current = null;
+  };
+
+  useEffect(() => {
+    if (bannerIndex >= banners.length) {
+      setBannerIndex(0);
+    }
+  }, [banners.length, bannerIndex]);
+
+  useEffect(() => {
+    if (banners.length <= 1) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setBannerIndex((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [banners]);
 
   return (
     <div className="page">
       <section className="section hero full-bleed">
-
-        <Link to={bannerTarget.link} className="wc-banner">
-          <div className="wc-banner-media">
-            {bannerTarget.image ? (
-              <img src={bannerTarget.image} alt={bannerTarget.title} />
-            ) : (
-              <div className="wc-banner-fallback" />
-            )}
-          </div>
-          <div className="wc-banner-content wc-content">
-            <span className="badge badge-hot">TODAY</span>
-            <h2>{bannerTarget.title}</h2>
-            <p>{bannerTarget.subtitle}</p>
-          </div>
-        </Link>
+        {bannerTarget.isExternal ? (
+          <a
+            href={bannerTarget.link}
+            className="wc-banner"
+            onTouchStart={handleBannerTouchStart}
+            onTouchMove={handleBannerTouchMove}
+            onTouchEnd={handleBannerTouchEnd}
+          >
+            <div className="wc-banner-media">
+              {bannerTarget.image ? (
+                <img src={bannerTarget.image} alt={bannerTarget.title || "banner"} />
+              ) : (
+                <div className="wc-banner-fallback" />
+              )}
+            </div>
+            {bannerTarget.useContent ? (
+              <div className="wc-banner-content wc-content">
+                <span className="badge badge-hot">TODAY</span>
+                <h2>{bannerTarget.title}</h2>
+                <p>{bannerTarget.subtitle}</p>
+              </div>
+            ) : null}
+            {!bannerTarget.useContent && bannerTarget.title ? (
+              <div className="wc-banner-title">{bannerTarget.title}</div>
+            ) : null}
+          </a>
+        ) : (
+          <Link
+            to={bannerTarget.link}
+            className="wc-banner"
+            onTouchStart={handleBannerTouchStart}
+            onTouchMove={handleBannerTouchMove}
+            onTouchEnd={handleBannerTouchEnd}
+          >
+            <div className="wc-banner-media">
+              {bannerTarget.image ? (
+                <img src={bannerTarget.image} alt={bannerTarget.title || "banner"} />
+              ) : (
+                <div className="wc-banner-fallback" />
+              )}
+            </div>
+            {bannerTarget.useContent ? (
+              <div className="wc-banner-content wc-content">
+                <span className="badge badge-hot">TODAY</span>
+                <h2>{bannerTarget.title}</h2>
+                <p>{bannerTarget.subtitle}</p>
+              </div>
+            ) : null}
+            {!bannerTarget.useContent && bannerTarget.title ? (
+              <div className="wc-banner-title">{bannerTarget.title}</div>
+            ) : null}
+          </Link>
+        )}
       </section>
 
       <div className="wc-content">

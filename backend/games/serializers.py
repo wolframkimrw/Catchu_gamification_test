@@ -6,6 +6,7 @@ from .models import (
     GameItem,
     GameResult,
     GameEditRequest,
+    Banner,
     WorldcupPickLog,
 )
 
@@ -37,6 +38,64 @@ class GameDetailSerializer(serializers.ModelSerializer):
     def get_items(self, obj):
         items = obj.items.filter(is_active=True)
         return GameItemSerializer(items, many=True).data
+
+
+class BannerSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Banner
+        fields = [
+            "id",
+            "name",
+            "position",
+            "image_url",
+            "link_type",
+            "link_url",
+            "game",
+        ]
+
+    def get_game(self, obj):
+        if not obj.game:
+            return None
+        return {
+            "id": obj.game.id,
+            "title": obj.game.title,
+            "type": obj.game.type,
+            "slug": obj.game.slug,
+        }
+
+
+class AdminBannerSerializer(serializers.ModelSerializer):
+    game = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Banner
+        fields = [
+            "id",
+            "name",
+            "position",
+            "image_url",
+            "link_type",
+            "link_url",
+            "game",
+            "is_active",
+            "priority",
+            "start_at",
+            "end_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_game(self, obj):
+        if not obj.game:
+            return None
+        return {
+            "id": obj.game.id,
+            "title": obj.game.title,
+            "type": obj.game.type,
+            "slug": obj.game.slug,
+        }
 
 
 class GameItemSerializer(serializers.ModelSerializer):

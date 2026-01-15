@@ -468,6 +468,11 @@ class BannerPosition(models.TextChoices):
     # 필요시 추가
 
 
+class BannerLinkType(models.TextChoices):
+    GAME = "GAME", "게임 연결"
+    URL = "URL", "URL 링크"
+
+
 class Banner(TimeStampedModel):
     name = models.CharField(max_length=100, verbose_name="배너 이름(내부용)")
     position = models.CharField(
@@ -476,7 +481,21 @@ class Banner(TimeStampedModel):
         verbose_name="배너 위치",
     )
     image_url = models.URLField(max_length=255, verbose_name="이미지 URL")
-    link_url = models.URLField(max_length=255, verbose_name="링크 URL")
+    link_type = models.CharField(
+        max_length=20,
+        choices=BannerLinkType.choices,
+        default=BannerLinkType.URL,
+        verbose_name="링크 타입",
+    )
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="banners",
+        verbose_name="연결 게임",
+    )
+    link_url = models.URLField(max_length=255, blank=True, verbose_name="링크 URL")
 
     is_active = models.BooleanField(default=True, verbose_name="활성 여부")
     priority = models.IntegerField(default=0, verbose_name="우선순위")

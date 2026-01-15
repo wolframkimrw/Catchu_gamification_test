@@ -1617,48 +1617,32 @@ export function AdminGameDetailPage() {
                 <div className="admin-json-empty">결과 카드가 없습니다.</div>
               ) : (
                 <div className="admin-psycho-list">
-                  {psychoCards.map((card, index) => {
-                    const cardId = `card-${card.id}-${index}`;
-                    const isExpanded = expandedCards.has(cardId);
-                    return (
-                      <div
-                        key={`${card.id}-${index}`}
-                        className={`admin-psycho-card ${isExpanded ? "expanded" : ""}`}
-                      >
+                  {psychoCards.map((card, index) => (
+                    <div key={`${card.id}-${index}`} className="admin-psycho-card">
+                      <div className="admin-psycho-card-header">
+                        <strong>결과 {index + 1}</strong>
                         <button
                           type="button"
-                          className="admin-psycho-card-header"
-                          onClick={() => toggleCardExpanded(cardId)}
+                          className="admin-psycho-remove"
+                          onClick={() => handleRemovePsychoCard(index)}
                         >
-                          <span className="admin-psycho-chevron">▾</span>
-                          <strong>결과 {index + 1}: {card.label}</strong>
-                          <button
-                            type="button"
-                            className="admin-psycho-remove"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemovePsychoCard(index);
-                            }}
-                          >
-                            삭제
-                          </button>
+                          삭제
                         </button>
-                        {isExpanded && (
-                          <>
-                            <div className="admin-psycho-grid">
-                              <label>
-                                ID
-                                <input
-                                  type="text"
-                                  value={card.id}
-                                  onChange={(event) =>
-                                    updatePsychoCard(index, (prev) => ({
-                                      ...prev,
-                                      id: event.target.value,
-                                    }))
-                                  }
-                                />
-                              </label>
+                      </div>
+                      <div className="admin-psycho-grid">
+                        <label>
+                          ID
+                          <input
+                            type="text"
+                            value={card.id}
+                            onChange={(event) =>
+                              updatePsychoCard(index, (prev) => ({
+                                ...prev,
+                                id: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
                         <label>
                           이름
                           <input
@@ -1760,11 +1744,8 @@ export function AdminGameDetailPage() {
                           />
                         </label>
                       </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

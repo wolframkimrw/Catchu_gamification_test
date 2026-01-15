@@ -1541,9 +1541,7 @@
   flex-shrink: 0;
 }
 
-.admin-psycho-card.expanded .admin-psycho-chevron,
-.admin-psycho-question.expanded .admin-psycho-chevron,
-.admin-psycho-option.expanded .admin-psycho-chevron {
+.admin-psycho-card.expanded .admin-psycho-chevron {
   transform: rotate(180deg);
 }
 
@@ -1551,29 +1549,20 @@
   margin-left: 0.5rem;
   color: #3d4052;
   flex-grow: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.admin-psycho-card,
-.admin-psycho-question,
-.admin-psycho-option {
+.admin-psycho-card {
   border: 1px solid #e4e6f1;
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
 }
 
-.admin-psycho-card.expanded,
-.admin-psycho-question.expanded,
-.admin-psycho-option.expanded {
+.admin-psycho-card.expanded {
   border-color: #d0d4e3;
 }
 
-.admin-psycho-card.expanded .admin-psycho-card-header,
-.admin-psycho-question.expanded .admin-psycho-card-header,
-.admin-psycho-option.expanded .admin-psycho-card-header {
+.admin-psycho-card.expanded .admin-psycho-card-header {
   border-bottom: 1px solid #e4e6f1;
   border-radius: 12px 12px 0 0;
   background: #f2f3f8;
@@ -1607,5 +1596,3 @@
 @media (max-width: 40rem) {
   .admin-psycho-grid {
     grid-template-columns: 1fr;
-  }
-}

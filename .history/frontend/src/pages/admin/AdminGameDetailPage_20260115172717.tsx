@@ -1760,11 +1760,8 @@ export function AdminGameDetailPage() {
                           />
                         </label>
                       </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -4,10 +4,6 @@
   background-color: #c8a97e;
   --arcana-bg-image: url("../../assets/arcana/arcana_back.png");
   --arcana-panel-min-height: calc(100dvh - var(--app-header-height) - 6rem);
-  background-image: var(--arcana-bg-image);
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-position: center;
   font-family: "Cinzel", "Cormorant Garamond", "Noto Serif KR", serif;
 }
 

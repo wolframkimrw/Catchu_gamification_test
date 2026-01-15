@@ -22,6 +22,10 @@
   gap: 1rem;
   text-align: center;
   min-height: var(--arcana-panel-min-height);
+  background-image: var(--arcana-bg-image);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
 }
 
 .arcana-card-visual {

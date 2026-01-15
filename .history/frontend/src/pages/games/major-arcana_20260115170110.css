@@ -11,6 +11,10 @@
   font-family: "Cinzel", "Cormorant Garamond", "Noto Serif KR", serif;
 }
 
+.major-arcana-page.no-background {
+  background-image: none;
+}
+
 .arcana-page {
   --arcana-accent: #c9b9f2;
   background: transparent;

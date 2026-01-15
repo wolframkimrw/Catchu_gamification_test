@@ -318,7 +318,7 @@ export function PsychoTestPage() {
   };
 
   return (
-    <>
+    <div className="major-arcana-page">
       {!started ? (
         <GameStartScreen
           title={template?.title || "심리테스트"}
@@ -339,74 +339,70 @@ export function PsychoTestPage() {
           buttonLabel="테스트 시작"
           onStart={handleStart}
         />
+      ) : error ? (
+        <div className="psycho-card psycho-result">
+          <p>{error}</p>
+        </div>
+      ) : result ? (
+        <div
+          className={`arcana-page arcana-${result.main.id}`}
+          style={
+            result.main.image_url
+              ? ({ "--arcana-card-image": `url("${result.main.image_url}")` } as CSSProperties)
+              : undefined
+          }
+        >
+          <div className="arcana-page-header">
+            <span className="arcana-page-badge">RESULT</span>
+            <div className="arcana-card-visual">
+              <div className="arcana-card-frame">
+              </div>
+            </div>
+            <h2>{result.main.label}</h2>
+            <ul className="arcana-page-list">
+              {result.main.keywords?.map((keyword) => (
+                <li key={keyword}>{keyword}</li>
+              ))}
+            </ul>
+            {result.main.summary ? (
+              <p className="arcana-page-summary">{result.main.summary}</p>
+            ) : null}
+          </div>
+          <MajorArcanaResultActions
+            onRetry={handleRestart}
+            onExit={() => setStarted(false)}
+          />
+        </div>
       ) : (
-        <div className="major-arcana-page">
-          {error ? (
-            <div className="psycho-card psycho-result">
-              <p>{error}</p>
-            </div>
-          ) : result ? (
-            <div
-              className={`arcana-page arcana-${result.main.id}`}
-              style={
-                result.main.image_url
-                  ? ({ "--arcana-card-image": `url("${result.main.image_url}")` } as CSSProperties)
-                  : undefined
-              }
-            >
-              <div className="arcana-page-header">
-                <span className="arcana-page-badge">RESULT</span>
-                <div className="arcana-card-visual">
-                  <div className="arcana-card-frame">
-                  </div>
-                </div>
-                <h2>{result.main.label}</h2>
-                <ul className="arcana-page-list">
-                  {result.main.keywords?.map((keyword) => (
-                    <li key={keyword}>{keyword}</li>
-                  ))}
-                </ul>
-                {result.main.summary ? (
-                  <p className="arcana-page-summary">{result.main.summary}</p>
+        <div className="psycho-card">
+          <div className="psycho-progress">
+            <span>
+              {currentIndex} / {totalQuestions}
+            </span>
+          </div>
+          <h2 className="psycho-question">{question?.text}</h2>
+          {question?.helper ? <p className="psycho-helper">{question.helper}</p> : null}
+          <div className="psycho-options">
+            {question?.options.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`psycho-option ${option.image_url ? "has-media" : ""}`}
+                onClick={() => handleOptionSelect(option)}
+              >
+                {option.image_url ? (
+                  <img
+                    className="psycho-option-media"
+                    src={option.image_url}
+                    alt={option.text}
+                  />
                 ) : null}
-              </div>
-              <MajorArcanaResultActions
-                onRetry={handleRestart}
-                onExit={() => setStarted(false)}
-              />
-            </div>
-          ) : (
-            <div className="psycho-card">
-              <div className="psycho-progress">
-                <span>
-                  {currentIndex} / {totalQuestions}
-                </span>
-              </div>
-              <h2 className="psycho-question">{question?.text}</h2>
-              {question?.helper ? <p className="psycho-helper">{question.helper}</p> : null}
-              <div className="psycho-options">
-                {question?.options.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={`psycho-option ${option.image_url ? "has-media" : ""}`}
-                    onClick={() => handleOptionSelect(option)}
-                  >
-                    {option.image_url ? (
-                      <img
-                        className="psycho-option-media"
-                        src={option.image_url}
-                        alt={option.text}
-                      />
-                    ) : null}
-                    <span className="psycho-option-text">{option.text}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                <span className="psycho-option-text">{option.text}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

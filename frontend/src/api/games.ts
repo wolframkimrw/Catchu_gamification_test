@@ -118,6 +118,19 @@ export async function fetchMyGames(): Promise<Game[]> {
   return games;
 }
 
+export async function savePsychoTemplate(payload: {
+  slug: string;
+  content: Record<string, unknown>;
+}): Promise<{ path: string; slug: string }> {
+  const response = await requestWithMeta(
+    apiClient.post<ApiResponse<{ path: string; slug: string }>>(
+      "/games/psycho/templates/",
+      payload
+    )
+  );
+  return response;
+}
+
 export type BannerLinkType = "GAME" | "URL";
 
 export type BannerItem = {
@@ -223,7 +236,7 @@ export type AdminGame = {
   visibility: string;
   thumbnail_image_url: string;
   created_at: string;
-  created_by: { id: number; name: string; email: string } | null;
+  created_by: { id: number; name: string; email: string; is_staff: boolean } | null;
 };
 
 export async function fetchAdminTodayPick(): Promise<AdminGame[]> {
@@ -303,7 +316,7 @@ export type AdminGameDetail = {
   visibility: string;
   thumbnail_image_url: string;
   items: { id: number; name: string; file_name: string; sort_order: number; is_active: boolean }[];
-  created_by: { id: number; name: string; email: string } | null;
+  created_by: { id: number; name: string; email: string; is_staff: boolean } | null;
 };
 
 export type AdminEditRequest = {

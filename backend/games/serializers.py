@@ -125,7 +125,12 @@ class GameAdminListSerializer(serializers.ModelSerializer):
         user = obj.created_by
         if not user:
             return None
-        return {"id": user.id, "name": user.name, "email": user.email}
+        return {
+            "id": user.id,
+            "name": "관리자" if user.is_staff else user.name,
+            "email": "" if user.is_staff else user.email,
+            "is_staff": user.is_staff,
+        }
 
 
 class AdminGameItemSerializer(serializers.ModelSerializer):
@@ -162,7 +167,12 @@ class AdminGameDetailSerializer(serializers.ModelSerializer):
         user = obj.created_by
         if not user:
             return None
-        return {"id": user.id, "name": user.name, "email": user.email}
+        return {
+            "id": user.id,
+            "name": "관리자" if user.is_staff else user.name,
+            "email": "" if user.is_staff else user.email,
+            "is_staff": user.is_staff,
+        }
 
 
 class AdminGameChoiceLogSerializer(serializers.ModelSerializer):

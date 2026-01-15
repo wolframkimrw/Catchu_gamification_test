@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import "./worldcup.css";
 import "./psycho-test.css";
@@ -12,7 +12,9 @@ import { useGameSessionStart } from "../../hooks/useGameSessionStart";
 type PsychoOption = {
   id: string;
   text: string;
-  weights: Record<string, number>;
+  image_url?: string;
+  weights?: Record<string, number>;
+  score?: number;
   nextQuestionId?: string;
 };
 
@@ -28,15 +30,19 @@ type PsychoCard = {
   label: string;
   summary?: string;
   keywords?: string[];
+  image_url?: string;
+  min_score?: number;
+  max_score?: number;
 };
 
 type PsychoScoringRules = {
-  min: number;
-  max: number;
-  minNegative: number;
-  threshold: number;
-  maxResults: number;
-  patterns: string[];
+  mode?: "TOTAL" | "WEIGHTED";
+  min?: number;
+  max?: number;
+  minNegative?: number;
+  threshold?: number;
+  maxResults?: number;
+  patterns?: string[];
 };
 
 type PsychoTemplate = {
@@ -44,6 +50,7 @@ type PsychoTemplate = {
   game_slug?: string;
   title: string;
   description: string;
+  thumbnail_url?: string;
   tags: { label: string }[];
   scoring: PsychoScoringRules;
   cards: PsychoCard[];
@@ -60,6 +67,7 @@ type PsychoOutcome = {
   secondary: PsychoCard[];
   scores: Record<string, number>;
   points: Record<string, number>;
+  totalScore?: number;
 };
 
 const DEFAULT_SLUG = "major-arcana";
@@ -77,6 +85,23 @@ const getNextQuestionId = (template: PsychoTemplate, currentId: string) => {
 };
 
 const computeScores = (template: PsychoTemplate, answers: PsychoAnswer[]) => {
+  if (template.scoring?.mode === "TOTAL") {
+    const optionMap = new Map<string, PsychoOption>();
+    template.questions.forEach((question) => {
+      question.options.forEach((option) => {
+        optionMap.set(`${question.id}:${option.id}`, option);
+      });
+    });
+    const totalScore = answers.reduce((acc, answer) => {
+      const option = optionMap.get(`${answer.questionId}:${answer.optionId}`);
+      if (!option) {
+        return acc;
+      }
+      return acc + Number(option.score || 0);
+    }, 0);
+    return { scores: {}, points: {}, totalScore };
+  }
+
   const points = Object.fromEntries(template.cards.map((card) => [card.id, 0])) as Record<
     string,
     number
@@ -92,7 +117,7 @@ const computeScores = (template: PsychoTemplate, answers: PsychoAnswer[]) => {
     if (!option) {
       return;
     }
-    Object.entries(option.weights).forEach(([cardId, value]) => {
+    Object.entries(option.weights ?? {}).forEach(([cardId, value]) => {
       if (typeof points[cardId] === "number") {
         if (value < 0) {
           points[cardId] = Math.max(0, points[cardId] + value);
@@ -118,9 +143,34 @@ const computeScores = (template: PsychoTemplate, answers: PsychoAnswer[]) => {
 };
 
 const resolveOutcome = (template: PsychoTemplate, answers: PsychoAnswer[]): PsychoOutcome => {
-  const { scores, points } = computeScores(template, answers);
+  const { scores, points, totalScore } = computeScores(template, answers);
+  if (template.scoring?.mode === "TOTAL") {
+    const resolvedScore = Number(totalScore || 0);
+    const sorted = [...template.cards].sort((a, b) => {
+      const aMin = a.min_score ?? 0;
+      const bMin = b.min_score ?? 0;
+      return aMin - bMin;
+    });
+    const matched = sorted.filter((card) => {
+      const minScore = card.min_score ?? 0;
+      const maxScore = card.max_score ?? Number.POSITIVE_INFINITY;
+      return resolvedScore >= minScore && resolvedScore <= maxScore;
+    });
+    const picked =
+      matched.length > 0
+        ? matched[matched.length - 1]
+        : sorted.find((card) => resolvedScore >= (card.min_score ?? 0)) || sorted[0];
+    return {
+      main: picked,
+      secondary: [],
+      scores,
+      points,
+      totalScore: resolvedScore,
+    };
+  }
+
   const maxPoints = Math.max(...Object.values(points), 0);
-  const threshold = template.scoring.threshold;
+  const threshold = template.scoring.threshold ?? 0;
   const eligible = template.cards.filter(
     (card) => (points[card.id] ?? 0) >= threshold
   );
@@ -203,6 +253,7 @@ export function PsychoTestPage() {
         points: result.points,
         answers,
         rules: template.scoring,
+        totalScore: result.totalScore,
       },
     }).catch(() => {
       // 결과 로그 실패는 진행을 막지 않음
@@ -264,7 +315,17 @@ export function PsychoTestPage() {
           description={template?.description || "테스트 데이터를 불러오는 중입니다."}
           badge="TEST"
           tags={(template?.tags || []).map((tag) => ({ label: tag.label }))}
-          media={<div className="game-start-art">🔮</div>}
+          media={
+            template?.thumbnail_url ? (
+              <img
+                className="game-start-thumb"
+                src={template.thumbnail_url}
+                alt={template.title}
+              />
+            ) : (
+              <div className="game-start-art">🔮</div>
+            )
+          }
           buttonLabel="테스트 시작"
           onStart={handleStart}
         />
@@ -273,7 +334,14 @@ export function PsychoTestPage() {
           <p>{error}</p>
         </div>
       ) : result ? (
-        <div className={`arcana-page arcana-${result.main.id}`}>
+        <div
+          className={`arcana-page arcana-${result.main.id}`}
+          style={
+            result.main.image_url
+              ? ({ "--arcana-card-image": `url("${result.main.image_url}")` } as CSSProperties)
+              : undefined
+          }
+        >
           <div className="arcana-page-header">
             <span className="arcana-page-badge">RESULT</span>
             <div className="arcana-card-visual">
@@ -309,10 +377,17 @@ export function PsychoTestPage() {
               <button
                 key={option.id}
                 type="button"
-                className="psycho-option"
+                className={`psycho-option ${option.image_url ? "has-media" : ""}`}
                 onClick={() => handleOptionSelect(option)}
               >
-                {option.text}
+                {option.image_url ? (
+                  <img
+                    className="psycho-option-media"
+                    src={option.image_url}
+                    alt={option.text}
+                  />
+                ) : null}
+                <span className="psycho-option-text">{option.text}</span>
               </button>
             ))}
           </div>

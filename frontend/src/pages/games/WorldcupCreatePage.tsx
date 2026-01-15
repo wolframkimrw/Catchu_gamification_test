@@ -24,6 +24,13 @@ const isMediaUrl = (value: string) => {
   }
 };
 
+const createItemFromFile = (file: File): WorldcupItemForm => ({
+  name: "",
+  imageFile: file,
+  imageUrl: "",
+  previewUrl: URL.createObjectURL(file),
+});
+
 export function WorldcupCreatePage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
@@ -40,6 +47,7 @@ export function WorldcupCreatePage() {
   const { user } = useAuthUser();
   const draftTimerRef = useRef<number | null>(null);
   const itemsRef = useRef(items);
+  const bulkInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -117,6 +125,44 @@ export function WorldcupCreatePage() {
       imageUrl: "",
       previewUrl,
     }));
+  };
+
+  const handleBulkItemFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+    const incoming = Array.from(files);
+    setItems((prev) => {
+      const next = [...prev];
+      let incomingIndex = 0;
+      for (let i = 0; i < next.length && incomingIndex < incoming.length; i += 1) {
+        const item = next[i];
+        const isEmpty =
+          !item.name.trim() &&
+          !item.imageFile &&
+          !item.imageUrl &&
+          !item.previewUrl;
+        if (!isEmpty) {
+          continue;
+        }
+        const file = incoming[incomingIndex];
+        incomingIndex += 1;
+        if (item.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+        next[i] = {
+          ...item,
+          imageFile: file,
+          imageUrl: "",
+          previewUrl: URL.createObjectURL(file),
+        };
+      }
+      while (incomingIndex < incoming.length) {
+        next.push(createItemFromFile(incoming[incomingIndex]));
+        incomingIndex += 1;
+      }
+      return next;
+    });
   };
 
   const handleAddItem = () => {
@@ -301,9 +347,28 @@ export function WorldcupCreatePage() {
         <div className="worldcup-create-items">
           <div className="worldcup-create-items-header">
             <h2>아이템</h2>
-            <button type="button" onClick={handleAddItem}>
-              아이템 추가
-            </button>
+            <div>
+              <input
+                ref={bulkInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(event) => {
+                  handleBulkItemFiles(event.target.files);
+                  event.currentTarget.value = "";
+                }}
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                onClick={() => bulkInputRef.current?.click()}
+              >
+                여러 이미지 추가
+              </button>
+              <button type="button" onClick={handleAddItem}>
+                아이템 추가
+              </button>
+            </div>
           </div>
 
           {items.map((item, index) => (

@@ -293,6 +293,45 @@ class GameResultDetailView(BaseAPIView):
         return self.respond(data={"result": serializer.data})
 
 
+class PsychoTemplateSaveView(BaseAPIView):
+    api_name = "games.psycho.template.save"
+
+    def post(self, request, *args, **kwargs):
+        slug_value = (request.data.get("slug") or "").strip()
+        if not slug_value:
+            raise ValidationError({"slug": "slug가 필요합니다."})
+        safe_slug = slugify(slug_value)
+        if not safe_slug:
+            raise ValidationError({"slug": "올바른 slug가 아닙니다."})
+
+        content = request.data.get("content")
+        if content is None:
+            raise ValidationError({"content": "저장할 내용이 없습니다."})
+        if isinstance(content, str):
+            try:
+                content = json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise ValidationError({"content": "JSON 형식이 올바르지 않습니다."}) from exc
+        if not isinstance(content, dict):
+            raise ValidationError({"content": "JSON 객체만 저장할 수 있습니다."})
+
+        content["slug"] = safe_slug
+        if not content.get("game_slug"):
+            content["game_slug"] = safe_slug
+
+        path = f"psycho/{safe_slug}.json"
+        abs_path, normalized = _resolve_json_path(path)
+        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+        with open(abs_path, "w", encoding="utf-8") as handle:
+            json.dump(content, handle, ensure_ascii=False, indent=2)
+        frontend_path = _resolve_frontend_json_path(normalized)
+        os.makedirs(os.path.dirname(frontend_path), exist_ok=True)
+        with open(frontend_path, "w", encoding="utf-8") as handle:
+            json.dump(content, handle, ensure_ascii=False, indent=2)
+
+        return self.respond(data={"path": normalized, "slug": safe_slug})
+
+
 class GameJsonReadView(BaseAPIView):
     api_name = "games.json.read"
 
@@ -454,6 +493,7 @@ class WorldcupCreateView(BaseAPIView):
                 type="WORLD_CUP",
                 status="ACTIVE",
                 created_by=request.user if request.user.is_authenticated else None,
+                is_official=bool(request.user.is_authenticated and request.user.is_staff),
                 visibility="PRIVATE",
                 thumbnail_image_url="",
                 storage_prefix=storage_prefix,

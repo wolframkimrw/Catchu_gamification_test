@@ -116,6 +116,32 @@
   font-weight: 600;
 }
 
+.worldcup-create-item input[type="text"] {
+  border: 1px solid #d7dbea;
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.worldcup-create-item input[type="text"]::placeholder {
+  color: #9aa1b2;
+}
+
+.worldcup-create-item input[type="text"]:focus {
+  outline: none;
+  border-color: #7257ff;
+  box-shadow: 0 0 0 3px rgba(114, 87, 255, 0.15);
+}
+
+.worldcup-create-item input[type="text"]:disabled {
+  background: #f2f3f8;
+  color: #9aa1b2;
+  cursor: not-allowed;
+}
+
 .worldcup-create-upload {
   margin-top: 0.4rem;
   border: 1.5px dashed #c8cde0;

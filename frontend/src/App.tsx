@@ -11,6 +11,7 @@ import { MyGameEditListPage } from "./pages/games/MyGameEditListPage";
 import { MyGameEditRequestPage } from "./pages/games/MyGameEditRequestPage";
 import { SajuLuckPage } from "./pages/games/SajuLuckPage";
 import { PsychoTestPage } from "./pages/games/PsychoTestPage";
+import { PsychoCreatePage } from "./pages/games/PsychoCreatePage";
 import { LoginPage } from "./pages/loginpage";
 import { AdminGamesPage } from "./pages/admin/AdminGamesPage";
 import { AdminEditRequestsPage } from "./pages/admin/AdminEditRequestsPage";
@@ -130,6 +131,9 @@ function Layout() {
                 <Link to="/worldcup/create" onClick={() => setIsMenuOpen(false)}>
                   월드컵 만들기
                 </Link>
+                <Link to="/psycho/create" onClick={() => setIsMenuOpen(false)}>
+                  심리테스트 만들기
+                </Link>
                 {user ? (
                   <Link to="/my/games" onClick={() => setIsMenuOpen(false)}>
                     내 게임
@@ -157,6 +161,7 @@ function Layout() {
             <Route path="/saju" element={<SajuLuckPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/psycho/:slug" element={<PsychoTestPage />} />
+            <Route path="/psycho/create" element={<PsychoCreatePage />} />
             <Route path="/admin/games" element={<AdminGamesPage />} />
             <Route path="/admin/games/:gameId" element={<AdminGameDetailPage />} />
             <Route path="/admin/today-pick" element={<AdminTodayPickPage />} />

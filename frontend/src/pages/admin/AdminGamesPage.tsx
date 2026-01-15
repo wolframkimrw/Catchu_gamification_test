@@ -106,7 +106,9 @@ export function AdminGamesPage() {
                       </div>
                       <div className="admin-games-owner">
                         {game.created_by
-                          ? `${game.created_by.name} (${game.created_by.email})`
+                          ? game.created_by.is_staff
+                            ? "관리자"
+                            : `${game.created_by.name} (${game.created_by.email})`
                           : "작성자 없음"}
                       </div>
                     </div>

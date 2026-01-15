@@ -10,12 +10,10 @@ export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(3);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    setVisibleCount(3);
     fetchAdminUsers()
       .then((userData) => {
         setUsers(userData);
@@ -52,7 +50,7 @@ export function AdminUsersPage() {
       ) : (
         <>
           <div className="admin-games-list">
-            {sortedUsers.slice(0, visibleCount).map((user) => {
+            {sortedUsers.map((user) => {
               return (
                 <div key={user.id} className="admin-games-card">
                   <Link to={`/admin/users/${user.id}`} className="admin-card-link">
@@ -75,15 +73,6 @@ export function AdminUsersPage() {
               );
             })}
           </div>
-          {sortedUsers.length > visibleCount ? (
-            <button
-              type="button"
-              className="admin-log-more"
-              onClick={() => setVisibleCount(sortedUsers.length)}
-            >
-              더보기
-            </button>
-          ) : null}
         </>
       )}
     </AdminShell>

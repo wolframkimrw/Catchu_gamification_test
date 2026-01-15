@@ -10,12 +10,10 @@ export function AdminGamesPage() {
   const [games, setGames] = useState<AdminGame[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(3);
 
   const loadGames = () => {
     setIsLoading(true);
     setError(null);
-    setVisibleCount(3);
     fetchAdminGames()
       .then((data) => setGames(data))
       .catch((err) => {
@@ -74,7 +72,7 @@ export function AdminGamesPage() {
       ) : (
         <>
           <div className="admin-games-list">
-            {games.slice(0, visibleCount).map((game) => (
+            {games.map((game) => (
               <div key={game.id} className="admin-games-card">
                 <Link to={`/admin/games/${game.id}`} className="admin-card-link">
                   <div className="admin-games-info">
@@ -117,15 +115,6 @@ export function AdminGamesPage() {
               </div>
             ))}
           </div>
-          {games.length > visibleCount ? (
-            <button
-              type="button"
-              className="admin-log-more"
-              onClick={() => setVisibleCount(games.length)}
-            >
-              더보기
-            </button>
-          ) : null}
         </>
       )}
     </AdminShell>

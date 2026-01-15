@@ -26,10 +26,6 @@ export function AdminLogDetailPage() {
   const [choiceLogs, setChoiceLogs] = useState<AdminChoiceLog[]>([]);
   const [pickLogs, setPickLogs] = useState<AdminPickLog[]>([]);
   const [resultLogs, setResultLogs] = useState<AdminResultLog[]>([]);
-  const [visibleCounts, setVisibleCounts] = useState({
-    choices: 3,
-    picks: 3,
-  });
   const [modalChoiceId, setModalChoiceId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,10 +128,6 @@ export function AdminLogDetailPage() {
 
   const formatDateTime = (value?: string | null) =>
     value ? new Date(value).toLocaleString() : "-";
-
-  const handleShowMore = (tab: LogTab, total: number) => {
-    setVisibleCounts((prev) => ({ ...prev, [tab]: total }));
-  };
 
   const activeModalSession = useMemo(() => {
     if (modalChoiceId === null) {
@@ -313,7 +305,7 @@ export function AdminLogDetailPage() {
               <div className="admin-games-empty">게임 시작 로그가 없습니다.</div>
             ) : (
               <div className="admin-log-list">
-                {choiceLogs.slice(0, visibleCounts.choices).map((log) => (
+                {choiceLogs.map((log) => (
                   <div key={log.id} className="admin-log-card admin-log-card-compact">
                     <div className="admin-log-lines">
                       <div className="admin-log-line">
@@ -331,22 +323,13 @@ export function AdminLogDetailPage() {
                     </div>
                   </div>
                 ))}
-                {choiceLogs.length > visibleCounts.choices ? (
-                  <button
-                    type="button"
-                    className="admin-log-more"
-                    onClick={() => handleShowMore("choices", choiceLogs.length)}
-                  >
-                    더보기
-                  </button>
-                ) : null}
               </div>
             )
           ) : pickSessions.length === 0 ? (
             <div className="admin-games-empty">월드컵 픽 로그가 없습니다.</div>
           ) : (
             <div className="admin-log-list">
-              {pickSessions.slice(0, visibleCounts.picks).map((session) => (
+              {pickSessions.map((session) => (
                 <button
                   key={session.choiceId}
                   type="button"
@@ -365,15 +348,6 @@ export function AdminLogDetailPage() {
                   </div>
                 </button>
               ))}
-              {pickSessions.length > visibleCounts.picks ? (
-                <button
-                  type="button"
-                  className="admin-log-more"
-                  onClick={() => handleShowMore("picks", pickSessions.length)}
-                >
-                  더보기
-                </button>
-              ) : null}
             </div>
           )}
           {activeTab === "picks" && activeModalSession ? (

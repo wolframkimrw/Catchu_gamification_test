@@ -14,13 +14,11 @@ export function AdminEditRequestsPage() {
   const [requests, setRequests] = useState<AdminEditRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(3);
   const navigate = useNavigate();
 
   const loadRequests = () => {
     setIsLoading(true);
     setError(null);
-    setVisibleCount(3);
     fetchAdminEditRequests()
       .then((data) => setRequests(data))
       .catch((err) => {
@@ -77,7 +75,7 @@ export function AdminEditRequestsPage() {
       ) : (
         <>
           <div className="admin-games-list">
-            {requests.slice(0, visibleCount).map((request) => (
+            {requests.map((request) => (
               <div key={request.id} className="admin-games-card">
                 <div
                   className="admin-games-info"
@@ -127,15 +125,6 @@ export function AdminEditRequestsPage() {
               </div>
             ))}
           </div>
-          {requests.length > visibleCount ? (
-            <button
-              type="button"
-              className="admin-log-more"
-              onClick={() => setVisibleCount(requests.length)}
-            >
-              더보기
-            </button>
-          ) : null}
         </>
       )}
     </AdminShell>

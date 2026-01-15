@@ -4,6 +4,7 @@ import "./worldcup-create.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
 import { createWorldcupGame, fetchWorldcupDraft, saveWorldcupDraft } from "../../api/games";
 import { useAuthUser } from "../../hooks/useAuthUser";
+import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
 type WorldcupItemForm = {
   name: string;
@@ -46,6 +47,7 @@ export function WorldcupCreatePage() {
   const [draftId, setDraftId] = useState<number | null>(null);
   const { user } = useAuthUser();
   const draftTimerRef = useRef<number | null>(null);
+  const bodyOverflowRef = useRef("");
   const itemsRef = useRef(items);
   const bulkInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -117,8 +119,23 @@ export function WorldcupCreatePage() {
     updateItem(index, (item) => ({ ...item, ...next }));
   };
 
-  const handleItemFileSelect = (index: number, file: File | null) => {
-    const previewUrl = file ? URL.createObjectURL(file) : "";
+  const handleItemFileSelect = async (index: number, file: File | null) => {
+    if (!file) {
+      updateItem(index, (item) => ({
+        ...item,
+        imageFile: null,
+        imageUrl: "",
+        previewUrl: "",
+      }));
+      return;
+    }
+    const error = await validateImageFile(file);
+    if (error) {
+      setFormError(error);
+      return;
+    }
+    setFormError(null);
+    const previewUrl = URL.createObjectURL(file);
     updateItem(index, (item) => ({
       ...item,
       imageFile: file,
@@ -127,15 +144,31 @@ export function WorldcupCreatePage() {
     }));
   };
 
-  const handleBulkItemFiles = (files: FileList | null) => {
+  const handleBulkItemFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) {
       return;
     }
     const incoming = Array.from(files);
+    const validated = await Promise.all(
+      incoming.map(async (file) => ({
+        file,
+        error: await validateImageFile(file),
+      }))
+    );
+    const usable = validated.filter((entry) => !entry.error).map((entry) => entry.file);
+    const firstError = validated.find((entry) => entry.error)?.error;
+    if (firstError) {
+      setFormError(firstError || null);
+    } else {
+      setFormError(null);
+    }
+    if (usable.length === 0) {
+      return;
+    }
     setItems((prev) => {
       const next = [...prev];
       let incomingIndex = 0;
-      for (let i = 0; i < next.length && incomingIndex < incoming.length; i += 1) {
+      for (let i = 0; i < next.length && incomingIndex < usable.length; i += 1) {
         const item = next[i];
         const isEmpty =
           !item.name.trim() &&
@@ -145,7 +178,7 @@ export function WorldcupCreatePage() {
         if (!isEmpty) {
           continue;
         }
-        const file = incoming[incomingIndex];
+        const file = usable[incomingIndex];
         incomingIndex += 1;
         if (item.previewUrl) {
           URL.revokeObjectURL(item.previewUrl);
@@ -157,8 +190,8 @@ export function WorldcupCreatePage() {
           previewUrl: URL.createObjectURL(file),
         };
       }
-      while (incomingIndex < incoming.length) {
-        next.push(createItemFromFile(incoming[incomingIndex]));
+      while (incomingIndex < usable.length) {
+        next.push(createItemFromFile(usable[incomingIndex]));
         incomingIndex += 1;
       }
       return next;
@@ -195,6 +228,17 @@ export function WorldcupCreatePage() {
       });
     };
   }, []);
+
+  useEffect(() => {
+    if (!formError) {
+      return;
+    }
+    bodyOverflowRef.current = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = bodyOverflowRef.current;
+    };
+  }, [formError]);
 
   const scheduleDraftSave = useCallback(() => {
     if (!user || isSubmitting) {
@@ -251,6 +295,22 @@ export function WorldcupCreatePage() {
       setFormError("필수 항목을 모두 입력해 주세요.");
       return;
     }
+    if (thumbnailUrl) {
+      const error = await validateImageUrl(thumbnailUrl);
+      if (error) {
+        setFormError(error);
+        return;
+      }
+    }
+    for (const item of items) {
+      if (item.imageUrl && !item.imageFile) {
+        const error = await validateImageUrl(item.imageUrl);
+        if (error) {
+          setFormError(error);
+          return;
+        }
+      }
+    }
     setFormError(null);
     setIsSubmitting(true);
 
@@ -300,7 +360,6 @@ export function WorldcupCreatePage() {
       </header>
 
       <form className="worldcup-create-form" onSubmit={handleSubmit}>
-        {formError ? <p className="worldcup-create-error">{formError}</p> : null}
 
         <label className="worldcup-create-field">
           <span>제목</span>
@@ -326,16 +385,38 @@ export function WorldcupCreatePage() {
           <span>썸네일 (선택)</span>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png"
             onChange={(event) => {
               const nextFile = event.target.files?.[0] || null;
-              setThumbnail(nextFile);
-              if (nextFile) {
-                setThumbnailUrl("");
+              if (!nextFile) {
+                setThumbnail(null);
+                return;
               }
+              void (async () => {
+                const error = await validateImageFile(nextFile);
+                if (error) {
+                  setFormError(error);
+                  return;
+                }
+                setFormError(null);
+                setThumbnail(nextFile);
+                setThumbnailUrl("");
+              })();
             }}
           />
           <small>미등록 시 첫 번째 아이템 이미지가 썸네일로 사용됩니다.</small>
+        </label>
+        <label className="worldcup-create-field">
+          <span>썸네일 URL (선택)</span>
+          <input
+            type="text"
+            placeholder="이미지 주소를 입력해 주세요"
+            value={thumbnail ? "" : thumbnailUrl}
+            onChange={(event) => {
+              setThumbnailUrl(event.target.value);
+              setThumbnail(null);
+            }}
+          />
         </label>
         {thumbnailUrl ? (
           <div className="worldcup-create-preview">
@@ -351,10 +432,10 @@ export function WorldcupCreatePage() {
               <input
                 ref={bulkInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png"
                 multiple
                 onChange={(event) => {
-                  handleBulkItemFiles(event.target.files);
+                  void handleBulkItemFiles(event.target.files);
                   event.currentTarget.value = "";
                 }}
                 style={{ display: "none" }}
@@ -392,7 +473,7 @@ export function WorldcupCreatePage() {
                   onDrop={(event) => {
                     event.preventDefault();
                     const file = event.dataTransfer.files?.[0] || null;
-                    handleItemFileSelect(index, file);
+                    void handleItemFileSelect(index, file);
                   }}
                 >
                   {item.previewUrl || item.imageUrl ? (
@@ -411,9 +492,9 @@ export function WorldcupCreatePage() {
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                     onChange={(event) =>
-                      handleItemFileSelect(index, event.target.files?.[0] || null)
+                      void handleItemFileSelect(index, event.target.files?.[0] || null)
                     }
                   />
                 </label>
@@ -455,6 +536,24 @@ export function WorldcupCreatePage() {
           {isSubmitting ? "생성 중..." : "월드컵 만들기"}
         </button>
       </form>
+      {formError ? (
+        <div className="wc-popup" role="dialog" aria-modal="true">
+          <div className="wc-popup-backdrop" onClick={() => setFormError(null)} />
+          <div className="wc-popup-card">
+            <p className="wc-popup-title">업로드 실패</p>
+            <p className="wc-popup-message">{formError}</p>
+            <div className="wc-popup-actions">
+              <button
+                type="button"
+                className="wc-popup-button"
+                onClick={() => setFormError(null)}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

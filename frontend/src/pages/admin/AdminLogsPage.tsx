@@ -9,11 +9,9 @@ export function AdminLogsPage() {
   const [games, setGames] = useState<AdminGame[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(3);
   const navigate = useNavigate();
 
   useEffect(() => {
-    setVisibleCount(3);
     setIsLoading(true);
     fetchAdminGames()
       .then((data) => setGames(data))
@@ -58,7 +56,7 @@ export function AdminLogsPage() {
       ) : (
         <>
           <div className="admin-games-list">
-            {games.slice(0, visibleCount).map((game) => (
+            {games.map((game) => (
               <div key={game.id} className="admin-games-card">
                 <div
                   className="admin-games-info"
@@ -99,15 +97,6 @@ export function AdminLogsPage() {
               </div>
             ))}
           </div>
-          {games.length > visibleCount ? (
-            <button
-              type="button"
-              className="admin-log-more"
-              onClick={() => setVisibleCount(games.length)}
-            >
-              더보기
-            </button>
-          ) : null}
         </>
       )}
     </AdminShell>

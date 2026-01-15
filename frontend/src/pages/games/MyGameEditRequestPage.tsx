@@ -5,6 +5,7 @@ import "./my-game-edit.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
 import { fetchGameDetail, submitGameEditRequest } from "../../api/games";
 import type { GameDetailData } from "../../api/games";
+import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
 type EditItemForm = {
   id?: number;
@@ -51,6 +52,7 @@ export function MyGameEditRequestPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const itemsRef = useRef<EditItemForm[]>([]);
   const thumbnailPreviewRef = useRef<string>("");
+  const bodyOverflowRef = useRef("");
 
   useEffect(() => {
     if (parsedGameId === null) {
@@ -114,8 +116,23 @@ export function MyGameEditRequestPage() {
     updateItem(index, (item) => ({ ...item, ...next }));
   };
 
-  const handleItemFileSelect = (index: number, file: File | null) => {
-    const previewUrl = file ? URL.createObjectURL(file) : "";
+  const handleItemFileSelect = async (index: number, file: File | null) => {
+    if (!file) {
+      updateItem(index, (item) => ({
+        ...item,
+        imageFile: null,
+        imageUrl: "",
+        previewUrl: "",
+      }));
+      return;
+    }
+    const error = await validateImageFile(file);
+    if (error) {
+      setFormError(error);
+      return;
+    }
+    setFormError(null);
+    const previewUrl = URL.createObjectURL(file);
     updateItem(index, (item) => ({
       ...item,
       imageFile: file,
@@ -163,11 +180,38 @@ export function MyGameEditRequestPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!formError) {
+      return;
+    }
+    bodyOverflowRef.current = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = bodyOverflowRef.current;
+    };
+  }, [formError]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit || parsedGameId === null) {
       setFormError("필수 항목을 모두 입력해 주세요.");
       return;
+    }
+    if (thumbnailUrl) {
+      const error = await validateImageUrl(thumbnailUrl);
+      if (error) {
+        setFormError(error);
+        return;
+      }
+    }
+    for (const item of items) {
+      if (item.imageUrl && !item.imageFile) {
+        const error = await validateImageUrl(item.imageUrl);
+        if (error) {
+          setFormError(error);
+          return;
+        }
+      }
     }
     setFormError(null);
     setSuccessMessage(null);
@@ -237,7 +281,6 @@ export function MyGameEditRequestPage() {
         <p>수정 요청은 승인 후 반영됩니다.</p>
       </header>
       <form className="worldcup-create-form" onSubmit={handleSubmit}>
-        {formError ? <p className="worldcup-create-error">{formError}</p> : null}
         {successMessage ? <p className="worldcup-create-success">{successMessage}</p> : null}
         <label className="worldcup-create-field">
           <span>게임 제목</span>
@@ -275,17 +318,28 @@ export function MyGameEditRequestPage() {
             )}
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png"
               onChange={(event) => {
                 const file = event.target.files ? event.target.files[0] : null;
-                if (thumbnailPreviewRef.current.startsWith("blob:")) {
-                  URL.revokeObjectURL(thumbnailPreviewRef.current);
+                if (!file) {
+                  return;
                 }
-                const previewUrl = file ? URL.createObjectURL(file) : "";
-                thumbnailPreviewRef.current = previewUrl;
-                setThumbnailPreviewUrl(previewUrl);
-                setThumbnail(file);
-                setThumbnailUrl("");
+                void (async () => {
+                  const error = await validateImageFile(file);
+                  if (error) {
+                    setFormError(error);
+                    return;
+                  }
+                  setFormError(null);
+                  if (thumbnailPreviewRef.current.startsWith("blob:")) {
+                    URL.revokeObjectURL(thumbnailPreviewRef.current);
+                  }
+                  const previewUrl = URL.createObjectURL(file);
+                  thumbnailPreviewRef.current = previewUrl;
+                  setThumbnailPreviewUrl(previewUrl);
+                  setThumbnail(file);
+                  setThumbnailUrl("");
+                })();
               }}
             />
           </label>
@@ -333,7 +387,7 @@ export function MyGameEditRequestPage() {
                   onDrop={(event) => {
                     event.preventDefault();
                     const file = event.dataTransfer.files?.[0] || null;
-                    handleItemFileSelect(index, file);
+                    void handleItemFileSelect(index, file);
                   }}
                 >
                   {item.previewUrl || item.imageUrl ? (
@@ -352,9 +406,9 @@ export function MyGameEditRequestPage() {
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                     onChange={(event) =>
-                      handleItemFileSelect(index, event.target.files?.[0] || null)
+                      void handleItemFileSelect(index, event.target.files?.[0] || null)
                     }
                   />
                 </label>
@@ -395,6 +449,24 @@ export function MyGameEditRequestPage() {
           </button>
         </div>
       </form>
+      {formError ? (
+        <div className="wc-popup" role="dialog" aria-modal="true">
+          <div className="wc-popup-backdrop" onClick={() => setFormError(null)} />
+          <div className="wc-popup-card">
+            <p className="wc-popup-title">업로드 실패</p>
+            <p className="wc-popup-message">{formError}</p>
+            <div className="wc-popup-actions">
+              <button
+                type="button"
+                className="wc-popup-button"
+                onClick={() => setFormError(null)}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

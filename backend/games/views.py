@@ -46,6 +46,7 @@ from .serializers import (
     AdminBannerSerializer,
     WorldcupPickLogCreateSerializer,
 )
+from .image_validation import validate_image_file, validate_image_url
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
@@ -447,7 +448,9 @@ class WorldcupCreateView(BaseAPIView):
             if image is None and not image_url:
                 raise ValidationError({f"items[{index}].image": "아이템 이미지는 필수입니다."})
             if image is not None:
-                self._ensure_image(image, f"items[{index}].image")
+                validate_image_file(image, f"items[{index}].image")
+            elif image_url:
+                validate_image_url(image_url, f"items[{index}].image_url")
             items.append((name or "", image, image_url))
             index += 1
         return items
@@ -514,7 +517,9 @@ class WorldcupCreateView(BaseAPIView):
         thumbnail = request.FILES.get("thumbnail")
         thumbnail_url = request.data.get("thumbnail_url")
         if thumbnail is not None:
-            self._ensure_image(thumbnail, "thumbnail")
+            validate_image_file(thumbnail, "thumbnail")
+        elif thumbnail_url:
+            validate_image_url(thumbnail_url, "thumbnail_url")
 
         slug = self._build_unique_slug(title)
         storage_prefix = f"worldcup/{slug}/"
@@ -625,11 +630,12 @@ class WorldcupDraftView(BaseAPIView):
             if name is None and image is None and image_url is None:
                 break
             if image is not None:
-                WorldcupCreateView._ensure_image(self, image, f"items[{index}].image")
+                validate_image_file(image, f"items[{index}].image")
                 url = WorldcupCreateView._save_file(
                     self, storage, draft_prefix, image, f"item-{index + 1}"
                 )
             else:
+                validate_image_url(image_url or "", f"items[{index}].image_url")
                 url = image_url or ""
             items.append({"name": name or "", "image_url": url})
             index += 1
@@ -637,10 +643,12 @@ class WorldcupDraftView(BaseAPIView):
         thumbnail = request.FILES.get("thumbnail")
         thumbnail_url = request.data.get("thumbnail_url") or ""
         if thumbnail is not None:
-            WorldcupCreateView._ensure_image(self, thumbnail, "thumbnail")
+            validate_image_file(thumbnail, "thumbnail")
             thumbnail_url = WorldcupCreateView._save_file(
                 self, storage, draft_prefix, thumbnail, "thumbnail"
             )
+        elif thumbnail_url:
+            validate_image_url(thumbnail_url, "thumbnail_url")
 
         payload = {
             "title": (request.data.get("title") or "").strip(),
@@ -917,7 +925,9 @@ class GameEditRequestView(WorldcupCreateView):
             if image is None and not image_url:
                 raise ValidationError({f"items[{index}].image": "아이템 이미지는 필수입니다."})
             if image is not None:
-                self._ensure_image(image, f"items[{index}].image")
+                validate_image_file(image, f"items[{index}].image")
+            elif image_url:
+                validate_image_url(image_url, f"items[{index}].image_url")
             parsed_id = None
             if item_id not in (None, ""):
                 try:
@@ -970,7 +980,9 @@ class GameEditRequestView(WorldcupCreateView):
         thumbnail = request.FILES.get("thumbnail")
         thumbnail_url = request.data.get("thumbnail_url")
         if thumbnail is not None:
-            self._ensure_image(thumbnail, "thumbnail")
+            validate_image_file(thumbnail, "thumbnail")
+        elif thumbnail_url:
+            validate_image_url(thumbnail_url, "thumbnail_url")
 
         request_prefix = f"worldcup/edit-requests/{game.id}/{uuid.uuid4().hex}/"
         storage = FileSystemStorage(
@@ -1003,9 +1015,10 @@ class GameEditRequestView(WorldcupCreateView):
         payload = {
             "title": title,
             "description": description,
-            "thumbnail_url": thumbnail_url or "",
             "items": payload_items,
         }
+        if thumbnail_url:
+            payload["thumbnail_url"] = thumbnail_url
 
         existing_request = GameEditRequest.objects.filter(
             game=game, user=request.user

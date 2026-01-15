@@ -16,7 +16,6 @@ export function AdminUserDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(3);
 
   useEffect(() => {
     if (!isValidUserId) {
@@ -24,7 +23,6 @@ export function AdminUserDetailPage() {
     }
     setIsLoading(true);
     setError(null);
-    setVisibleCount(3);
     Promise.all([fetchAdminUsers(), fetchAdminChoiceLogs()])
       .then(([userData, choiceData]) => {
         setUsers(userData);
@@ -206,7 +204,7 @@ export function AdminUserDetailPage() {
           ) : (
             <>
               <div className="admin-log-list">
-                {sortedUserLogs.slice(0, visibleCount).map((log) => (
+                {sortedUserLogs.map((log) => (
                   <div key={log.id} className="admin-log-card admin-log-card-compact">
                     <div className="admin-log-lines">
                       <div className="admin-log-line">
@@ -225,15 +223,6 @@ export function AdminUserDetailPage() {
                   </div>
                 ))}
               </div>
-              {sortedUserLogs.length > visibleCount ? (
-                <button
-                  type="button"
-                  className="admin-log-more"
-                  onClick={() => setVisibleCount(sortedUserLogs.length)}
-                >
-                  더보기
-                </button>
-              ) : null}
             </>
           )}
         </>

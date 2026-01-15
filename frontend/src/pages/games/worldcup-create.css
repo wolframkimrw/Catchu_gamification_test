@@ -21,6 +21,63 @@
   gap: 1.2rem;
 }
 
+.wc-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.wc-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 19, 26, 0.55);
+}
+
+.wc-popup-card {
+  position: relative;
+  background: #ffffff;
+  color: #1b1c1f;
+  border-radius: 14px;
+  padding: 16px;
+  width: min(90vw, 360px);
+  box-shadow: 0 16px 36px rgba(27, 31, 59, 0.2);
+  display: grid;
+  gap: 10px;
+  text-align: center;
+}
+
+.wc-popup-title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.wc-popup-message {
+  margin: 0;
+  color: #3f4250;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.wc-popup-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.wc-popup-button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  background: #7257ff;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .worldcup-create-error {
   background: #fdeaea;
   color: #b42318;

@@ -88,9 +88,8 @@ export function WorldcupArenaPage() {
     [parsedGameId]
   );
 
-  // 아레나 진입 시 화면을 맨 아래로 스크롤 (상단 여백 없이 바로 콘텐츠가 보이도록)
   useEffect(() => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
 
   useEffect(() => {

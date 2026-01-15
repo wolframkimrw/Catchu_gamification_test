@@ -1,9 +1,11 @@
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .app-viewport {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--app-bg);
   padding: 0;
   display: flex;
@@ -14,6 +16,7 @@
 .app-shell {
   width: min(100%, var(--app-max-width));
   min-height: 100vh;
+  min-height: 100dvh;
   /* margin: 0 auto; */
   padding: 0;
   background: var(--app-surface);

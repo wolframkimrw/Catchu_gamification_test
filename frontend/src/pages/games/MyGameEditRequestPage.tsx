@@ -3,7 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./worldcup-create.css";
 import "./my-game-edit.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
-import { fetchGameDetail, submitGameEditRequest } from "../../api/games";
+import {
+  fetchGameDetail,
+  fetchGameJsonFile,
+  saveAdminJsonFile,
+  savePsychoTemplate,
+  submitGameEditRequest,
+} from "../../api/games";
 import type { GameDetailData } from "../../api/games";
 import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
@@ -50,6 +56,9 @@ export function MyGameEditRequestPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [jsonPath, setJsonPath] = useState<string | null>(null);
+  const [jsonRaw, setJsonRaw] = useState("");
+  const [isJsonLoading, setIsJsonLoading] = useState(false);
   const itemsRef = useRef<EditItemForm[]>([]);
   const thumbnailPreviewRef = useRef<string>("");
   const bodyOverflowRef = useRef("");
@@ -61,6 +70,13 @@ export function MyGameEditRequestPage() {
     fetchGameDetail(parsedGameId)
       .then((data) => {
         setState({ status: "ready", data });
+        if (data.game.type === "FORTUNE_TEST") {
+          setJsonPath("fortune/idioms.json");
+        } else if (data.game.type === "PSYCHO_TEST" || data.game.type === "PSYCHOLOGICAL") {
+          setJsonPath(`psycho/${data.game.slug || "major-arcana"}.json`);
+        } else {
+          setJsonPath(null);
+        }
         setTitle(data.game.title || "");
         setDescription(data.game.description || "");
         setThumbnailUrl("");
@@ -88,11 +104,32 @@ export function MyGameEditRequestPage() {
       });
   }, [parsedGameId]);
 
+  useEffect(() => {
+    if (!jsonPath) {
+      setJsonRaw("");
+      return;
+    }
+    setIsJsonLoading(true);
+    fetchGameJsonFile(jsonPath)
+      .then((content) => setJsonRaw(JSON.stringify(content || {}, null, 2)))
+      .catch(() => {
+        setFormError("JSON을 불러오지 못했습니다.");
+      })
+      .finally(() => setIsJsonLoading(false));
+  }, [jsonPath]);
+
+  const isJsonMode = Boolean(jsonPath);
+  const showItemEditor = !isJsonMode || items.length > 0;
+  const showWorldcupFields = !isJsonMode;
   const canSubmit = useMemo(() => {
+    if (isJsonMode) {
+      if (!items.length) return false;
+      return items.every((item) => item.imageFile || item.imageUrl);
+    }
     if (!title.trim()) return false;
     if (items.length < 2) return false;
     return items.every((item) => item.imageFile || item.imageUrl);
-  }, [items, title]);
+  }, [isJsonMode, items, title]);
 
   const updateItem = (
     index: number,
@@ -257,6 +294,40 @@ export function MyGameEditRequestPage() {
     }
   };
 
+  const handleJsonSave = async () => {
+    if (!jsonPath || state.status !== "ready") {
+      return;
+    }
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(jsonRaw);
+    } catch {
+      setFormError("JSON 형식이 올바르지 않습니다.");
+      return;
+    }
+    setFormError(null);
+    setIsSubmitting(true);
+    try {
+      if (jsonPath.startsWith("psycho/")) {
+        await savePsychoTemplate({
+          slug: state.data.game.slug || "major-arcana",
+          content: parsed,
+        });
+      } else {
+        await saveAdminJsonFile(jsonPath, parsed);
+      }
+      setSuccessMessage("JSON 저장이 완료되었습니다.");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setFormError(err.meta.message || "JSON 저장에 실패했습니다.");
+      } else {
+        setFormError("JSON 저장에 실패했습니다.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (parsedGameId === null) {
     return <div className="my-edit-state">잘못된 게임 ID 입니다.</div>;
   }
@@ -280,121 +351,53 @@ export function MyGameEditRequestPage() {
         <h1>내 게임 수정</h1>
         <p>수정 요청은 승인 후 반영됩니다.</p>
       </header>
-      <form className="worldcup-create-form" onSubmit={handleSubmit}>
-        {successMessage ? <p className="worldcup-create-success">{successMessage}</p> : null}
-        <label className="worldcup-create-field">
-          <span>게임 제목</span>
-          <input
-            type="text"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="게임 제목을 입력해 주세요"
-          />
-        </label>
-        <label className="worldcup-create-field">
-          <span>설명</span>
-          <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="게임 설명을 입력해 주세요"
-          />
-        </label>
-        <label className="worldcup-create-field">
-          <span>썸네일</span>
-          <label className="worldcup-create-upload">
-            {thumbnailPreviewUrl ? (
-              <img
-                className="worldcup-create-upload-image"
-                src={thumbnailPreviewUrl}
-                alt="썸네일 미리보기"
-              />
-            ) : (
-              <>
-                <span className="worldcup-create-upload-plus">+</span>
-                <span className="worldcup-create-upload-text">
-                  클릭하거나 드래그해서 업로드
-                </span>
-              </>
-            )}
-            <input
-              type="file"
-              accept="image/jpeg,image/png"
-              onChange={(event) => {
-                const file = event.target.files ? event.target.files[0] : null;
-                if (!file) {
-                  return;
-                }
-                void (async () => {
-                  const error = await validateImageFile(file);
-                  if (error) {
-                    setFormError(error);
-                    return;
-                  }
-                  setFormError(null);
-                  if (thumbnailPreviewRef.current.startsWith("blob:")) {
-                    URL.revokeObjectURL(thumbnailPreviewRef.current);
-                  }
-                  const previewUrl = URL.createObjectURL(file);
-                  thumbnailPreviewRef.current = previewUrl;
-                  setThumbnailPreviewUrl(previewUrl);
-                  setThumbnail(file);
-                  setThumbnailUrl("");
-                })();
-              }}
-            />
-          </label>
-          <small>이미지 URL로도 제출할 수 있습니다.</small>
-          <input
-            type="text"
-            value={thumbnail ? "" : thumbnailUrl}
-            onChange={(event) => {
-              const value = event.target.value;
-              setThumbnailUrl(value);
-              if (thumbnailPreviewRef.current.startsWith("blob:")) {
-                URL.revokeObjectURL(thumbnailPreviewRef.current);
-                thumbnailPreviewRef.current = "";
-              }
-              setThumbnail(null);
-              setThumbnailPreviewUrl(value);
-            }}
-            placeholder="이미지 URL"
-          />
-        </label>
-        <div className="worldcup-create-items">
+      {successMessage ? <p className="worldcup-create-success">{successMessage}</p> : null}
+      {isJsonMode ? (
+        <section className="worldcup-create-field">
           <div className="worldcup-create-items-header">
-            <h2>아이템</h2>
-            <button type="button" onClick={handleAddItem}>
-              + 추가
+            <h2>JSON 편집</h2>
+            <button type="button" onClick={handleJsonSave} disabled={isSubmitting || isJsonLoading}>
+              {isSubmitting ? "저장 중..." : "JSON 저장"}
             </button>
           </div>
-          {items.map((item, index) => (
-            <div key={`item-${index}`} className="worldcup-create-item">
-              <label>
-                <span>아이템 이름</span>
+          <textarea
+            value={jsonRaw}
+            onChange={(event) => setJsonRaw(event.target.value)}
+            spellCheck={false}
+            rows={14}
+            disabled={isJsonLoading}
+          />
+        </section>
+      ) : null}
+      {showWorldcupFields || showItemEditor ? (
+        <form className="worldcup-create-form" onSubmit={handleSubmit}>
+          {showWorldcupFields ? (
+            <>
+              <label className="worldcup-create-field">
+                <span>게임 제목</span>
                 <input
                   type="text"
-                  value={item.name}
-                  onChange={(event) =>
-                    handleItemChange(index, { name: event.target.value })
-                  }
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="게임 제목을 입력해 주세요"
                 />
               </label>
-              <label>
-                <span>이미지 업로드</span>
-                <label
-                  className="worldcup-create-upload"
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const file = event.dataTransfer.files?.[0] || null;
-                    void handleItemFileSelect(index, file);
-                  }}
-                >
-                  {item.previewUrl || item.imageUrl ? (
+              <label className="worldcup-create-field">
+                <span>설명</span>
+                <textarea
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="게임 설명을 입력해 주세요"
+                />
+              </label>
+              <label className="worldcup-create-field">
+                <span>썸네일</span>
+                <label className="worldcup-create-upload">
+                  {thumbnailPreviewUrl ? (
                     <img
                       className="worldcup-create-upload-image"
-                      src={item.previewUrl || item.imageUrl}
-                      alt="아이템 미리보기"
+                      src={thumbnailPreviewUrl}
+                      alt="썸네일 미리보기"
                     />
                   ) : (
                     <>
@@ -407,48 +410,146 @@ export function MyGameEditRequestPage() {
                   <input
                     type="file"
                     accept="image/jpeg,image/png"
-                    onChange={(event) =>
-                      void handleItemFileSelect(index, event.target.files?.[0] || null)
-                    }
+                    onChange={(event) => {
+                      const file = event.target.files ? event.target.files[0] : null;
+                      if (!file) {
+                        return;
+                      }
+                      void (async () => {
+                        const error = await validateImageFile(file);
+                        if (error) {
+                          setFormError(error);
+                          return;
+                        }
+                        setFormError(null);
+                        if (thumbnailPreviewRef.current.startsWith("blob:")) {
+                          URL.revokeObjectURL(thumbnailPreviewRef.current);
+                        }
+                        const previewUrl = URL.createObjectURL(file);
+                        thumbnailPreviewRef.current = previewUrl;
+                        setThumbnailPreviewUrl(previewUrl);
+                        setThumbnail(file);
+                        setThumbnailUrl("");
+                      })();
+                    }}
                   />
                 </label>
-              </label>
-              <label>
-                <span>이미지 URL</span>
+                <small>이미지 URL로도 제출할 수 있습니다.</small>
                 <input
                   type="text"
-                  value={
-                    item.imageFile || (item.imageUrl && isMediaUrl(item.imageUrl))
-                      ? ""
-                      : item.imageUrl
-                  }
-                  disabled={Boolean(item.imageFile)}
-                  onChange={(event) =>
-                    updateItem(index, (item) => ({
-                      ...item,
-                      imageUrl: event.target.value,
-                      imageFile: null,
-                      previewUrl: "",
-                    }))
-                  }
+                  value={thumbnail ? "" : thumbnailUrl}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setThumbnailUrl(value);
+                    if (thumbnailPreviewRef.current.startsWith("blob:")) {
+                      URL.revokeObjectURL(thumbnailPreviewRef.current);
+                      thumbnailPreviewRef.current = "";
+                    }
+                    setThumbnail(null);
+                    setThumbnailPreviewUrl(value);
+                  }}
+                  placeholder="이미지 URL"
                 />
               </label>
-              <button
-                type="button"
-                className="danger"
-                onClick={() => handleRemoveItem(index)}
-              >
-                삭제
+            </>
+          ) : null}
+          {showItemEditor ? (
+            <div className="worldcup-create-items">
+              <div className="worldcup-create-items-header">
+                <h2>아이템</h2>
+                <button type="button" onClick={handleAddItem}>
+                  + 추가
+                </button>
+              </div>
+              {items.map((item, index) => (
+                <div key={`item-${index}`} className="worldcup-create-item">
+                  <label>
+                    <span>아이템 이름</span>
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(event) =>
+                        handleItemChange(index, { name: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>이미지 업로드</span>
+                    <label
+                      className="worldcup-create-upload"
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const file = event.dataTransfer.files?.[0] || null;
+                        void handleItemFileSelect(index, file);
+                      }}
+                    >
+                      {item.previewUrl || item.imageUrl ? (
+                        <img
+                          className="worldcup-create-upload-image"
+                          src={item.previewUrl || item.imageUrl}
+                          alt="아이템 미리보기"
+                        />
+                      ) : (
+                        <>
+                          <span className="worldcup-create-upload-plus">+</span>
+                          <span className="worldcup-create-upload-text">
+                            클릭하거나 드래그해서 업로드
+                          </span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        onChange={(event) =>
+                          void handleItemFileSelect(
+                            index,
+                            event.target.files?.[0] || null
+                          )
+                        }
+                      />
+                    </label>
+                  </label>
+                  <label>
+                    <span>이미지 URL</span>
+                    <input
+                      type="text"
+                      value={
+                        item.imageFile || (item.imageUrl && isMediaUrl(item.imageUrl))
+                          ? ""
+                          : item.imageUrl
+                      }
+                      disabled={Boolean(item.imageFile)}
+                      onChange={(event) =>
+                        updateItem(index, (item) => ({
+                          ...item,
+                          imageUrl: event.target.value,
+                          imageFile: null,
+                          previewUrl: "",
+                        }))
+                      }
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => handleRemoveItem(index)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {showItemEditor ? (
+            <div className="worldcup-create-actions worldcup-create-actions-right">
+              <button className="worldcup-create-submit" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "요청 중..." : "수정 요청 보내기"}
               </button>
             </div>
-          ))}
-        </div>
-        <div className="worldcup-create-actions worldcup-create-actions-right">
-          <button className="worldcup-create-submit" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "요청 중..." : "수정 요청 보내기"}
-          </button>
-        </div>
-      </form>
+          ) : null}
+        </form>
+      ) : null}
       {formError ? (
         <div className="wc-popup" role="dialog" aria-modal="true">
           <div className="wc-popup-backdrop" onClick={() => setFormError(null)} />

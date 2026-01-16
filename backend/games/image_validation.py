@@ -1,33 +1,43 @@
+import base64
 import os
+from io import BytesIO
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 from PIL import Image
 
-ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".png"}
-MIN_IMAGE_DIMENSION = 200
-MAX_IMAGE_DIMENSION = 4000
+MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024
+REMOTE_IMAGE_TIMEOUT_SECONDS = 5
 
 
-def _validate_image_dimensions(width: int, height: int, field_name: str) -> None:
-    if min(width, height) < MIN_IMAGE_DIMENSION or max(width, height) > MAX_IMAGE_DIMENSION:
-        raise ValidationError({field_name: "이미지 해상도는 200px 이상, 4000px 이하만 가능합니다."})
+def _read_limited(response, max_bytes: int, field_name: str) -> bytes:
+    data = bytearray()
+    while True:
+        chunk = response.read(8192)
+        if not chunk:
+            break
+        data.extend(chunk)
+        if len(data) > max_bytes:
+            raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."})
+    return bytes(data)
 
 
-def _validate_image_extension(path: str, field_name: str) -> None:
-    ext = os.path.splitext(path)[1].lower()
-    if ext not in ALLOWED_IMAGE_EXTENSIONS:
-        raise ValidationError({field_name: "이미지는 jpg 또는 png만 가능합니다."})
+def _validate_image_bytes(data: bytes, field_name: str) -> None:
+    try:
+        with Image.open(BytesIO(data)) as image:
+            image.verify()
+    except Exception as exc:  # noqa: BLE001
+        raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."}) from exc
 
 
 def validate_image_file(file_obj, field_name: str) -> None:
     if file_obj is None:
         return
-    _validate_image_extension(file_obj.name or "", field_name)
     try:
         with Image.open(file_obj) as image:
-            width, height = image.size
+            image.verify()
     except Exception as exc:  # noqa: BLE001 - 이미지 파싱 실패는 검증 에러로 처리
         raise ValidationError({field_name: "이미지 파일을 확인할 수 없습니다."}) from exc
     finally:
@@ -35,25 +45,45 @@ def validate_image_file(file_obj, field_name: str) -> None:
             file_obj.seek(0)
         except Exception:
             pass
-    _validate_image_dimensions(width, height, field_name)
 
 
 def validate_image_url(image_url: str, field_name: str) -> None:
     if not image_url:
         return
     value = str(image_url).strip()
+    if value.startswith("data:image/"):
+        try:
+            header, encoded = value.split(",", 1)
+            data = base64.b64decode(encoded, validate=True)
+        except Exception as exc:  # noqa: BLE001
+            raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."}) from exc
+        _validate_image_bytes(data, field_name)
+        return
     parsed = urlparse(value)
-    if not (parsed.scheme in ("http", "https") or value.startswith("/")):
-        raise ValidationError({field_name: "이미지 URL만 가능합니다."})
     path = parsed.path if parsed.scheme else value
-    _validate_image_extension(path, field_name)
     if path.startswith(settings.MEDIA_URL):
         relative_path = path[len(settings.MEDIA_URL) :]
         file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
-        if os.path.exists(file_path):
-            try:
-                with Image.open(file_path) as image:
-                    width, height = image.size
-            except Exception as exc:  # noqa: BLE001
-                raise ValidationError({field_name: "이미지 파일을 확인할 수 없습니다."}) from exc
-            _validate_image_dimensions(width, height, field_name)
+        if not os.path.exists(file_path):
+            raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."})
+        try:
+            with Image.open(file_path) as image:
+                image.verify()
+        except Exception as exc:  # noqa: BLE001
+            raise ValidationError({field_name: "이미지 파일을 확인할 수 없습니다."}) from exc
+        return
+    if value.startswith("/"):
+        raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."})
+    if parsed.scheme in ("http", "https"):
+        try:
+            request = Request(
+                value,
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*"},
+            )
+            with urlopen(request, timeout=REMOTE_IMAGE_TIMEOUT_SECONDS) as response:
+                data = _read_limited(response, MAX_REMOTE_IMAGE_BYTES, field_name)
+        except Exception as exc:  # noqa: BLE001
+            raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."}) from exc
+        _validate_image_bytes(data, field_name)
+        return
+    raise ValidationError({field_name: "이미지 URL을 불러올 수 없습니다."})

@@ -6,6 +6,7 @@ import type { GameResultDetail } from "../../api/gamesSession";
 import placeholderImage from "../../assets/worldcup-placeholder.svg";
 import { getStoredGameSessionId } from "../../utils/gameSession";
 import { resolveMediaUrl } from "../../api/http";
+import { fetchAdminResultSummary } from "../../api/games";
 
 type ResultPayload = {
   gameId: number;
@@ -125,6 +126,10 @@ export function WorldcupResultPage() {
     const state = location.state as LocationState;
     return state || null;
   });
+  const [adminSummary, setAdminSummary] = useState<{
+    total_results: number;
+    ranking: { id: number | null; name: string; count: number }[];
+  } | null>(null);
 
   useEffect(() => {
     if (!parsedGameId) {
@@ -142,13 +147,15 @@ export function WorldcupResultPage() {
     const sessionId = getStoredGameSessionId(parsedGameId);
     const loadSummary = async () => {
       try {
-        const [summaryResponse, resultResponse] = await Promise.all([
+        const [summaryResponse, resultResponse, adminSummaryResponse] = await Promise.all([
           fetchWorldcupPickSummary(parsedGameId),
           sessionId ? fetchGameResult(sessionId) : Promise.resolve(null),
+          fetchAdminResultSummary(parsedGameId),
         ]);
         const summary = summaryResponse.summary;
         const summaryTotalItems = Number(summary?.total_items ?? 0);
         const mapped = resultResponse?.result ? mapResultFromApi(resultResponse.result) : null;
+        setAdminSummary(adminSummaryResponse);
         setResult((prev) => {
           const base = mapped || prev;
           const championSource = base?.champion || summary?.champion || summary?.ranking[0];
@@ -213,6 +220,15 @@ export function WorldcupResultPage() {
   const video = isVideo(mediaUrl);
   const selectedRound = result.round || result.totalItems;
   const productCount = result.totalItems || result.ranking.length;
+  const adminRanking = (adminSummary?.ranking ?? []).map((entry) => {
+    const fallback = result.ranking.find((item) => item.id === entry.id);
+    return {
+      id: entry.id ?? 0,
+      name: entry.name,
+      file_name: fallback?.file_name || "",
+      wins: entry.count,
+    };
+  });
 
   return (
     <div className="worldcup-result-page">
@@ -253,7 +269,7 @@ export function WorldcupResultPage() {
             <section className="worldcup-dashboard-rank">
               <h3>승리 랭킹</h3>
               <div className="worldcup-rank-table">
-                {result.ranking.map((entry, index) => {
+                {adminRanking.map((entry, index) => {
                   const entryMedia = getMediaUrl(entry.file_name);
                   const entryVideo = isVideo(entryMedia);
                   return (
@@ -288,6 +304,7 @@ export function WorldcupResultPage() {
           ) : (
             <>
               <section className="worldcup-dashboard-hero">
+                <p className="worldcup-winner-label">우승자는...</p>
                 <div className="result-media">
                   {mediaUrl ? (
                     video ? (
@@ -301,8 +318,10 @@ export function WorldcupResultPage() {
                     </div>
                   )}
                 </div>
-                <h3 className="result-title">{result.champion.name || result.champion.file_name}</h3>
-                <p className="result-sub">이번 월드컵의 우승자입니다.</p>
+                <p className="worldcup-winner-name">
+                  {result.champion.name || result.champion.file_name}
+                  <span className="worldcup-winner-suffix">입니다.</span>
+                </p>
               </section>
               <section className="worldcup-dashboard-stats">
                 <div className="worldcup-stat-card">

@@ -331,6 +331,8 @@ class GameResultDetailView(BaseAPIView):
         return self.respond(data={"result": data})
 
 
+
+
 class PsychoTemplateSaveView(BaseAPIView):
     api_name = "games.psycho.template.save"
 
@@ -1519,6 +1521,28 @@ class AdminGameResultListView(BaseAPIView):
         denied = _require_staff(self, request)
         if denied:
             return denied
+        game_id_value = request.query_params.get("game_id")
+        if game_id_value:
+            try:
+                game_id = int(game_id_value)
+            except (TypeError, ValueError) as exc:
+                raise ValidationError({"game_id": "올바른 게임 ID가 아닙니다."}) from exc
+            qs = GameResult.objects.filter(game_id=game_id)
+            total_results = qs.count()
+            ranking_rows = (
+                qs.values("winner_item_id", "winner_item__name")
+                .annotate(count=models.Count("id"))
+                .order_by("-count", "winner_item__name", "winner_item_id")
+            )
+            ranking = [
+                {
+                    "id": row["winner_item_id"],
+                    "name": row["winner_item__name"] or "미지정",
+                    "count": row["count"],
+                }
+                for row in ranking_rows
+            ]
+            return self.respond(data={"total_results": total_results, "ranking": ranking})
         qs = GameResult.objects.select_related("game", "winner_item").order_by("-created_at")[:200]
         serializer = AdminGameResultSerializer(qs, many=True)
         return self.respond(data={"results": serializer.data})

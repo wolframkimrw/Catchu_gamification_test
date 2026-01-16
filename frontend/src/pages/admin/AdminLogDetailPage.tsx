@@ -6,10 +6,10 @@ import {
   fetchAdminChoiceLogs,
   fetchAdminGameDetail,
   fetchAdminPickLogs,
-  fetchAdminResultLogs,
+  fetchAdminResultSummary,
   type AdminChoiceLog,
   type AdminPickLog,
-  type AdminResultLog,
+  type AdminResultSummary,
   type AdminGameDetail,
 } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
@@ -26,7 +26,7 @@ export function AdminLogDetailPage() {
   const [game, setGame] = useState<AdminGameDetail | null>(null);
   const [choiceLogs, setChoiceLogs] = useState<AdminChoiceLog[]>([]);
   const [pickLogs, setPickLogs] = useState<AdminPickLog[]>([]);
-  const [resultLogs, setResultLogs] = useState<AdminResultLog[]>([]);
+  const [resultSummary, setResultSummary] = useState<AdminResultSummary | null>(null);
   const [modalChoiceId, setModalChoiceId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,13 +41,13 @@ export function AdminLogDetailPage() {
       fetchAdminGameDetail(parsedGameId),
       fetchAdminChoiceLogs(),
       fetchAdminPickLogs(),
-      fetchAdminResultLogs(),
+      fetchAdminResultSummary(parsedGameId),
     ])
-      .then(([gameDetail, choices, picks, results]) => {
+      .then(([gameDetail, choices, picks, summary]) => {
         setGame(gameDetail);
         setChoiceLogs(choices.filter((log) => log.game.id === parsedGameId));
         setPickLogs(picks.filter((log) => log.game.id === parsedGameId));
-        setResultLogs(results.filter((log) => log.game.id === parsedGameId));
+        setResultSummary(summary);
       })
       .catch((err) => {
         if (err instanceof ApiError) {
@@ -67,39 +67,20 @@ export function AdminLogDetailPage() {
 
   const isWorldCup = game?.type === "WORLD_CUP";
   const totalStarts = choiceLogs.length;
-  const totalResults = resultLogs.length;
+  const totalResults = resultSummary?.total_results ?? 0;
   const totalDrops = Math.max(0, totalStarts - totalResults);
   const winnerRanking = useMemo(() => {
-    const counts = new Map<
-      number | string,
-      { id?: number; label: string; count: number; imageUrl: string }
-    >();
     const itemImageMap = new Map<number, string>(
       game?.items.map((item) => [item.id, item.file_name]) ?? []
     );
-    resultLogs.forEach((log) => {
-      const winnerId = log.winner_item?.id;
-      const key = winnerId ?? log.winner_item?.name ?? "미지정";
-      const label = log.winner_item?.name || "미지정";
-      const imageUrl = winnerId ? itemImageMap.get(winnerId) || "" : "";
-      const entry = counts.get(key);
-      if (entry) {
-        entry.count += 1;
-      } else {
-        counts.set(key, { id: winnerId, label, count: 1, imageUrl });
-      }
-    });
-    return Array.from(counts.values())
-      .map((entry) => ({
-        ...entry,
-        rate: totalResults ? entry.count / totalResults : 0,
-      }))
-      .sort((a, b) => {
-        if (b.rate !== a.rate) return b.rate - a.rate;
-        if (b.count !== a.count) return b.count - a.count;
-        return a.label.localeCompare(b.label);
-      });
-  }, [game?.items, resultLogs, totalResults]);
+    return (resultSummary?.ranking ?? []).map((entry) => ({
+      id: entry.id ?? undefined,
+      label: entry.name,
+      count: entry.count,
+      imageUrl: entry.id ? itemImageMap.get(entry.id) || "" : "",
+      rate: totalResults ? entry.count / totalResults : 0,
+    }));
+  }, [game?.items, resultSummary, totalResults]);
 
   const itemImageMap = useMemo(
     () => new Map(game?.items.map((item) => [item.id, item.file_name]) ?? []),

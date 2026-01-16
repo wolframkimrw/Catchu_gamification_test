@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "../pages/admin/admin-games.css";
 import { ApiError } from "../api/http";
 import { fetchGameJsonFile, saveAdminJsonFile, savePsychoTemplate } from "../api/games";
@@ -115,7 +115,7 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
   const psychoThumbnailRef = useRef("");
   const lastLoadedContentRef = useRef<Record<string, unknown> | null>(null);
 
-  const applyJsonContent = (content: Record<string, unknown> | null) => {
+  const applyJsonContent = useCallback((content: Record<string, unknown> | null) => {
     if (isSajuJson) {
       const data = (content || {}) as Record<string, IdiomEntry[]>;
       setIdiomBuckets({
@@ -234,7 +234,7 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
           : []
       );
     }
-  };
+  }, [gameSlug, isPsychoJson, isSajuJson]);
 
   const toggleCardExpanded = (cardId: string) => {
     setExpandedCards((prev) => {
@@ -343,7 +343,7 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
         }
       })
       .finally(() => setIsLoading(false));
-  }, [gameSlug, isPsychoJson, isSajuJson, jsonPath]);
+  }, [applyJsonContent, jsonPath]);
 
   const handleCancelJson = () => {
     if (onCancel) {
@@ -564,7 +564,8 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
             if (!(removedId in option.weights)) {
               return option;
             }
-            const { [removedId]: _, ...rest } = option.weights;
+            const { [removedId]: removedWeight, ...rest } = option.weights;
+            void removedWeight;
             return { ...option, weights: rest };
           }),
         }))

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./admin-games.css";
 import { ApiError } from "../../api/http";
@@ -237,7 +237,7 @@ export function AdminGameDetailPage() {
   const isSajuJson = Boolean(jsonPath && jsonPath.startsWith("fortune/"));
   const isPsychoJson = Boolean(jsonPath && jsonPath.startsWith("psycho/"));
 
-  const applyJsonContent = (content: Record<string, unknown> | null) => {
+  const applyJsonContent = useCallback((content: Record<string, unknown> | null) => {
     if (isSajuJson) {
       const data = (content || {}) as Record<string, IdiomEntry[]>;
       setIdiomBuckets({
@@ -252,7 +252,6 @@ export function AdminGameDetailPage() {
       const data = content && typeof content === "object" ? content : {};
       const {
         slug,
-        game_slug,
         title,
         description,
         thumbnail_url,
@@ -360,7 +359,7 @@ export function AdminGameDetailPage() {
       return;
     }
     setJsonRaw(JSON.stringify(content || {}, null, 2));
-  };
+  }, [game?.slug, isPsychoJson, isSajuJson]);
 
   useEffect(() => {
     if (!jsonPath) {
@@ -404,7 +403,7 @@ export function AdminGameDetailPage() {
           setError("JSON을 불러오지 못했습니다.");
         }
       });
-  }, [game, isPsychoJson, isSajuJson, jsonPath]);
+  }, [applyJsonContent, jsonPath]);
 
   const handleCancelJson = () => {
     navigate("/admin/games");
@@ -831,7 +830,8 @@ export function AdminGameDetailPage() {
             if (!(removedId in option.weights)) {
               return option;
             }
-            const { [removedId]: _, ...rest } = option.weights;
+            const { [removedId]: removedWeight, ...rest } = option.weights;
+            void removedWeight;
             return { ...option, weights: rest };
           }),
         }))

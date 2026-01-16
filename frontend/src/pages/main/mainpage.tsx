@@ -1,5 +1,5 @@
 // src/pages/main/mainpage.tsx
-import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { Link } from "react-router-dom";
 import "../games/worldcup.css";
 import type { BannerItem, Game } from "../../api/games";
@@ -150,7 +150,7 @@ export function WorldcupListPage() {
     ];
   }, [banners, fortuneGames, worldcupGames]);
 
-  const resetBannerTimer = () => {
+  const resetBannerTimer = useCallback(() => {
     if (bannerTimerRef.current) {
       window.clearInterval(bannerTimerRef.current);
       bannerTimerRef.current = null;
@@ -161,7 +161,7 @@ export function WorldcupListPage() {
     bannerTimerRef.current = window.setInterval(() => {
       setBannerIndex((prev) => (prev + 1) % bannerSlides.length);
     }, 5000);
-  };
+  }, [bannerSlides.length]);
 
   const bumpBannerIndex = (direction: number) => {
     if (bannerSlides.length === 0) {
@@ -217,7 +217,7 @@ export function WorldcupListPage() {
         bannerTimerRef.current = null;
       }
     };
-  }, [bannerSlides.length]);
+  }, [bannerSlides.length, resetBannerTimer]);
 
   return (
     <div className="page">

@@ -90,19 +90,15 @@ export function WorldcupArenaPage() {
     setMatchIndex(0);
   }, []);
 
-  const getMaxRoundSize = (count: number) => {
-    let size = 1;
-    while (size * 2 <= count) {
-      size *= 2;
-    }
-    return Math.min(Math.max(size, 2), 64);
-  };
-
-  const resolveRoundSize = (preferred: number | undefined, count: number) => {
+  const resolveRoundSize = useCallback((preferred: number | undefined, count: number) => {
     if (count <= 0) {
       return 0;
     }
-    const maxSize = getMaxRoundSize(count);
+    let maxSize = 1;
+    while (maxSize * 2 <= count) {
+      maxSize *= 2;
+    }
+    maxSize = Math.min(Math.max(maxSize, 2), 64);
     if (!preferred) {
       return maxSize;
     }
@@ -112,7 +108,7 @@ export function WorldcupArenaPage() {
       size *= 2;
     }
     return Math.max(size, 2);
-  };
+  }, []);
 
   const pickRandomItems = (items: GameItem[], count: number) => {
     if (count <= 0 || items.length <= count) {
@@ -210,7 +206,15 @@ export function WorldcupArenaPage() {
     pickIndexRef.current = 0;
     setPlayItems(selectedItems);
     startRound(shuffled, 1);
-  }, [champion, currentRound.length, roundConfirmed, selectedRound, startRound, state]);
+  }, [
+    champion,
+    currentRound.length,
+    roundConfirmed,
+    resolveRoundSize,
+    selectedRound,
+    startRound,
+    state,
+  ]);
 
   useEffect(() => {
     if (state.status !== "success") {
@@ -335,7 +339,16 @@ export function WorldcupArenaPage() {
     sessionStorage.setItem(`worldcup-result-${parsedGameId}`, JSON.stringify(payload));
     hasNavigatedRef.current = true;
     navigate(`/worldcup/${parsedGameId}/result`, { replace: true, state: payload });
-  }, [allItems, champion, itemsCount, navigate, parsedGameId, resolvedGame, selectedRound]);
+  }, [
+    allItems,
+    champion,
+    itemsCount,
+    navigate,
+    parsedGameId,
+    resolvedGame,
+    selectedRound,
+    sessionId,
+  ]);
 
   useEffect(() => {
     if (!champion || parsedGameId === null || !sessionId) {

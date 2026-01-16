@@ -13,17 +13,6 @@ type PageState =
   | { status: "error"; message: string }
   | { status: "success"; data: GameDetailData };
 
-const getTypeLabel = (value: string) => {
-  const map: Record<string, string> = {
-    WORLD_CUP: "월드컵",
-    FORTUNE_TEST: "운세",
-    PSYCHOLOGICAL: "심리테스트",
-    PSYCHO_TEST: "심리테스트",
-    QUIZ: "퀴즈",
-  };
-  return map[value] || value;
-};
-
 export function WorldcupPlayPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const parsedGameId = useMemo(() => {
@@ -134,63 +123,7 @@ export function WorldcupPlayPage() {
         </div>
       ) : !started && !champion ? (
         <GameStartScreen
-          title={game.title}
-          tags={[
-            {
-              label: getTypeLabel(game.type),
-              icon: (
-                <svg viewBox="0 0 24 24" role="img">
-                  <path
-                    d="M7.5 8.5h9c2.07 0 3.75 1.68 3.75 3.75v3.25a2 2 0 0 1-2 2h-1.1a2 2 0 0 1-1.79-1.1l-.67-1.35H9.31l-.67 1.35A2 2 0 0 1 6.85 17.5H5.75a2 2 0 0 1-2-2v-3.25A3.75 3.75 0 0 1 7.5 8.5Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M9 12h-2m1-1v2"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="16" cy="11.5" r="0.9" fill="currentColor" />
-                  <circle cx="18.2" cy="13.2" r="0.9" fill="currentColor" />
-                </svg>
-              ),
-            },
-            {
-              label: "예상 시간 2분",
-              icon: (
-                <svg viewBox="0 0 24 24" role="img">
-                  <path
-                    d="M9 3h6m-3 0v3"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                  <circle
-                    cx="12"
-                    cy="13"
-                    r="7"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M12 13l3-2"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              ),
-            },
-          ]}
-          media={<img src={game.thumbnail} alt={game.title} />}
-          buttonLabel="게임 시작"
+          game={game}
           onStart={startGame}
         />
       ) : (

@@ -3,14 +3,14 @@
 }
 
 .detail-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 18px;
-  box-shadow: 0 10px 26px rgba(27, 31, 59, 0.12);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
 }
 
 .play-card {
-  background: linear-gradient(180deg, #f7f5ff 0%, #ffffff 60%);
+  background: transparent;
   padding: 0;
 }
 

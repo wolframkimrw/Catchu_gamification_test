@@ -1,0 +1,78 @@
+.my-info-page {
+  padding: 1.5rem 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.my-info-header h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.4rem;
+  color: #1b1c1f;
+}
+
+.my-info-header p {
+  margin: 0;
+  color: #6b6f76;
+  font-size: 0.95rem;
+}
+
+.my-info-section {
+  border-top: 1px solid #eceff6;
+  border-bottom: 1px solid #eceff6;
+}
+
+.my-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #eceff6;
+}
+
+.my-info-row:last-child {
+  border-bottom: none;
+}
+
+.my-info-label {
+  color: #6b6f76;
+  font-size: 0.9rem;
+}
+
+.my-info-value {
+  color: #1b1c1f;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.my-info-card {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.my-info-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.my-info-card p {
+  margin: 0 0 0.9rem;
+  color: #6b6f76;
+}
+
+.my-info-link {
+  text-decoration: none;
+  color: #ffffff;
+  background: #1b1c1f;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 600;
+}
+
+@media (min-width: 40rem) {
+  .my-info-page {
+    padding: 2rem 1.5rem 2.5rem;
+  }
+}

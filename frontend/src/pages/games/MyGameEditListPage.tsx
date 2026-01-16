@@ -5,6 +5,7 @@ import { ApiError } from "../../api/http";
 import { fetchMyGames } from "../../api/games";
 import type { Game } from "../../api/games";
 import { useAuthUser } from "../../hooks/useAuthUser";
+import { getTypeLabel } from "../../components/GameStartScreen";
 
 export function MyGameEditListPage() {
   const { user } = useAuthUser();
@@ -57,7 +58,7 @@ export function MyGameEditListPage() {
               </div>
               <div className="my-edit-info">
                 <div className="my-edit-title">{game.title}</div>
-                <div className="my-edit-meta">{game.type}</div>
+                <div className="my-edit-meta">{getTypeLabel(game.type)}</div>
                 <Link to={`/my/games/${game.id}/edit`} className="my-edit-button">
                   수정 요청
                 </Link>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 import { WorldcupDetailPage } from "./pages/games/WorldcupDetailPage";
@@ -23,10 +23,22 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
 import { AdminBannersPage } from "./pages/admin/AdminBannersPage";
 import { useAuthUser } from "./hooks/useAuthUser";
+import { SearchPage } from "./pages/common/searchpage";
+import { MyInfoPage } from "./pages/common/my-info";
 
 function Layout() {
   const location = useLocation();
   const isArena = location.pathname.includes("/arena");
+  const isInGame = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith("/saju") || path.startsWith("/psycho")) {
+      return true;
+    }
+    if (path.startsWith("/worldcup/")) {
+      return path.includes("/play") || path.includes("/arena") || path.includes("/result");
+    }
+    return false;
+  }, [location.pathname]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
@@ -64,36 +76,67 @@ function Layout() {
           >
             ☰
           </button>
-          <div className="app-title">캐치유 테스트</div>
+          <Link className="app-title" to="/">
+            캐치유 테스트
+          </Link>
           <div className="app-actions">
-            <button className="app-icon" type="button" aria-label="검색">
-              🔍
-            </button>
+            {!isInGame ? (
+              <Link className="app-icon app-icon-button" to="/search" aria-label="검색">
+                <span className="app-icon-svg" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="presentation">
+                    <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" fill="none" />
+                    <line x1="16.2" y1="16.2" x2="21" y2="21" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                </span>
+              </Link>
+            ) : null}
             <div className="app-user" ref={userMenuRef}>
               {user ? (
                 <button
-                  className="app-icon"
+                  className="app-icon app-icon-button"
                   type="button"
                   aria-label="계정 메뉴"
                   onClick={() => setIsUserMenuOpen((prev) => !prev)}
                 >
-                  👤
+                  <span className="app-icon-svg" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" role="presentation">
+                      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" fill="none" />
+                      <path
+                        d="M4 20c1.7-4 5.1-6 8-6s6.3 2 8 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
                 </button>
               ) : (
-                <Link className="app-icon" to="/login" aria-label="로그인">
-                  👤
+                <Link className="app-icon app-icon-button" to="/login" aria-label="로그인">
+                  <span className="app-icon-svg" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" role="presentation">
+                      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" fill="none" />
+                      <path
+                        d="M4 20c1.7-4 5.1-6 8-6s6.3 2 8 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
                 </Link>
               )}
               {user && isUserMenuOpen ? (
                 <div className="app-user-menu" role="menu">
                   <div className="app-user-name">{user.name}</div>
-                  <button
-                    type="button"
+                  <Link
+                    to="/me"
                     className="app-user-item"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
                     내정보
-                  </button>
+                  </Link>
                   <button
                     type="button"
                     className="app-user-item danger"
@@ -147,6 +190,7 @@ function Layout() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<WorldcupListPage />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/worldcup/:gameId" element={<WorldcupDetailPage />} />
             <Route path="/worldcup/:gameId/play" element={<WorldcupPlayPage />} />
             <Route path="/worldcup/:gameId/arena" element={<WorldcupArenaPage />} />
@@ -154,6 +198,7 @@ function Layout() {
             <Route path="/worldcup/create" element={<WorldcupCreatePage />} />
             <Route path="/my/games" element={<MyGameEditListPage />} />
             <Route path="/my/games/:gameId/edit" element={<MyGameEditRequestPage />} />
+            <Route path="/me" element={<MyInfoPage />} />
             <Route path="/saju" element={<SajuLuckPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/psycho/:slug" element={<PsychoTestPage />} />

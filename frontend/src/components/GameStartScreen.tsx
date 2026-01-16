@@ -21,7 +21,7 @@ type GameStartScreenProps = {
   className?: string;
 };
 
-const getTypeLabel = (value: string) => {
+export const getTypeLabel = (value: string) => {
   const map: Record<string, string> = {
     WORLD_CUP: "월드컵",
     FORTUNE_TEST: "운세",

@@ -885,7 +885,7 @@
 .admin-psycho-option {
   border: 1px solid #e4e6f1;
   border-radius: 14px;
-  padding: 1rem;
+  padding: 0.5px 1rem;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -894,42 +894,10 @@
 
 .admin-psycho-card-header,
 .admin-psycho-option-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.8rem;
-  align-items: flex-start;
-  min-height: auto;
-}
-
-.admin-psycho-option-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.8rem;
-  align-items: flex-start;
-  min-height: auto;
-}
-
-.admin-psycho-option-header .admin-psycho-chevron {
-  flex-shrink: 0;
-  grid-column: 1;
-}
-
-.admin-psycho-option-header strong {
-  grid-column: 2;
-  min-width: 0;
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.5;
-}
-
-.admin-psycho-option-header .admin-psycho-remove {
-  grid-column: 3;
-  grid-row: 1 / 3;
-  align-self: center;
-  flex-shrink: 0;
-  padding: 0.4rem 0.7rem;
-  white-space: nowrap;
-  height: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .admin-psycho-remove {

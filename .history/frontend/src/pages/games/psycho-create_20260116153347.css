@@ -128,7 +128,7 @@
   margin: 0.2rem 0 0.8rem;
 }
 
-.psycho-section-header+.psycho-section-sep {
+.psycho-section-header + .psycho-section-sep {
   height: 1px;
   background: #e0e0e0;
 }
@@ -184,12 +184,12 @@
   box-shadow: none;
 }
 
-.psycho-card-item+.psycho-card-item,
-.psycho-question-item+.psycho-question-item {
+.psycho-card-item + .psycho-card-item,
+.psycho-question-item + .psycho-question-item {
   border-top: 1px solid #e0e0e0;
 }
 
-.psycho-paragraph-item+.psycho-paragraph-item {
+.psycho-paragraph-item + .psycho-paragraph-item {
   border-top: 1px solid #eceff1;
 }
 
@@ -334,7 +334,7 @@
 .psycho-card-actions button,
 .psycho-option-actions button,
 .psycho-question-actions button,
-.psycho-create-section>button,
+.psycho-create-section > button,
 .psycho-section-row button,
 .psycho-paragraph-header button,
 .psycho-create-page button[type="button"] {

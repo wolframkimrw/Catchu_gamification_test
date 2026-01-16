@@ -9,6 +9,7 @@ import {
 } from "../../api/games";
 import type { GameDetailData } from "../../api/games";
 import { GameJsonEditor } from "../../components/GameJsonEditor";
+import { ListBackButton } from "../../components/ListBackButton";
 import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
 type EditItemForm = {
@@ -289,9 +290,7 @@ export function MyGameEditRequestPage() {
   return (
     <div className="worldcup-create-page">
       <div className="worldcup-create-actions worldcup-create-actions-top">
-        <button type="button" className="ghost" onClick={() => navigate("/my/games")}>
-          목록으로
-        </button>
+        <ListBackButton to="/my/games" />
       </div>
       <header className="worldcup-create-header">
         <h1>내 게임 수정</h1>
@@ -302,6 +301,7 @@ export function MyGameEditRequestPage() {
           jsonPath={jsonPath}
           gameSlug={state.data.game.slug || "major-arcana"}
           gameType={state.data.game.type}
+          onCancel={() => navigate("/my/games")}
         />
       ) : null}
       {showWorldcupFields || showItemEditor ? (

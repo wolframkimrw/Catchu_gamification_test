@@ -8,6 +8,7 @@ type GameJsonEditorProps = {
   jsonPath: string;
   gameSlug: string;
   gameType: string;
+  onCancel?: () => void;
 };
 
 type IdiomEntry = {
@@ -72,7 +73,7 @@ const readFileAsDataUrl = (file: File) =>
 
 const isDataUrl = (value: string) => value.startsWith("data:");
 
-export function GameJsonEditor({ jsonPath, gameSlug, gameType }: GameJsonEditorProps) {
+export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJsonEditorProps) {
   const isSajuJson = gameType === "FORTUNE_TEST";
   const isPsychoJson = gameType === "PSYCHO_TEST" || gameType === "PSYCHOLOGICAL";
   const [error, setError] = useState<string | null>(null);
@@ -345,11 +346,14 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType }: GameJsonEditorP
   }, [gameSlug, isPsychoJson, isSajuJson, jsonPath]);
 
   const handleCancelJson = () => {
-    if (!lastLoadedContentRef.current) {
+    if (onCancel) {
+      onCancel();
       return;
     }
-    setError(null);
-    applyJsonContent(lastLoadedContentRef.current);
+    if (lastLoadedContentRef.current) {
+      setError(null);
+      applyJsonContent(lastLoadedContentRef.current);
+    }
   };
 
   const updateEntry = (index: number, updates: Partial<IdiomEntry>) => {

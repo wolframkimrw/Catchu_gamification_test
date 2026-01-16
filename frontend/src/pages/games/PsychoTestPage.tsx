@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./worldcup.css";
 import "./psycho-test.css";
 import "./major-arcana.css";
@@ -200,6 +200,7 @@ const resolveOutcome = (template: PsychoTemplate, answers: PsychoAnswer[]): Psyc
 
 export function PsychoTestPage() {
   const { slug } = useParams<{ slug?: string }>();
+  const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [template, setTemplate] = useState<PsychoTemplate | null>(null);
   const [currentId, setCurrentId] = useState("");
@@ -373,6 +374,7 @@ export function PsychoTestPage() {
               <MajorArcanaResultActions
                 onRetry={handleRestart}
                 onExit={() => setStarted(false)}
+                onHome={() => navigate("/")}
               />
             </div>
           ) : (

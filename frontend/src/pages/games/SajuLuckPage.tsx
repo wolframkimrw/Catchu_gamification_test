@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./saju.css";
 import { GameStartScreen } from "../../components/GameStartScreen";
 import sajuHero from "../../assets/saju-hero.svg";
@@ -15,6 +16,7 @@ import {
 type LuckResult = ReturnType<typeof calculateLuckFromBirthDate>;
 
 export function SajuLuckPage() {
+  const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [gender, setGender] = useState<GenderType | "">("");
   const [calendarType, setCalendarType] = useState<CalendarType>("SOLAR");
@@ -316,6 +318,13 @@ export function SajuLuckPage() {
                       onClick={() => setResultStep(3)}
                     >
                       이전
+                    </button>
+                    <button
+                      className="btn btn-ghost"
+                      type="button"
+                      onClick={() => navigate("/")}
+                    >
+                      홈으로
                     </button>
                     <button
                       className="btn btn-primary"

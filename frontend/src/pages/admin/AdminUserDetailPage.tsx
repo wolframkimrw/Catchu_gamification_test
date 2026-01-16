@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./admin-games.css";
 import { ApiError } from "../../api/http";
 import { fetchAdminUsers, updateAdminUser, type AdminUser } from "../../api/accounts";
 import { fetchAdminChoiceLogs, type AdminChoiceLog } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
+import { ListBackButton } from "../../components/ListBackButton";
 
 export function AdminUserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -102,10 +103,7 @@ export function AdminUserDetailPage() {
         title="유저"
         showTabs={false}
         headerTop={
-          <Link className="admin-back-button" to="/admin/users">
-            <span className="admin-back-icon" aria-hidden="true" />
-            뒤로가기
-          </Link>
+          <ListBackButton to="/admin/users" />
         }
       >
         <div className="admin-games-error">유저 ID가 올바르지 않습니다.</div>
@@ -120,10 +118,7 @@ export function AdminUserDetailPage() {
       description={user ? `유저 · ${user.name}` : "유저"}
       showTabs={false}
       headerTop={
-        <Link className="admin-back-button" to="/admin/users">
-          <span className="admin-back-icon" aria-hidden="true" />
-          뒤로가기
-        </Link>
+        <ListBackButton to="/admin/users" />
       }
     >
       {error ? <div className="admin-games-error">{error}</div> : null}

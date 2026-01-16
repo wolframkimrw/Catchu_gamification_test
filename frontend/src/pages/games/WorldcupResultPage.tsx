@@ -199,7 +199,7 @@ export function WorldcupResultPage() {
                 다시 플레이
               </Link>
               <Link to="/" className="btn btn-ghost">
-                리스트로
+                홈으로
               </Link>
             </div>
           </div>
@@ -225,7 +225,7 @@ export function WorldcupResultPage() {
               다시 플레이
             </Link>
             <Link to="/" className="btn btn-ghost">
-              리스트로
+              홈으로
             </Link>
           </div>
         </header>

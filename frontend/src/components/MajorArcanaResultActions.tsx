@@ -3,13 +3,14 @@ import "./MajorArcanaResultActions.css";
 type Props = {
   onRetry: () => void;
   onExit: () => void;
+  onHome?: () => void;
   className?: string;
 };
 
 // Usage:
 // import { MajorArcanaResultActions } from "../../components/MajorArcanaResultActions";
 // <MajorArcanaResultActions onRetry={handleRestart} onExit={() => setStarted(false)} />
-export function MajorArcanaResultActions({ onRetry, onExit, className }: Props) {
+export function MajorArcanaResultActions({ onRetry, onExit, onHome, className }: Props) {
   return (
     <div className={`arcana-actions ${className || ""}`.trim()}>
       <button
@@ -28,6 +29,16 @@ export function MajorArcanaResultActions({ onRetry, onExit, className }: Props) 
       >
         나가기
       </button>
+      {onHome ? (
+        <button
+          type="button"
+          className="arcana-btn arcana-btn-home"
+          aria-label="홈으로 돌아가기"
+          onClick={onHome}
+        >
+          홈으로
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -56,6 +56,16 @@
   background: rgba(255, 255, 255, 0.8);
 }
 
+.arcana-btn-home {
+  background: rgba(255, 255, 255, 0.85);
+  color: #5a3d8c;
+  border-color: rgba(181, 162, 214, 0.55);
+}
+
+.arcana-btn-home:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
 @media (max-width: 360px) {
   .arcana-btn {
     padding: 0.65rem 1.15rem;

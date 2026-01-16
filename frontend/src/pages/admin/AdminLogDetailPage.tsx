@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./admin-games.css";
 import { ApiError } from "../../api/http";
 import {
@@ -13,6 +13,7 @@ import {
   type AdminGameDetail,
 } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
+import { ListBackButton } from "../../components/ListBackButton";
 
 type LogTab = "choices" | "picks";
 
@@ -173,10 +174,7 @@ export function AdminLogDetailPage() {
         title="결과/로그"
         showTabs={false}
         headerTop={
-          <Link className="admin-back-button" to="/admin/logs">
-            <span className="admin-back-icon" aria-hidden="true" />
-            뒤로가기
-          </Link>
+          <ListBackButton to="/admin/logs" />
         }
       >
         <div className="admin-games-error">게임 ID가 올바르지 않습니다.</div>
@@ -190,10 +188,7 @@ export function AdminLogDetailPage() {
       title=""
       description={game ? `로그 · ${game.title}` : "로그"}
       headerTop={
-        <Link className="admin-back-button" to="/admin/logs">
-          <span className="admin-back-icon" aria-hidden="true" />
-          뒤로가기
-        </Link>
+        <ListBackButton to="/admin/logs" />
       }
     >
       {error ? <div className="admin-games-error">{error}</div> : null}

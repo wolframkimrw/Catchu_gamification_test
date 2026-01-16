@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./admin-games.css";
 import { ApiError } from "../../api/http";
 import {
@@ -9,6 +9,7 @@ import {
   type AdminEditRequestDetail,
 } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
+import { ListBackButton } from "../../components/ListBackButton";
 
 type PageState =
   | { status: "loading" }
@@ -44,10 +45,7 @@ export function AdminEditRequestDetailPage() {
         title="수정 요청 상세"
         showTabs={false}
         headerTop={
-          <Link className="admin-back-button" to="/admin/requests">
-            <span className="admin-back-icon" aria-hidden="true" />
-            뒤로가기
-          </Link>
+          <ListBackButton to="/admin/requests" />
         }
       >
         <div className="admin-games-error">요청 ID가 올바르지 않습니다.</div>
@@ -104,10 +102,7 @@ export function AdminEditRequestDetailPage() {
         title="수정 요청 상세"
         showTabs={false}
         headerTop={
-          <Link className="admin-back-button" to="/admin/requests">
-            <span className="admin-back-icon" aria-hidden="true" />
-            뒤로가기
-          </Link>
+          <ListBackButton to="/admin/requests" />
         }
       >
         <div className="admin-games-empty">불러오는 중...</div>
@@ -122,10 +117,7 @@ export function AdminEditRequestDetailPage() {
         title="수정 요청 상세"
         showTabs={false}
         headerTop={
-          <Link className="admin-back-button" to="/admin/requests">
-            <span className="admin-back-icon" aria-hidden="true" />
-            뒤로가기
-          </Link>
+          <ListBackButton to="/admin/requests" />
         }
       >
         <div className="admin-games-error">{state.message}</div>
@@ -313,10 +305,7 @@ export function AdminEditRequestDetailPage() {
       description={`수정 요청 · ${state.data.game.title}`}
       showTabs={false}
       headerTop={
-        <Link className="admin-back-button" to="/admin/requests">
-          <span className="admin-back-icon" aria-hidden="true" />
-          뒤로가기
-        </Link>
+        <ListBackButton to="/admin/requests" />
       }
     >
       {actionError ? <div className="admin-games-error">{actionError}</div> : null}

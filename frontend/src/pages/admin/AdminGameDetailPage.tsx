@@ -14,6 +14,7 @@ import {
   updateAdminGameItem,
 } from "../../api/games";
 import { AdminShell } from "../../components/AdminShell";
+import { ListBackButton } from "../../components/ListBackButton";
 import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
 type IdiomEntry = {
@@ -406,11 +407,7 @@ export function AdminGameDetailPage() {
   }, [game, isPsychoJson, isSajuJson, jsonPath]);
 
   const handleCancelJson = () => {
-    if (!lastLoadedJsonRef.current) {
-      return;
-    }
-    setError(null);
-    applyJsonContent(lastLoadedJsonRef.current);
+    navigate("/admin/games");
   };
 
   const handleUpdate = async (updates: { visibility?: string; status?: string }) => {
@@ -1196,10 +1193,7 @@ export function AdminGameDetailPage() {
       description={`게임 설정 · ${getTypeLabel(game.type)}`}
       showTabs={false}
       headerTop={
-        <button type="button" className="admin-back-button" onClick={() => navigate(-1)}>
-          <span className="admin-back-icon" aria-hidden="true" />
-          뒤로가기
-        </button>
+        <ListBackButton to="/admin/games" />
       }
     >
       {error ? <div className="admin-games-error">{error}</div> : null}

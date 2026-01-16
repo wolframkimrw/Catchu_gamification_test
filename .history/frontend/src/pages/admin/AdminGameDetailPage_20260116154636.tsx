@@ -1465,9 +1465,8 @@ export function AdminGameDetailPage() {
             gameType={game?.type || "PSYCHO_TEST"}
             onCancel={() => setJsonRaw("")}
           />
-        ) : null
-      ) : null}
-      {showItemSection ? (
+        ) : null}
+        {showItemSection ? (
         <>
           <section className="admin-item-section">
             <div className="admin-item-header">

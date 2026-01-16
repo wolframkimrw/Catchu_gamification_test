@@ -1465,7 +1465,609 @@ export function AdminGameDetailPage() {
             gameType={game?.type || "PSYCHO_TEST"}
             onCancel={() => setJsonRaw("")}
           />
-        ) : null
+        ) : null}
+        {/* OLD_PSYCHO_EDITOR_START
+        ) : isPsychoJson ? (
+          <section className="admin-json-editor admin-psycho-editor">
+            <div className="admin-psycho-section">
+              <div className="admin-psycho-section-header">
+                <h4>JSON 편집</h4>
+              </div>
+              <div className="admin-psycho-grid">
+                <label>
+                  제목
+                  <input
+                    type="text"
+                    value={psychoTitle}
+                    onChange={(event) => setPsychoTitle(event.target.value)}
+                  />
+                </label>
+                <label>
+                  설명
+                  <textarea
+                    rows={3}
+                    value={psychoDescription}
+                    onChange={(event) => setPsychoDescription(event.target.value)}
+                  />
+                </label>
+                <label>
+                  태그 (쉼표로 구분)
+                  <input
+                    type="text"
+                    value={psychoTags}
+                    onChange={(event) => setPsychoTags(event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="admin-psycho-media-row">
+                <label className="admin-psycho-upload">
+                  {psychoThumbnailPreview ? (
+                    <img src={psychoThumbnailPreview} alt="thumbnail" />
+                  ) : (
+                    <span>썸네일 업로드</span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={(event) =>
+                      void handlePsychoThumbnailSelect(event.target.files?.[0] || null)
+                    }
+                  />
+                </label>
+                <label className="admin-psycho-url">
+                  썸네일 URL
+                  <input
+                    type="text"
+                    value={psychoThumbnailFile ? "" : psychoThumbnailUrl}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      setPsychoThumbnailUrl(next);
+                      if (psychoThumbnailPreview.startsWith("blob:")) {
+                        URL.revokeObjectURL(psychoThumbnailPreview);
+                      }
+                      setPsychoThumbnailFile(null);
+                      setPsychoThumbnailPreview(next);
+                    }}
+                  />
+                </label>
+              </div>
+              <div className="admin-psycho-grid admin-psycho-scoring">
+                <label>
+                  점수 모드
+                  <select
+                    value={psychoScoring.mode}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({
+                        ...prev,
+                        mode: event.target.value === "TOTAL" ? "TOTAL" : "WEIGHTED",
+                      }))
+                    }
+                  >
+                    <option value="WEIGHTED">가중치</option>
+                    <option value="TOTAL">총점</option>
+                  </select>
+                </label>
+                <label>
+                  최소 점수
+                  <input
+                    type="number"
+                    value={psychoScoring.min}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({ ...prev, min: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  최대 점수
+                  <input
+                    type="number"
+                    value={psychoScoring.max}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({ ...prev, max: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  최소 음수
+                  <input
+                    type="number"
+                    value={psychoScoring.minNegative}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({
+                        ...prev,
+                        minNegative: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  임계값
+                  <input
+                    type="number"
+                    value={psychoScoring.threshold}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({
+                        ...prev,
+                        threshold: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  최대 결과 수
+                  <input
+                    type="number"
+                    value={psychoScoring.maxResults}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({
+                        ...prev,
+                        maxResults: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="admin-psycho-full">
+                  패턴 (쉼표로 구분)
+                  <input
+                    type="text"
+                    value={psychoScoring.patterns}
+                    onChange={(event) =>
+                      setPsychoScoring((prev) => ({
+                        ...prev,
+                        patterns: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="admin-psycho-section">
+              <div className="admin-psycho-section-header">
+                <h4>결과 카드</h4>
+                <button type="button" onClick={handleAddPsychoCard}>
+                  + 추가
+                </button>
+              </div>
+              {psychoCards.length === 0 ? (
+                <div className="admin-json-empty">결과 카드가 없습니다.</div>
+              ) : (
+                <div className="admin-psycho-list">
+                {psychoCards.map((card, index) => {
+                    const cardId = `card-${index}`;
+                    const isExpanded = expandedCards.has(cardId);
+                    return (
+                      <div
+                        key={`card-${index}`}
+                        className={`admin-psycho-card ${isExpanded ? "expanded" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="admin-psycho-card-header"
+                          onClick={() => toggleCardExpanded(cardId)}
+                        >
+                          <span className="admin-psycho-chevron">▾</span>
+                          <strong>결과 {index + 1}: {card.label}</strong>
+                          <button
+                            type="button"
+                            className="admin-psycho-remove"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemovePsychoCard(index);
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </button>
+                        {isExpanded && (
+                          <>
+                            <div className="admin-psycho-grid">
+                              <label>
+                                ID
+                                <input
+                                  type="text"
+                                  value={card.id}
+                                  onChange={(event) =>
+                                    updatePsychoCard(index, (prev) => ({
+                                      ...prev,
+                                      id: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label>
+                                이름
+                                <input
+                                  type="text"
+                                  value={card.label}
+                                  onChange={(event) =>
+                                    updatePsychoCard(index, (prev) => ({
+                                      ...prev,
+                                      label: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label className="admin-psycho-full">
+                                설명
+                                <textarea
+                                  rows={3}
+                                  value={card.summary}
+                                  onChange={(event) =>
+                                    updatePsychoCard(index, (prev) => ({
+                                      ...prev,
+                                      summary: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label className="admin-psycho-full">
+                                키워드 (쉼표로 구분)
+                                <input
+                                  type="text"
+                                  value={card.keywords}
+                                  onChange={(event) =>
+                                    updatePsychoCard(index, (prev) => ({
+                                      ...prev,
+                                      keywords: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                              {psychoScoring.mode === "TOTAL" ? (
+                                <>
+                                  <label>
+                                    최소 점수
+                                    <input
+                                      type="number"
+                                      value={card.minScore}
+                                      onChange={(event) =>
+                                        updatePsychoCard(index, (prev) => ({
+                                          ...prev,
+                                          minScore: event.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </label>
+                                  <label>
+                                    최대 점수
+                                    <input
+                                      type="number"
+                                      value={card.maxScore}
+                                      onChange={(event) =>
+                                        updatePsychoCard(index, (prev) => ({
+                                          ...prev,
+                                          maxScore: event.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </label>
+                                </>
+                              ) : null}
+                            </div>
+                            <div className="admin-psycho-media-row">
+                              <label className="admin-psycho-upload">
+                                {card.previewUrl || card.imageUrl ? (
+                                  <img src={card.previewUrl || card.imageUrl} alt={card.label || "card"} />
+                                ) : (
+                                  <span>이미지 업로드</span>
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png"
+                                  onChange={(event) =>
+                                    void handlePsychoCardFileSelect(index, event.target.files?.[0] || null)
+                                  }
+                                />
+                              </label>
+                              <label className="admin-psycho-url">
+                                이미지 URL
+                                <input
+                                  type="text"
+                                  value={card.imageFile ? "" : card.imageUrl}
+                                  onChange={(event) =>
+                                    updatePsychoCard(index, (prev) => ({
+                                      ...prev,
+                                      imageUrl: event.target.value,
+                                      imageFile: null,
+                                      previewUrl: "",
+                                    }))
+                                  }
+                                />
+                              </label>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="admin-psycho-section">
+              <div className="admin-psycho-section-header">
+                <h4>질문</h4>
+                <button type="button" onClick={handleAddPsychoQuestion}>
+                  + 추가
+                </button>
+              </div>
+              {psychoQuestions.length === 0 ? (
+                <div className="admin-json-empty">질문이 없습니다.</div>
+              ) : (
+                <div className="admin-psycho-list">
+                {psychoQuestions.map((question, qIndex) => {
+                    const questionId = `question-${qIndex}`;
+                    const isExpanded = expandedQuestions.has(questionId);
+                    return (
+                      <div
+                        key={`question-${qIndex}`}
+                        className={`admin-psycho-question ${isExpanded ? "expanded" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="admin-psycho-card-header"
+                          onClick={() => toggleQuestionExpanded(questionId)}
+                        >
+                          <span className="admin-psycho-chevron">▾</span>
+                          <strong>질문 {qIndex + 1}: {question.text}</strong>
+                          <button
+                            type="button"
+                            className="admin-psycho-remove"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemovePsychoQuestion(qIndex);
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </button>
+                        {isExpanded && (
+                          <>
+                            <div className="admin-psycho-grid">
+                              <label>
+                                ID
+                                <input
+                                  type="text"
+                                  value={question.id}
+                                  onChange={(event) =>
+                                    updatePsychoQuestion(qIndex, (prev) => ({
+                                      ...prev,
+                                      id: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label className="admin-psycho-full">
+                                질문
+                                <textarea
+                                  rows={2}
+                                  value={question.text}
+                                  onChange={(event) =>
+                                    updatePsychoQuestion(qIndex, (prev) => ({
+                                      ...prev,
+                                      text: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label className="admin-psycho-full">
+                                보조 설명
+                                <input
+                                  type="text"
+                                  value={question.helper}
+                                  onChange={(event) =>
+                                    updatePsychoQuestion(qIndex, (prev) => ({
+                                      ...prev,
+                                      helper: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </label>
+                            </div>
+                            <div className="admin-psycho-options">
+                              {question.options.map((option, oIndex) => {
+                                const optionId = `option-${qIndex}-${oIndex}`;
+                                const isOExpanded = expandedOptions.has(optionId);
+                                return (
+                                  <div
+                                    key={`option-${qIndex}-${oIndex}`}
+                                    className={`admin-psycho-option ${isOExpanded ? "expanded" : ""}`}
+                                  >
+                                    <button
+                                      type="button"
+                                      className="admin-psycho-card-header"
+                                      onClick={() => toggleOptionExpanded(optionId)}
+                                    >
+                                      <span className="admin-psycho-chevron">▾</span>
+                                      <strong>선택지 {oIndex + 1}: {option.text}</strong>
+                                      <button
+                                        type="button"
+                                        className="admin-psycho-remove"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemovePsychoOption(qIndex, oIndex);
+                                        }}
+                                      >
+                                        삭제
+                                      </button>
+                                    </button>
+                                    {isOExpanded && (
+                                      <>
+                                        <div className="admin-psycho-grid">
+                                          <label>
+                                            ID
+                                            <input
+                                              type="text"
+                                              value={option.id}
+                                              onChange={(event) =>
+                                                updatePsychoOption(qIndex, oIndex, (prev) => ({
+                                                  ...prev,
+                                                  id: event.target.value,
+                                                }))
+                                              }
+                                            />
+                                          </label>
+                                          <label className="admin-psycho-full">
+                                            텍스트
+                                            <input
+                                              type="text"
+                                              value={option.text}
+                                              onChange={(event) =>
+                                                updatePsychoOption(qIndex, oIndex, (prev) => ({
+                                                  ...prev,
+                                                  text: event.target.value,
+                                                }))
+                                              }
+                                            />
+                                          </label>
+                                          <label>
+                                            다음 질문 ID
+                                            <input
+                                              type="text"
+                                              value={option.nextQuestionId}
+                                              onChange={(event) =>
+                                                updatePsychoOption(qIndex, oIndex, (prev) => ({
+                                                  ...prev,
+                                                  nextQuestionId: event.target.value,
+                                                }))
+                                              }
+                                            />
+                                          </label>
+                                          {psychoScoring.mode === "TOTAL" ? (
+                                            <label>
+                                              점수
+                                              <input
+                                                type="number"
+                                                value={option.score}
+                                                onChange={(event) =>
+                                                  updatePsychoOption(qIndex, oIndex, (prev) => ({
+                                                    ...prev,
+                                                    score: event.target.value,
+                                                  }))
+                                                }
+                                              />
+                                            </label>
+                                          ) : null}
+                                        </div>
+                                        <div className="admin-psycho-media-row">
+                                          <label className="admin-psycho-upload">
+                                            {option.previewUrl || option.imageUrl ? (
+                                              <img
+                                                src={option.previewUrl || option.imageUrl}
+                                                alt={option.text || "option"}
+                                              />
+                                            ) : (
+                                              <span>이미지 업로드</span>
+                                            )}
+                                            <input
+                                              type="file"
+                                              accept="image/jpeg,image/png"
+                                              onChange={(event) =>
+                                                void handlePsychoOptionFileSelect(
+                                                  qIndex,
+                                                  oIndex,
+                                                  event.target.files?.[0] || null
+                                                )
+                                              }
+                                            />
+                                          </label>
+                                          <label className="admin-psycho-url">
+                                            이미지 URL
+                                            <input
+                                              type="text"
+                                              value={option.imageFile ? "" : option.imageUrl}
+                                              onChange={(event) =>
+                                                updatePsychoOption(qIndex, oIndex, (prev) => ({
+                                                  ...prev,
+                                                  imageUrl: event.target.value,
+                                                  imageFile: null,
+                                                  previewUrl: "",
+                                                }))
+                                              }
+                                            />
+                                          </label>
+                                        </div>
+                                        {psychoScoring.mode === "WEIGHTED" ? (
+                                          <div className="admin-psycho-weights">
+                                            {psychoCards.length === 0 ? (
+                                              <div className="admin-json-empty">
+                                                카드가 없어 가중치를 설정할 수 없습니다.
+                                              </div>
+                                            ) : (
+                                              psychoCards.map((card) => (
+                                                <label key={`weight-${option.id}-${card.id}`}>
+                                                  {card.label || card.id || "카드"}
+                                                  <input
+                                                    type="number"
+                                                    value={option.weights[card.id] ?? ""}
+                                                    onChange={(event) =>
+                                                      updatePsychoOption(qIndex, oIndex, (prev) => {
+                                                        const value = event.target.value;
+                                                        const nextWeights = { ...prev.weights };
+                                                        if (value === "") {
+                                                          delete nextWeights[card.id];
+                                                        } else {
+                                                          nextWeights[card.id] = value;
+                                                        }
+                                                        return { ...prev, weights: nextWeights };
+                                                      })
+                                                    }
+                                                  />
+                                                </label>
+                                              ))
+                                            )}
+                                          </div>
+                                        ) : null}
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                              <button
+                                type="button"
+                                className="admin-psycho-add"
+                                onClick={() => handleAddPsychoOption(qIndex)}
+                              >
+                                + 선택지 추가
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="admin-floating-actions">
+              <button type="button" onClick={handleSaveJson} disabled={isSavingJson}>
+                {isSavingJson ? "저장 중..." : "저장"}
+              </button>
+              <button type="button" className="ghost" onClick={handleCancelJson}>
+                취소
+              </button>
+            </div>
+          </section>
+        ) : (
+          <section className="admin-json-editor">
+            <div className="admin-json-raw">
+              <textarea
+                value={jsonRaw}
+                onChange={(event) => setJsonRaw(event.target.value)}
+                spellCheck={false}
+              />
+            </div>
+            <div className="admin-floating-actions">
+              <button type="button" onClick={handleSaveJson}>
+                저장
+              </button>
+              <button type="button" className="ghost" onClick={handleCancelJson}>
+                취소
+              </button>
+            </div>
+          </section>
+        )
       ) : null}
       {showItemSection ? (
         <>

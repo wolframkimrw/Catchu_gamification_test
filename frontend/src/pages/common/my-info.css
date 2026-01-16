@@ -45,6 +45,20 @@
   font-size: 0.95rem;
 }
 
+.my-info-action {
+  text-decoration: none;
+  color: #ffffff;
+  background: #1b1c1f;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .my-info-card {
   background: transparent;
   border: 0;

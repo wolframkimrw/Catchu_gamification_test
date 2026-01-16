@@ -34,6 +34,20 @@ export function MyInfoPage() {
           <span className="my-info-label">이메일</span>
           <span className="my-info-value">{user.email}</span>
         </div>
+        <div className="my-info-row">
+          <span className="my-info-label">스태프 여부</span>
+          <span className="my-info-value">{user.is_staff ? "스태프" : "일반"}</span>
+        </div>
+        <div className="my-info-row">
+          <span className="my-info-label">로그인 제공자</span>
+          <span className="my-info-value">{user.provider || "알 수 없음"}</span>
+        </div>
+        <div className="my-info-row">
+          <span className="my-info-label">비밀번호 변경</span>
+          <Link className="my-info-action" to="/login?tab=reset">
+            변경하기
+          </Link>
+        </div>
       </section>
     </div>
   );

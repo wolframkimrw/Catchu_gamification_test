@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./login.css";
 import { fetchCsrfToken, loginAccount, resetPassword, signupAccount } from "../api/accounts";
 import { ApiError } from "../api/http";
@@ -24,6 +24,7 @@ type ResetFormState = {
 };
 
 export function LoginPage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>("login");
   const [loginState, setLoginState] = useState<LoginFormState>({
@@ -40,6 +41,14 @@ export function LoginPage() {
     email: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab === "login" || tab === "signup" || tab === "reset") {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   const tabTitle = useMemo(() => {
     if (activeTab === "signup") return "회원가입";

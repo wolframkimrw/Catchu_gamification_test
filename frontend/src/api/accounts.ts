@@ -6,6 +6,7 @@ export type AuthUser = {
   email: string;
   name: string;
   is_staff?: boolean;
+  provider?: string;
 };
 
 export async function fetchCsrfToken() {

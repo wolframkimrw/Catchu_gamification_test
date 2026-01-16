@@ -117,7 +117,7 @@ const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
 export function WorldcupResultPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<"winner" | "all">("winner");
+  const activeTab: "winner" | "all" = "winner";
   const parsedGameId = useMemo(() => {
     const idNumber = Number(gameId);
     return Number.isFinite(idNumber) ? idNumber : null;
@@ -246,22 +246,6 @@ export function WorldcupResultPage() {
             </Link>
           </div>
         </header>
-        <div className="worldcup-result-tabs">
-          <button
-            type="button"
-            className={`worldcup-result-tab ${activeTab === "winner" ? "active" : ""}`}
-            onClick={() => setActiveTab("winner")}
-          >
-            우승 결과
-          </button>
-          <button
-            type="button"
-            className={`worldcup-result-tab ${activeTab === "all" ? "active" : ""}`}
-            onClick={() => setActiveTab("all")}
-          >
-            전체 결과
-          </button>
-        </div>
         <div
           className={`worldcup-dashboard-grid ${activeTab === "winner" ? "no-rank" : "only-rank"}`}
         >

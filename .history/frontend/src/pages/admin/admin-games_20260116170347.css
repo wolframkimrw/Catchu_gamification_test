@@ -1046,12 +1046,12 @@
 }
 
 .admin-psycho-weights {
-  border-top: 1px solid #e9ebf5;
+  border-top: ;
   display: grid;
   gap: 0.6rem;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   padding: 1rem;
-  /* border-radius: 12px; */
+  border-radius: 12px;
   
 }
 
@@ -1796,7 +1796,7 @@
 }
 
 .admin-psycho-option.expanded .admin-psycho-card-header {
-  border-bottom: 1px solid #e9ebf5;
+  border-bottom: 0;
 }
 
 .admin-psycho-option .admin-psycho-card-header {

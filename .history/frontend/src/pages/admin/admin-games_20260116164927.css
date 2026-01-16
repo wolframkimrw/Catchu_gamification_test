@@ -912,12 +912,12 @@
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.8rem;
   margin: 0;
 }
 
 .admin-psycho-option + .admin-psycho-option {
-  margin-top: 0;
+  margin-top: 0.6rem;
 }
 
 .admin-psycho-option.expanded .admin-psycho-card-header {
@@ -1006,9 +1006,9 @@
 .admin-psycho-options {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.8rem;
   padding: 0;
-  background: #ffffff;
+  background: #eef1f6;
 }
 
 .admin-psycho-options-actions {
@@ -1046,13 +1046,12 @@
 }
 
 .admin-psycho-weights {
-  border-top: 1px solid #e9ebf5;
   display: grid;
   gap: 0.6rem;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  padding: 1rem;
-  /* border-radius: 12px; */
-  
+  padding: 0.6rem;
+  border-radius: 12px;
+  background: #f2f4ff;
 }
 
 .admin-psycho-weights label {
@@ -1724,7 +1723,7 @@
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 0;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -1752,6 +1751,12 @@
   font-weight: 600;
 }
 
+.admin-psycho-card.expanded .admin-psycho-chevron,
+.admin-psycho-question.expanded .admin-psycho-chevron,
+.admin-psycho-option.expanded .admin-psycho-chevron {
+  transform: rotate(180deg);
+}
+
 .admin-psycho-card-label {
   margin-left: 0.5rem;
   color: #3d4052;
@@ -1767,7 +1772,7 @@
 .admin-psycho-option.expanded .admin-psycho-card-header {
   border-bottom: 1px solid #e4e6f1;
   border-radius: 0;
-  background: transparent;
+  background: #fff;
 }
 
 .admin-psycho-grid {
@@ -1778,9 +1783,9 @@
 }
 
 .admin-psycho-options {
-  padding: 0;
-  gap: 0;
-  background: #ffffff;
+  padding: 0 1rem 0.5rem;
+  gap: 0.8rem;
+  background: transparent;
   border: 0;
   border-radius: 0;
 }
@@ -1788,19 +1793,8 @@
 .admin-psycho-option {
   border: 0;
   border-radius: 0;
-  padding: 0.7rem 0rem;
-  background: #ffffff;
+  background: #eef1f6;
   box-shadow: none;
-  gap: 0.8rem;
-  margin: 0;
-}
-
-.admin-psycho-option.expanded .admin-psycho-card-header {
-  border-bottom: 1px solid #e9ebf5;
-}
-
-.admin-psycho-option .admin-psycho-card-header {
-  border-bottom: 0;
 }
 
 @media (max-width: 40rem) {

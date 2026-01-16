@@ -921,7 +921,7 @@
 }
 
 .admin-psycho-option.expanded .admin-psycho-card-header {
-  border-bottom: 0;
+  border-bottom: 1px solid #e9ebf5;
 }
 
 .admin-psycho-list > .admin-psycho-card:last-child,
@@ -1796,7 +1796,7 @@
 }
 
 .admin-psycho-option.expanded .admin-psycho-card-header {
-  border-bottom: 1px solid #e9ebf5;
+  border-bottom: 0;
 }
 
 .admin-psycho-option .admin-psycho-card-header {

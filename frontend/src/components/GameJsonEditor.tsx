@@ -88,6 +88,8 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
   const [activeEntryIndex, setActiveEntryIndex] = useState<number | null>(null);
   const [isSajuDeleteMode, setIsSajuDeleteMode] = useState(false);
   const [selectedSajuIndexes, setSelectedSajuIndexes] = useState<number[]>([]);
+  const [isPsychoDeleteMode, setIsPsychoDeleteMode] = useState(false);
+  const [selectedPsychoCardIndexes, setSelectedPsychoCardIndexes] = useState<number[]>([]);
   const [psychoSlug, setPsychoSlug] = useState("");
   const [psychoTitle, setPsychoTitle] = useState("");
   const [psychoDescription, setPsychoDescription] = useState("");
@@ -110,6 +112,10 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
+  const [isPsychoQuestionDeleteMode, setIsPsychoQuestionDeleteMode] = useState(false);
+  const [selectedPsychoQuestionIndexes, setSelectedPsychoQuestionIndexes] = useState<number[]>([]);
+  const [psychoOptionDeleteMode, setPsychoOptionDeleteMode] = useState<Record<number, boolean>>({});
+  const [selectedPsychoOptionIndexes, setSelectedPsychoOptionIndexes] = useState<Record<number, number[]>>({});
   const psychoCardsRef = useRef<PsychoCardForm[]>([]);
   const psychoQuestionsRef = useRef<PsychoQuestionForm[]>([]);
   const psychoThumbnailRef = useRef("");
@@ -573,6 +579,58 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
     }
   };
 
+  const togglePsychoCardSelection = (index: number) => {
+    setSelectedPsychoCardIndexes((prev) =>
+      prev.includes(index) ? prev.filter((id) => id !== index) : [...prev, index]
+    );
+  };
+
+  const handleRemoveSelectedPsychoCards = () => {
+    if (selectedPsychoCardIndexes.length === 0) {
+      setIsPsychoDeleteMode(false);
+      return;
+    }
+    const selected = [...selectedPsychoCardIndexes].sort((a, b) => b - a);
+    const removedIds = new Set<string>();
+    const removedPreviews: string[] = [];
+    const nextCards = psychoCardsRef.current.filter((card, index) => {
+      if (!selected.includes(index)) {
+        return true;
+      }
+      if (card.previewUrl?.startsWith("blob:")) {
+        removedPreviews.push(card.previewUrl);
+      }
+      if (card.id) {
+        removedIds.add(card.id);
+      }
+      return false;
+    });
+    removedPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setPsychoCards(nextCards);
+    if (removedIds.size > 0) {
+      setPsychoQuestions((prev) =>
+        prev.map((question) => ({
+          ...question,
+          options: question.options.map((option) => {
+            let weights = option.weights;
+            let changed = false;
+            removedIds.forEach((id) => {
+              if (id in weights) {
+                const { [id]: removedWeight, ...rest } = weights;
+                void removedWeight;
+                weights = rest;
+                changed = true;
+              }
+            });
+            return changed ? { ...option, weights } : option;
+          }),
+        }))
+      );
+    }
+    setSelectedPsychoCardIndexes([]);
+    setIsPsychoDeleteMode(false);
+  };
+
   const handleAddPsychoQuestion = () => {
     setPsychoQuestions((prev) => [
       ...prev,
@@ -604,6 +662,74 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
       }
     });
     setPsychoQuestions((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const togglePsychoQuestionSelection = (index: number) => {
+    setSelectedPsychoQuestionIndexes((prev) =>
+      prev.includes(index) ? prev.filter((id) => id !== index) : [...prev, index]
+    );
+  };
+
+  const handleRemoveSelectedPsychoQuestions = () => {
+    if (selectedPsychoQuestionIndexes.length === 0) {
+      setIsPsychoQuestionDeleteMode(false);
+      return;
+    }
+    const selected = [...selectedPsychoQuestionIndexes].sort((a, b) => b - a);
+    const nextQuestions = psychoQuestionsRef.current.filter((question, index) => {
+      if (!selected.includes(index)) {
+        return true;
+      }
+      question.options.forEach((option) => {
+        if (option.previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(option.previewUrl);
+        }
+      });
+      return false;
+    });
+    setPsychoQuestions(nextQuestions);
+    setSelectedPsychoQuestionIndexes([]);
+    setIsPsychoQuestionDeleteMode(false);
+  };
+
+  const togglePsychoOptionSelection = (questionIndex: number, optionIndex: number) => {
+    setSelectedPsychoOptionIndexes((prev) => {
+      const current = prev[questionIndex] ?? [];
+      const next = current.includes(optionIndex)
+        ? current.filter((id) => id !== optionIndex)
+        : [...current, optionIndex];
+      return { ...prev, [questionIndex]: next };
+    });
+  };
+
+  const handleRemoveSelectedPsychoOptions = (questionIndex: number) => {
+    const selected = selectedPsychoOptionIndexes[questionIndex] ?? [];
+    if (selected.length === 0) {
+      setPsychoOptionDeleteMode((prev) => ({ ...prev, [questionIndex]: false }));
+      return;
+    }
+    const question = psychoQuestionsRef.current[questionIndex];
+    if (!question) {
+      setPsychoOptionDeleteMode((prev) => ({ ...prev, [questionIndex]: false }));
+      return;
+    }
+    const selectedSet = new Set(selected);
+    question.options.forEach((option, index) => {
+      if (selectedSet.has(index) && option.previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(option.previewUrl);
+      }
+    });
+    const nextOptions = question.options.filter((_, index) => !selectedSet.has(index));
+    updatePsychoQuestion(questionIndex, (prev) => ({
+      ...prev,
+      options: nextOptions,
+    }));
+    setSelectedPsychoOptionIndexes((prev) => {
+      const next = { ...prev };
+      delete next[questionIndex];
+      return next;
+    });
+    setPsychoOptionDeleteMode((prev) => ({ ...prev, [questionIndex]: false }));
   };
 
   const handleAddPsychoOption = (questionIndex: number) => {
@@ -1164,13 +1290,31 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
             </div>
           </div>
 
-          <div className="admin-psycho-section">
-            <div className="admin-psycho-section-header">
-              <h4>결과 카드</h4>
-              <button type="button" onClick={handleAddPsychoCard}>
-                + 추가
-              </button>
-            </div>
+            <div className="admin-psycho-section">
+              <div className="admin-psycho-section-header">
+                <h4>결과 카드</h4>
+                <div className="admin-psycho-section-actions">
+                  <button type="button" onClick={handleAddPsychoCard}>
+                    + 추가
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      if (!isPsychoDeleteMode) {
+                        setIsPsychoDeleteMode(true);
+                        setSelectedPsychoCardIndexes([]);
+                        return;
+                      }
+                      handleRemoveSelectedPsychoCards();
+                    }}
+                  >
+                    {isPsychoDeleteMode
+                      ? `${selectedPsychoCardIndexes.length}개 삭제`
+                      : "삭제"}
+                  </button>
+                </div>
+              </div>
             {psychoCards.length === 0 ? (
               <div className="admin-json-empty">결과 카드가 없습니다.</div>
             ) : (
@@ -1181,31 +1325,43 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
                   return (
                     <div
                       key={`card-${index}`}
-                      className={`admin-psycho-card ${isExpanded ? "expanded" : ""}`}
+                      className={`admin-psycho-card ${isExpanded ? "expanded" : ""} ${selectedPsychoCardIndexes.includes(index) ? "admin-card-selected admin-card-selected-delete" : ""
+                        }`}
                     >
                       <div
                         className="admin-psycho-card-header"
                         role="button"
                         tabIndex={0}
-                        onClick={() => toggleCardExpanded(cardId)}
+                        onClick={() => {
+                          if (isPsychoDeleteMode) {
+                            togglePsychoCardSelection(index);
+                            return;
+                          }
+                          toggleCardExpanded(cardId);
+                        }}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
+                            if (isPsychoDeleteMode) {
+                              togglePsychoCardSelection(index);
+                              return;
+                            }
                             toggleCardExpanded(cardId);
                           }
                         }}
                       >
-                        <span className="admin-psycho-chevron">▾</span>
-                        <strong>결과 {index + 1}: {card.label}</strong>
-                        <button
-                          type="button"
-                          className="admin-psycho-remove"
-                          onClick={() => {
-                            handleRemovePsychoCard(index);
-                          }}
-                        >
-                          삭제
-                        </button>
+                        {isPsychoDeleteMode ? (
+                          <input
+                            type="checkbox"
+                            className="admin-item-checkbox is-delete"
+                            checked={selectedPsychoCardIndexes.includes(index)}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => togglePsychoCardSelection(index)}
+                          />
+                        ) : (
+                          <span className="admin-psycho-chevron">{isExpanded ? "▴" : "▾"}</span>
+                        )}
+                        <strong>{card.label}</strong>
                       </div>
                       {isExpanded && (
                         <>
@@ -1336,9 +1492,27 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
           <div className="admin-psycho-section">
             <div className="admin-psycho-section-header">
               <h4>질문</h4>
-              <button type="button" onClick={handleAddPsychoQuestion}>
-                + 추가
-              </button>
+              <div className="admin-psycho-section-actions">
+                <button type="button" onClick={handleAddPsychoQuestion}>
+                  + 추가
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => {
+                    if (!isPsychoQuestionDeleteMode) {
+                      setIsPsychoQuestionDeleteMode(true);
+                      setSelectedPsychoQuestionIndexes([]);
+                      return;
+                    }
+                    handleRemoveSelectedPsychoQuestions();
+                  }}
+                >
+                  {isPsychoQuestionDeleteMode
+                    ? `${selectedPsychoQuestionIndexes.length}개 삭제`
+                    : "삭제"}
+                </button>
+              </div>
             </div>
             {psychoQuestions.length === 0 ? (
               <div className="admin-json-empty">질문이 없습니다.</div>
@@ -1350,31 +1524,43 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
                   return (
                     <div
                       key={`question-${qIndex}`}
-                      className={`admin-psycho-question ${isExpanded ? "expanded" : ""}`}
+                      className={`admin-psycho-question ${isExpanded ? "expanded" : ""} ${selectedPsychoQuestionIndexes.includes(qIndex) ? "admin-card-selected admin-card-selected-delete" : ""
+                        }`}
                     >
                       <div
                         className="admin-psycho-card-header"
                         role="button"
                         tabIndex={0}
-                        onClick={() => toggleQuestionExpanded(questionId)}
+                        onClick={() => {
+                          if (isPsychoQuestionDeleteMode) {
+                            togglePsychoQuestionSelection(qIndex);
+                            return;
+                          }
+                          toggleQuestionExpanded(questionId);
+                        }}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
+                            if (isPsychoQuestionDeleteMode) {
+                              togglePsychoQuestionSelection(qIndex);
+                              return;
+                            }
                             toggleQuestionExpanded(questionId);
                           }
                         }}
                       >
-                        <span className="admin-psycho-chevron">▾</span>
-                        <strong>질문 {qIndex + 1}: {question.text}</strong>
-                        <button
-                          type="button"
-                          className="admin-psycho-remove"
-                          onClick={() => {
-                            handleRemovePsychoQuestion(qIndex);
-                          }}
-                        >
-                          삭제
-                        </button>
+                        {isPsychoQuestionDeleteMode ? (
+                          <input
+                            type="checkbox"
+                            className="admin-item-checkbox is-delete"
+                            checked={selectedPsychoQuestionIndexes.includes(qIndex)}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => togglePsychoQuestionSelection(qIndex)}
+                          />
+                        ) : (
+                          <span className="admin-psycho-chevron">{isExpanded ? "▴" : "▾"}</span>
+                        )}
+                        <strong>{question.text}</strong>
                       </div>
                       {isExpanded && (
                         <>
@@ -1420,37 +1606,73 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
                             </label>
                           </div>
                           <div className="admin-psycho-options">
-                              {question.options.map((option, oIndex) => {
-                                const optionId = `option-${qIndex}-${oIndex}`;
-                                const isOExpanded = expandedOptions.has(optionId);
-                                return (
-                                  <div
-                                    key={`option-${qIndex}-${oIndex}`}
-                                    className={`admin-psycho-option ${isOExpanded ? "expanded" : ""}`}
-                                  >
+                            <div className="admin-psycho-options-actions">
+                              <button
+                                type="button"
+                                className="admin-psycho-add"
+                                onClick={() => handleAddPsychoOption(qIndex)}
+                              >
+                                + 선택지 추가
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-psycho-options-delete"
+                                onClick={() => {
+                                  if (!psychoOptionDeleteMode[qIndex]) {
+                                    setPsychoOptionDeleteMode((prev) => ({ ...prev, [qIndex]: true }));
+                                    setSelectedPsychoOptionIndexes((prev) => ({ ...prev, [qIndex]: [] }));
+                                    return;
+                                  }
+                                  handleRemoveSelectedPsychoOptions(qIndex);
+                                }}
+                              >
+                                {psychoOptionDeleteMode[qIndex]
+                                  ? `${(selectedPsychoOptionIndexes[qIndex] ?? []).length}개 삭제`
+                                  : "삭제"}
+                              </button>
+                            </div>
+                            {question.options.map((option, oIndex) => {
+                              const optionId = `option-${qIndex}-${oIndex}`;
+                              const isOExpanded = expandedOptions.has(optionId);
+                              return (
+                                <div
+                                  key={`option-${qIndex}-${oIndex}`}
+                                  className={`admin-psycho-option ${isOExpanded ? "expanded" : ""}`}
+                                >
                                   <div
                                     className="admin-psycho-card-header"
                                     role="button"
                                     tabIndex={0}
-                                    onClick={() => toggleOptionExpanded(optionId)}
+                                    onClick={() => {
+                                      if (psychoOptionDeleteMode[qIndex]) {
+                                        togglePsychoOptionSelection(qIndex, oIndex);
+                                        return;
+                                      }
+                                      toggleOptionExpanded(optionId);
+                                    }}
                                     onKeyDown={(event) => {
                                       if (event.key === "Enter" || event.key === " ") {
                                         event.preventDefault();
+                                        if (psychoOptionDeleteMode[qIndex]) {
+                                          togglePsychoOptionSelection(qIndex, oIndex);
+                                          return;
+                                        }
                                         toggleOptionExpanded(optionId);
                                       }
                                     }}
                                   >
-                                    <span className="admin-psycho-chevron">▾</span>
-                                    <strong>선택지 {oIndex + 1}: {option.text}</strong>
-                                    <button
-                                      type="button"
-                                      className="admin-psycho-remove"
-                                      onClick={() => {
-                                        handleRemovePsychoOption(qIndex, oIndex);
-                                      }}
-                                    >
-                                      삭제
-                                    </button>
+                                    {psychoOptionDeleteMode[qIndex] ? (
+                                      <input
+                                        type="checkbox"
+                                        className="admin-item-checkbox is-delete"
+                                        checked={(selectedPsychoOptionIndexes[qIndex] ?? []).includes(oIndex)}
+                                        onClick={(event) => event.stopPropagation()}
+                                        onChange={() => togglePsychoOptionSelection(qIndex, oIndex)}
+                                      />
+                                    ) : (
+                                      <span className="admin-psycho-chevron">{isOExpanded ? "▴" : "▾"}</span>
+                                    )}
+                                    <strong>{option.text}</strong>
                                   </div>
                                   {isOExpanded && (
                                     <>
@@ -1584,13 +1806,6 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
                                 </div>
                               );
                             })}
-                            <button
-                              type="button"
-                              className="admin-psycho-add"
-                              onClick={() => handleAddPsychoOption(qIndex)}
-                            >
-                              + 선택지 추가
-                            </button>
                           </div>
                         </>
                       )}

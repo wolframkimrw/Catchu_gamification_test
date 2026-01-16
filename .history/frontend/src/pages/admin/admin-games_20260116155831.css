@@ -736,13 +736,7 @@
   justify-content: space-between;
   gap: 0.8rem;
   padding-bottom: 0.75rem;
-  /* border-bottom: 1px dashed #e2e4ee; */
-}
-
-.admin-psycho-section-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  border-bottom: 1px dashed #e2e4ee;
 }
 
 .admin-psycho-section-header button {
@@ -772,7 +766,6 @@
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   margin-top: 0.75rem;
-  padding: 0 1rem;
 }
 
 .admin-psycho-grid label {
@@ -821,7 +814,6 @@
   grid-template-columns: minmax(200px, 280px) 1fr;
   align-items: start;
   margin-top: 0.75rem;
-  padding: 0 1rem 0.5rem;
 }
 
 .admin-psycho-upload {
@@ -894,34 +886,16 @@
 }
 
 .admin-psycho-card,
-.admin-psycho-question {
+.admin-psycho-question,
+.admin-psycho-option {
   border: 0;
   border-radius: 0;
-  padding: 0.7rem 0rem;
+  padding: 0.9rem 1rem;
   background: #eef1f6;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   margin: 0 0 0.6rem;
-}
-
-.admin-psycho-option {
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 0;
-}
-
-.admin-psycho-option + .admin-psycho-option {
-  margin-top: 0;
-}
-
-.admin-psycho-option.expanded .admin-psycho-card-header {
-  border-bottom: 0;
 }
 
 .admin-psycho-list > .admin-psycho-card:last-child,
@@ -933,19 +907,10 @@
 .admin-psycho-card-header,
 .admin-psycho-option-header {
   display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
+  grid-template-columns: auto 1fr auto;
   gap: 0.8rem;
-  align-items: center;
+  align-items: flex-start;
   min-height: auto;
-  position: relative;
-  padding-right: 4.4rem;
-}
-
-.admin-psycho-card-header strong {
-  min-width: 0;
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.5;
 }
 
 .admin-psycho-option-header {
@@ -970,9 +935,13 @@
 }
 
 .admin-psycho-option-header .admin-psycho-remove {
-  right: 0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
+  grid-column: 3;
+  grid-row: 1 / 3;
+  align-self: center;
+  flex-shrink: 0;
+  padding: 0.4rem 0.7rem;
+  white-space: nowrap;
+  height: fit-content;
 }
 
 .admin-psycho-remove {
@@ -985,12 +954,6 @@
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.15s ease;
-  white-space: nowrap;
-  min-width: 3rem;
-  position: absolute;
-  right: 0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
 }
 
 .admin-psycho-remove:hover {
@@ -1006,32 +969,7 @@
 .admin-psycho-options {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0;
-  background: #ffffff;
-}
-
-.admin-psycho-options-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.admin-psycho-options-delete {
-  border: 1px solid #ef5350;
-  background: #ffcdd2;
-  color: #b71c1c;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.admin-psycho-options-delete:hover {
-  background: #ef5350;
-  color: #ffffff;
+  gap: 0.8rem;
 }
 
 .admin-psycho-add {
@@ -1046,13 +984,12 @@
 }
 
 .admin-psycho-weights {
-  border-top: 1px solid #e9ebf5;
   display: grid;
   gap: 0.6rem;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  padding: 1rem;
-  /* border-radius: 12px; */
-  
+  padding: 0.6rem;
+  border-radius: 12px;
+  background: #f2f4ff;
 }
 
 .admin-psycho-weights label {
@@ -1724,7 +1661,7 @@
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 0;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -1752,14 +1689,19 @@
   font-weight: 600;
 }
 
+.admin-psycho-card.expanded .admin-psycho-chevron,
+.admin-psycho-question.expanded .admin-psycho-chevron,
+.admin-psycho-option.expanded .admin-psycho-chevron {
+  transform: rotate(180deg);
+}
+
 .admin-psycho-card-label {
   margin-left: 0.5rem;
   color: #3d4052;
   flex-grow: 1;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .admin-psycho-card.expanded .admin-psycho-card-header,
@@ -1779,28 +1721,21 @@
 
 .admin-psycho-options {
   padding: 0;
-  gap: 0;
-  background: #ffffff;
+  gap: 0.8rem;
+  background: transparent;
   border: 0;
   border-radius: 0;
 }
 
 .admin-psycho-option {
-  border: 0;
-  border-radius: 0;
-  padding: 0.7rem 0rem;
-  background: #ffffff;
+  border: 1px solid #e4e6f1;
+  border-radius: 14px;
+  background: #fff;
   box-shadow: none;
-  gap: 0.8rem;
-  margin: 0;
 }
 
-.admin-psycho-option.expanded .admin-psycho-card-header {
-  border-bottom: 1px solid #e9ebf5;
-}
-
-.admin-psycho-option .admin-psycho-card-header {
-  border-bottom: 0;
+.admin-psycho-question {
+  border-color: #e8eaf2;
 }
 
 @media (max-width: 40rem) {

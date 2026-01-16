@@ -1503,8 +1503,8 @@
 
 .arena-round-card {
   position: relative;
-  width: min(92vw, 520px);
-  transform: scale(0.8);
+  width: min(94vw, 560px);
+  transform: scale(0.95);
   transform-origin: center;
   background: #f7f8fa;
   border: 1px solid #d9dde5;
@@ -1516,7 +1516,7 @@
 }
 
 .arena-round-hero {
-  padding: 22px 20px 14px;
+  padding: 28px 24px 18px;
   background: #ffffff;
   border-bottom: 1px solid #e6e9ef;
   text-align: center;
@@ -1525,32 +1525,32 @@
 }
 
 .arena-round-icon {
-  font-size: 36px;
-  margin-bottom: 8px;
+  font-size: 44px;
+  margin-bottom: 10px;
 }
 
 .arena-round-hero h2 {
   margin: 0 0 4px;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #2a2f36;
 }
 
 .arena-round-hero p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #6b7280;
 }
 
 .arena-round-body {
-  padding: 16px 20px 18px;
+  padding: 20px 24px 22px;
   display: grid;
   gap: 10px;
   color: #2a2f36;
 }
 
 .arena-round-body strong {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 
 .arena-round-body label {
@@ -1563,8 +1563,8 @@
   background: #ffffff;
   color: #2a2f36;
   border-radius: 6px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.95rem;
+  padding: 0.75rem 0.9rem;
+  font-size: 1.05rem;
   font-family: inherit;
 }
 
@@ -1574,7 +1574,7 @@
 }
 
 .arena-round-body span {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: #5a6472;
 }
 
@@ -1582,12 +1582,16 @@
   margin: 0 20px 12px;
   border-radius: 6px;
   font-weight: 700;
+  padding: 0.8rem 0;
+  font-size: 1rem;
 }
 
 .arena-round-cancel {
   margin: 0 20px 20px;
   border-radius: 6px;
   font-weight: 600;
+  padding: 0.75rem 0;
+  font-size: 0.95rem;
 }
 
 .arena-title {

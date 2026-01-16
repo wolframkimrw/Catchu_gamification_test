@@ -116,6 +116,7 @@ const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
 export function WorldcupResultPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const location = useLocation();
+  const [activeTab, setActiveTab] = useState<"winner" | "all">("winner");
   const parsedGameId = useMemo(() => {
     const idNumber = Number(gameId);
     return Number.isFinite(idNumber) ? idNumber : null;
@@ -221,80 +222,100 @@ export function WorldcupResultPage() {
             <h2 className="worldcup-dashboard-title">{result.gameTitle} 결과</h2>
           </div>
           <div className="worldcup-dashboard-actions">
-            <Link to={`/worldcup/${parsedGameId}/play`} className="btn btn-primary">
-              다시 플레이
-            </Link>
             <Link to="/" className="btn btn-ghost">
               홈으로
             </Link>
+            <Link to={`/worldcup/${parsedGameId}/play`} className="btn btn-primary">
+              다시 플레이
+            </Link>
           </div>
         </header>
-        <div className="worldcup-dashboard-grid no-rank">
-          {/* TODO: 승리 랭킹 섹션 잠시 비활성화 */}
-          {/*
-          <section className="worldcup-dashboard-rank">
-            <h3>승리 랭킹</h3>
-            <div className="worldcup-rank-table">
-              {result.ranking.map((entry, index) => {
-                const entryMedia = getMediaUrl(entry.file_name);
-                const entryVideo = isVideo(entryMedia);
-                return (
-                  <div key={entry.id} className="worldcup-rank-row">
-                    <div className="worldcup-rank-content">
-                      <div className="worldcup-rank-top">
-                        <div className="worldcup-rank-order">{index + 1}</div>
-                        <div className="worldcup-rank-main">
-                          <div className="worldcup-rank-media">
-                            {entryMedia ? (
-                              entryVideo ? (
-                                <video src={entryMedia} muted playsInline />
+        <div className="worldcup-result-tabs">
+          <button
+            type="button"
+            className={`worldcup-result-tab ${activeTab === "winner" ? "active" : ""}`}
+            onClick={() => setActiveTab("winner")}
+          >
+            우승 결과
+          </button>
+          <button
+            type="button"
+            className={`worldcup-result-tab ${activeTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveTab("all")}
+          >
+            전체 결과
+          </button>
+        </div>
+        <div
+          className={`worldcup-dashboard-grid ${activeTab === "winner" ? "no-rank" : "only-rank"}`}
+        >
+          {activeTab === "all" ? (
+            <section className="worldcup-dashboard-rank">
+              <h3>승리 랭킹</h3>
+              <div className="worldcup-rank-table">
+                {result.ranking.map((entry, index) => {
+                  const entryMedia = getMediaUrl(entry.file_name);
+                  const entryVideo = isVideo(entryMedia);
+                  return (
+                    <div key={entry.id} className="worldcup-rank-row">
+                      <div className="worldcup-rank-content">
+                        <div className="worldcup-rank-top">
+                          <div className="worldcup-rank-order">{index + 1}</div>
+                          <div className="worldcup-rank-main">
+                            <div className="worldcup-rank-media">
+                              {entryMedia ? (
+                                entryVideo ? (
+                                  <video src={entryMedia} muted playsInline />
+                                ) : (
+                                  <img src={entryMedia} alt={entry.name || entry.file_name} />
+                                )
                               ) : (
-                                <img src={entryMedia} alt={entry.name || entry.file_name} />
-                              )
-                            ) : (
-                              <div className="worldcup-rank-fallback">
-                                <img src={placeholderImage} alt="NO IMAGE" />
-                              </div>
-                            )}
+                                <div className="worldcup-rank-fallback">
+                                  <img src={placeholderImage} alt="NO IMAGE" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="worldcup-rank-score">{entry.wins}승</div>
                           </div>
-                          <div className="worldcup-rank-score">{entry.wins}승</div>
                         </div>
+                        <div className="worldcup-rank-name">{entry.name || entry.file_name}</div>
                       </div>
-                      <div className="worldcup-rank-name">{entry.name || entry.file_name}</div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-          */}
-          <section className="worldcup-dashboard-hero">
-            <div className="result-media">
-              {mediaUrl ? (
-                video ? (
-                  <video src={mediaUrl} controls playsInline muted loop />
-                ) : (
-                  <img src={mediaUrl} alt={result.champion.name || result.champion.file_name} />
-                )
-              ) : (
-                <div className="arena-media-fallback">
-                  <img src={placeholderImage} alt="NO IMAGE" />
+                  );
+                })}
+              </div>
+            </section>
+          ) : (
+            <>
+              <section className="worldcup-dashboard-hero">
+                <div className="result-media">
+                  {mediaUrl ? (
+                    video ? (
+                      <video src={mediaUrl} controls playsInline muted loop />
+                    ) : (
+                      <img src={mediaUrl} alt={result.champion.name || result.champion.file_name} />
+                    )
+                  ) : (
+                    <div className="arena-media-fallback">
+                      <img src={placeholderImage} alt="NO IMAGE" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <h3 className="result-title">{result.champion.name || result.champion.file_name}</h3>
-            <p className="result-sub">이번 월드컵의 우승자입니다.</p>
-          </section>
-          <section className="worldcup-dashboard-stats">
-            <div className="worldcup-stat-card">
-              <span>선택 강수</span>
-              <strong>{selectedRound}강</strong>
-            </div>
-            <div className="worldcup-stat-card">
-              <span>상품 갯수</span>
-              <strong>{productCount}개</strong>
-            </div>
-          </section>
+                <h3 className="result-title">{result.champion.name || result.champion.file_name}</h3>
+                <p className="result-sub">이번 월드컵의 우승자입니다.</p>
+              </section>
+              <section className="worldcup-dashboard-stats">
+                <div className="worldcup-stat-card">
+                  <span>선택 강수</span>
+                  <strong>{selectedRound}강</strong>
+                </div>
+                <div className="worldcup-stat-card">
+                  <span>상품 갯수</span>
+                  <strong>{productCount}개</strong>
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </div>
     </div>

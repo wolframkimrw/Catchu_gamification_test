@@ -262,7 +262,7 @@ export function AdminLogDetailPage() {
                       </div>
                       <div className="admin-rank-name">{entry.label}</div>
                       <div className="admin-rank-rate">
-                        {totalResults ? `${Math.round(entry.rate * 100)}%` : "-"}
+                        {totalResults ? `${entry.count}승` : "-"}
                       </div>
                     </div>
                   ))}

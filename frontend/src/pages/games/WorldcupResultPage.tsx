@@ -229,7 +229,9 @@ export function WorldcupResultPage() {
             </Link>
           </div>
         </header>
-        <div className="worldcup-dashboard-grid">
+        <div className="worldcup-dashboard-grid no-rank">
+          {/* TODO: 승리 랭킹 섹션 잠시 비활성화 */}
+          {/*
           <section className="worldcup-dashboard-rank">
             <h3>승리 랭킹</h3>
             <div className="worldcup-rank-table">
@@ -265,6 +267,7 @@ export function WorldcupResultPage() {
               })}
             </div>
           </section>
+          */}
           <section className="worldcup-dashboard-hero">
             <div className="result-media">
               {mediaUrl ? (

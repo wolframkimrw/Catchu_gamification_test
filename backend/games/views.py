@@ -689,7 +689,7 @@ class BannerListView(BaseAPIView):
         )
         if position:
             qs = qs.filter(position=position)
-        qs = qs.order_by("priority", "-created_at", "id")
+        qs = qs.order_by("priority", "created_at", "id")
         serializer = BannerSerializer(qs, many=True)
         return self.respond(data={"banners": serializer.data})
 

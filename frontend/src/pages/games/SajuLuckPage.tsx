@@ -24,6 +24,7 @@ export function SajuLuckPage() {
   const [error, setError] = useState<string | null>(null);
   const [gameId, setGameId] = useState<number | null>(null);
   const [idiomsData, setIdiomsData] = useState<IdiomsData | null>(null);
+  const [fortuneJsonPath, setFortuneJsonPath] = useState("fortune/idioms.json");
   const lastResultSessionRef = useRef<number | null>(null);
   const { sessionId, startSession } = useGameSessionStart(gameId, "saju_start");
 
@@ -46,6 +47,7 @@ export function SajuLuckPage() {
         const sajuGame = games.find((game) => game.slug === "saju-luck");
         if (sajuGame) {
           setGameId(sajuGame.id);
+          setFortuneJsonPath(`fortune/${sajuGame.slug}.json`);
         }
       })
       .catch(() => {
@@ -54,14 +56,14 @@ export function SajuLuckPage() {
   }, []);
 
   useEffect(() => {
-    fetchGameJsonFile("fortune/idioms.json")
+    fetchGameJsonFile(fortuneJsonPath)
       .then((data) => {
         setIdiomsData(data as IdiomsData);
       })
       .catch(() => {
         // json 로드 실패는 기본값 사용
       });
-  }, []);
+  }, [fortuneJsonPath]);
 
   const handleSubmit = () => {
     if (!canSubmit) {

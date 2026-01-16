@@ -5,12 +5,10 @@ import "./my-game-edit.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
 import {
   fetchGameDetail,
-  fetchGameJsonFile,
-  saveAdminJsonFile,
-  savePsychoTemplate,
   submitGameEditRequest,
 } from "../../api/games";
 import type { GameDetailData } from "../../api/games";
+import { GameJsonEditor } from "../../components/GameJsonEditor";
 import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
 type EditItemForm = {
@@ -55,10 +53,7 @@ export function MyGameEditRequestPage() {
   const [items, setItems] = useState<EditItemForm[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [jsonPath, setJsonPath] = useState<string | null>(null);
-  const [jsonRaw, setJsonRaw] = useState("");
-  const [isJsonLoading, setIsJsonLoading] = useState(false);
   const itemsRef = useRef<EditItemForm[]>([]);
   const thumbnailPreviewRef = useRef<string>("");
   const bodyOverflowRef = useRef("");
@@ -71,7 +66,7 @@ export function MyGameEditRequestPage() {
       .then((data) => {
         setState({ status: "ready", data });
         if (data.game.type === "FORTUNE_TEST") {
-          setJsonPath("fortune/idioms.json");
+          setJsonPath(`fortune/${data.game.slug || "saju-luck"}.json`);
         } else if (data.game.type === "PSYCHO_TEST" || data.game.type === "PSYCHOLOGICAL") {
           setJsonPath(`psycho/${data.game.slug || "major-arcana"}.json`);
         } else {
@@ -103,20 +98,6 @@ export function MyGameEditRequestPage() {
         setState({ status: "error", message });
       });
   }, [parsedGameId]);
-
-  useEffect(() => {
-    if (!jsonPath) {
-      setJsonRaw("");
-      return;
-    }
-    setIsJsonLoading(true);
-    fetchGameJsonFile(jsonPath)
-      .then((content) => setJsonRaw(JSON.stringify(content || {}, null, 2)))
-      .catch(() => {
-        setFormError("JSON을 불러오지 못했습니다.");
-      })
-      .finally(() => setIsJsonLoading(false));
-  }, [jsonPath]);
 
   const isJsonMode = Boolean(jsonPath);
   const showItemEditor = !isJsonMode || items.length > 0;
@@ -251,7 +232,6 @@ export function MyGameEditRequestPage() {
       }
     }
     setFormError(null);
-    setSuccessMessage(null);
     setIsSubmitting(true);
 
     const formData = new FormData();
@@ -294,40 +274,6 @@ export function MyGameEditRequestPage() {
     }
   };
 
-  const handleJsonSave = async () => {
-    if (!jsonPath || state.status !== "ready") {
-      return;
-    }
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(jsonRaw);
-    } catch {
-      setFormError("JSON 형식이 올바르지 않습니다.");
-      return;
-    }
-    setFormError(null);
-    setIsSubmitting(true);
-    try {
-      if (jsonPath.startsWith("psycho/")) {
-        await savePsychoTemplate({
-          slug: state.data.game.slug || "major-arcana",
-          content: parsed,
-        });
-      } else {
-        await saveAdminJsonFile(jsonPath, parsed);
-      }
-      setSuccessMessage("JSON 저장이 완료되었습니다.");
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setFormError(err.meta.message || "JSON 저장에 실패했습니다.");
-      } else {
-        setFormError("JSON 저장에 실패했습니다.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   if (parsedGameId === null) {
     return <div className="my-edit-state">잘못된 게임 ID 입니다.</div>;
   }
@@ -351,23 +297,12 @@ export function MyGameEditRequestPage() {
         <h1>내 게임 수정</h1>
         <p>수정 요청은 승인 후 반영됩니다.</p>
       </header>
-      {successMessage ? <p className="worldcup-create-success">{successMessage}</p> : null}
       {isJsonMode ? (
-        <section className="worldcup-create-field">
-          <div className="worldcup-create-items-header">
-            <h2>JSON 편집</h2>
-            <button type="button" onClick={handleJsonSave} disabled={isSubmitting || isJsonLoading}>
-              {isSubmitting ? "저장 중..." : "JSON 저장"}
-            </button>
-          </div>
-          <textarea
-            value={jsonRaw}
-            onChange={(event) => setJsonRaw(event.target.value)}
-            spellCheck={false}
-            rows={14}
-            disabled={isJsonLoading}
-          />
-        </section>
+        <GameJsonEditor
+          jsonPath={jsonPath}
+          gameSlug={state.data.game.slug || "major-arcana"}
+          gameType={state.data.game.type}
+        />
       ) : null}
       {showWorldcupFields || showItemEditor ? (
         <form className="worldcup-create-form" onSubmit={handleSubmit}>

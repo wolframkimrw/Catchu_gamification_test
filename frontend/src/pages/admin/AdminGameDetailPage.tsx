@@ -134,6 +134,7 @@ export function AdminGameDetailPage() {
   const psychoCardsRef = useRef<PsychoCardForm[]>([]);
   const psychoQuestionsRef = useRef<PsychoQuestionForm[]>([]);
   const psychoThumbnailRef = useRef("");
+  const lastLoadedJsonRef = useRef<Record<string, unknown> | null>(null);
 
   const toggleCardExpanded = (cardId: string) => {
     setExpandedCards((prev) => {
@@ -224,16 +225,141 @@ export function AdminGameDetailPage() {
     if (!game) {
       return null;
     }
-    if (game.slug === "saju-luck") {
-      return "fortune/idioms.json";
+    if (game.type === "FORTUNE_TEST") {
+      return `fortune/${game.slug || "saju-luck"}.json`;
     }
     if (game.type === "PSYCHO_TEST" || game.type === "PSYCHOLOGICAL") {
       return `psycho/${game.slug}.json`;
     }
     return null;
   }, [game]);
-  const isSajuJson = jsonPath === "fortune/idioms.json";
+  const isSajuJson = Boolean(jsonPath && jsonPath.startsWith("fortune/"));
   const isPsychoJson = Boolean(jsonPath && jsonPath.startsWith("psycho/"));
+
+  const applyJsonContent = (content: Record<string, unknown> | null) => {
+    if (isSajuJson) {
+      const data = (content || {}) as Record<string, IdiomEntry[]>;
+      setIdiomBuckets({
+        high: Array.isArray(data.high) ? data.high : [],
+        mid: Array.isArray(data.mid) ? data.mid : [],
+        low: Array.isArray(data.low) ? data.low : [],
+      });
+      setJsonRaw("");
+      return;
+    }
+    if (isPsychoJson) {
+      const data = content && typeof content === "object" ? content : {};
+      const {
+        slug,
+        game_slug,
+        title,
+        description,
+        thumbnail_url,
+        tags,
+        scoring,
+        cards,
+        questions,
+        ...rest
+      } = data as {
+        slug?: string;
+        game_slug?: string;
+        title?: string;
+        description?: string;
+        thumbnail_url?: string;
+        tags?: Array<{ label: string }>;
+        scoring?: Partial<Record<string, unknown>>;
+        cards?: Array<Record<string, unknown>>;
+        questions?: Array<Record<string, unknown>>;
+      };
+      setPsychoExtras(rest);
+      setPsychoSlug(slug || game?.slug || "");
+      setPsychoTitle(String(title || ""));
+      setPsychoDescription(String(description || ""));
+      setPsychoTags(
+        Array.isArray(tags) ? tags.map((tag) => tag.label).filter(Boolean).join(", ") : ""
+      );
+      setPsychoThumbnailFile(null);
+      setPsychoThumbnailUrl(String(thumbnail_url || ""));
+      setPsychoThumbnailPreview(String(thumbnail_url || ""));
+      const scoringRecord = (scoring || {}) as Record<string, unknown>;
+      setPsychoScoring({
+        mode:
+          scoringRecord.mode === "TOTAL"
+            ? "TOTAL"
+            : scoringRecord.mode === "WEIGHTED"
+              ? "WEIGHTED"
+              : "WEIGHTED",
+        min: scoringRecord.min !== undefined ? String(scoringRecord.min) : "",
+        max: scoringRecord.max !== undefined ? String(scoringRecord.max) : "",
+        minNegative:
+          scoringRecord.minNegative !== undefined ? String(scoringRecord.minNegative) : "",
+        threshold:
+          scoringRecord.threshold !== undefined ? String(scoringRecord.threshold) : "",
+        maxResults:
+          scoringRecord.maxResults !== undefined ? String(scoringRecord.maxResults) : "",
+        patterns: Array.isArray(scoringRecord.patterns)
+          ? scoringRecord.patterns.map(String).join(", ")
+          : "",
+      });
+      setPsychoCards(
+        Array.isArray(cards)
+          ? cards.map((card) => ({
+            id: String(card.id || ""),
+            label: String(card.label || ""),
+            summary: String(card.summary || ""),
+            keywords: Array.isArray(card.keywords)
+              ? card.keywords.map(String).join(", ")
+              : String(card.keywords || ""),
+            imageFile: null,
+            imageUrl: String(card.image_url || ""),
+            previewUrl: "",
+            minScore:
+              card.min_score !== undefined && card.min_score !== null
+                ? String(card.min_score)
+                : "",
+            maxScore:
+              card.max_score !== undefined && card.max_score !== null
+                ? String(card.max_score)
+                : "",
+          }))
+          : []
+      );
+      setPsychoQuestions(
+        Array.isArray(questions)
+          ? questions.map((question) => ({
+            id: String(question.id || ""),
+            text: String(question.text || ""),
+            helper: String(question.helper || ""),
+            options: Array.isArray(question.options)
+              ? question.options.map((option: Record<string, unknown>) => ({
+                id: String(option.id || ""),
+                text: String(option.text || ""),
+                score:
+                  option.score !== undefined && option.score !== null
+                    ? String(option.score)
+                    : "",
+                nextQuestionId: String(option.nextQuestionId || ""),
+                imageFile: null,
+                imageUrl: String(option.image_url || ""),
+                previewUrl: "",
+                weights:
+                  option.weights && typeof option.weights === "object"
+                    ? Object.fromEntries(
+                      Object.entries(option.weights as Record<string, unknown>).map(
+                        ([key, value]) => [key, String(value)]
+                      )
+                    )
+                    : {},
+              }))
+              : [],
+          }))
+          : []
+      );
+      setJsonRaw("");
+      return;
+    }
+    setJsonRaw(JSON.stringify(content || {}, null, 2));
+  };
 
   useEffect(() => {
     if (!jsonPath) {
@@ -258,135 +384,17 @@ export function AdminGameDetailPage() {
       setPsychoCards([]);
       setPsychoQuestions([]);
       setPsychoExtras({});
+      lastLoadedJsonRef.current = null;
       return;
     }
     fetchAdminJsonFile(jsonPath)
       .then((data) => {
-        if (isSajuJson) {
-          const content = (data.content || {}) as Record<string, IdiomEntry[]>;
-          setIdiomBuckets({
-            high: Array.isArray(content.high) ? content.high : [],
-            mid: Array.isArray(content.mid) ? content.mid : [],
-            low: Array.isArray(content.low) ? content.low : [],
-          });
-          setJsonRaw("");
-          return;
-        }
-        if (isPsychoJson) {
-          const content =
-            data.content && typeof data.content === "object"
-              ? (data.content as Record<string, unknown>)
-              : {};
-          const {
-            slug,
-            game_slug,
-            title,
-            description,
-            thumbnail_url,
-            tags,
-            scoring,
-            cards,
-            questions,
-            ...rest
-          } = content as {
-            slug?: string;
-            game_slug?: string;
-            title?: string;
-            description?: string;
-            thumbnail_url?: string;
-            tags?: Array<{ label: string }>;
-            scoring?: Partial<Record<string, unknown>>;
-            cards?: Array<Record<string, unknown>>;
-            questions?: Array<Record<string, unknown>>;
-          };
-          setPsychoExtras(rest);
-          setPsychoSlug(slug || game?.slug || "");
-          setPsychoTitle(String(title || ""));
-          setPsychoDescription(String(description || ""));
-          setPsychoTags(
-            Array.isArray(tags) ? tags.map((tag) => tag.label).filter(Boolean).join(", ") : ""
-          );
-          setPsychoThumbnailFile(null);
-          setPsychoThumbnailUrl(String(thumbnail_url || ""));
-          setPsychoThumbnailPreview(String(thumbnail_url || ""));
-          const scoringRecord = (scoring || {}) as Record<string, unknown>;
-          setPsychoScoring({
-            mode:
-              scoringRecord.mode === "TOTAL"
-                ? "TOTAL"
-                : scoringRecord.mode === "WEIGHTED"
-                  ? "WEIGHTED"
-                  : "WEIGHTED",
-            min: scoringRecord.min !== undefined ? String(scoringRecord.min) : "",
-            max: scoringRecord.max !== undefined ? String(scoringRecord.max) : "",
-            minNegative:
-              scoringRecord.minNegative !== undefined ? String(scoringRecord.minNegative) : "",
-            threshold:
-              scoringRecord.threshold !== undefined ? String(scoringRecord.threshold) : "",
-            maxResults:
-              scoringRecord.maxResults !== undefined ? String(scoringRecord.maxResults) : "",
-            patterns: Array.isArray(scoringRecord.patterns)
-              ? scoringRecord.patterns.map(String).join(", ")
-              : "",
-          });
-          setPsychoCards(
-            Array.isArray(cards)
-              ? cards.map((card) => ({
-                id: String(card.id || ""),
-                label: String(card.label || ""),
-                summary: String(card.summary || ""),
-                keywords: Array.isArray(card.keywords)
-                  ? card.keywords.map(String).join(", ")
-                  : String(card.keywords || ""),
-                imageFile: null,
-                imageUrl: String(card.image_url || ""),
-                previewUrl: "",
-                minScore:
-                  card.min_score !== undefined && card.min_score !== null
-                    ? String(card.min_score)
-                    : "",
-                maxScore:
-                  card.max_score !== undefined && card.max_score !== null
-                    ? String(card.max_score)
-                    : "",
-              }))
-              : []
-          );
-          setPsychoQuestions(
-            Array.isArray(questions)
-              ? questions.map((question) => ({
-                id: String(question.id || ""),
-                text: String(question.text || ""),
-                helper: String(question.helper || ""),
-                options: Array.isArray(question.options)
-                  ? question.options.map((option: Record<string, unknown>) => ({
-                    id: String(option.id || ""),
-                    text: String(option.text || ""),
-                    score:
-                      option.score !== undefined && option.score !== null
-                        ? String(option.score)
-                        : "",
-                    nextQuestionId: String(option.nextQuestionId || ""),
-                    imageFile: null,
-                    imageUrl: String(option.image_url || ""),
-                    previewUrl: "",
-                    weights:
-                      option.weights && typeof option.weights === "object"
-                        ? Object.fromEntries(
-                          Object.entries(option.weights as Record<string, unknown>).map(
-                            ([key, value]) => [key, String(value)]
-                          )
-                        )
-                        : {},
-                  }))
-                  : [],
-              }))
-              : []
-          );
-          setJsonRaw("");
-          return;
-        }
-        setJsonRaw(JSON.stringify(data.content || {}, null, 2));
+        const content =
+          data.content && typeof data.content === "object"
+            ? (data.content as Record<string, unknown>)
+            : {};
+        lastLoadedJsonRef.current = content;
+        applyJsonContent(content);
       })
       .catch((err) => {
         if (err instanceof ApiError) {
@@ -396,6 +404,14 @@ export function AdminGameDetailPage() {
         }
       });
   }, [game, isPsychoJson, isSajuJson, jsonPath]);
+
+  const handleCancelJson = () => {
+    if (!lastLoadedJsonRef.current) {
+      return;
+    }
+    setError(null);
+    applyJsonContent(lastLoadedJsonRef.current);
+  };
 
   const handleUpdate = async (updates: { visibility?: string; status?: string }) => {
     if (!game) {
@@ -1452,9 +1468,6 @@ export function AdminGameDetailPage() {
             <div className="admin-psycho-section">
               <div className="admin-psycho-section-header">
                 <h4>JSON 편집</h4>
-                <button type="button" onClick={handleSaveJson} disabled={isSavingJson}>
-                  {isSavingJson ? "저장 중..." : "JSON 저장"}
-                </button>
               </div>
               <div className="admin-psycho-grid">
                 <label>
@@ -1616,12 +1629,12 @@ export function AdminGameDetailPage() {
                 <div className="admin-json-empty">결과 카드가 없습니다.</div>
               ) : (
                 <div className="admin-psycho-list">
-                  {psychoCards.map((card, index) => {
-                    const cardId = `card-${card.id}-${index}`;
+                {psychoCards.map((card, index) => {
+                    const cardId = `card-${index}`;
                     const isExpanded = expandedCards.has(cardId);
                     return (
                       <div
-                        key={`${card.id}-${index}`}
+                        key={`card-${index}`}
                         className={`admin-psycho-card ${isExpanded ? "expanded" : ""}`}
                       >
                         <button
@@ -1779,12 +1792,12 @@ export function AdminGameDetailPage() {
                 <div className="admin-json-empty">질문이 없습니다.</div>
               ) : (
                 <div className="admin-psycho-list">
-                  {psychoQuestions.map((question, qIndex) => {
-                    const questionId = `question-${question.id}-${qIndex}`;
+                {psychoQuestions.map((question, qIndex) => {
+                    const questionId = `question-${qIndex}`;
                     const isExpanded = expandedQuestions.has(questionId);
                     return (
                       <div
-                        key={`${question.id}-${qIndex}`}
+                        key={`question-${qIndex}`}
                         className={`admin-psycho-question ${isExpanded ? "expanded" : ""}`}
                       >
                         <button
@@ -1850,11 +1863,11 @@ export function AdminGameDetailPage() {
                             </div>
                             <div className="admin-psycho-options">
                               {question.options.map((option, oIndex) => {
-                                const optionId = `option-${option.id}-${oIndex}`;
+                                const optionId = `option-${qIndex}-${oIndex}`;
                                 const isOExpanded = expandedOptions.has(optionId);
                                 return (
                                   <div
-                                    key={`${option.id}-${oIndex}`}
+                                    key={`option-${qIndex}-${oIndex}`}
                                     className={`admin-psycho-option ${isOExpanded ? "expanded" : ""}`}
                                   >
                                     <button
@@ -2023,20 +2036,31 @@ export function AdminGameDetailPage() {
                 </div>
               )}
             </div>
+            <div className="admin-floating-actions">
+              <button type="button" onClick={handleSaveJson} disabled={isSavingJson}>
+                {isSavingJson ? "저장 중..." : "저장"}
+              </button>
+              <button type="button" className="ghost" onClick={handleCancelJson}>
+                취소
+              </button>
+            </div>
           </section>
         ) : (
           <section className="admin-json-editor">
-            <div className="admin-json-actions">
-              <button type="button" onClick={handleSaveJson}>
-                JSON 저장
-              </button>
-            </div>
             <div className="admin-json-raw">
               <textarea
                 value={jsonRaw}
                 onChange={(event) => setJsonRaw(event.target.value)}
                 spellCheck={false}
               />
+            </div>
+            <div className="admin-floating-actions">
+              <button type="button" onClick={handleSaveJson}>
+                저장
+              </button>
+              <button type="button" className="ghost" onClick={handleCancelJson}>
+                취소
+              </button>
             </div>
           </section>
         )

@@ -358,10 +358,7 @@ class PsychoTemplateSaveView(BaseAPIView):
             content["game_slug"] = safe_slug
 
         path = f"psycho/{safe_slug}.json"
-        abs_path, normalized = _resolve_json_path(path)
-        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-        with open(abs_path, "w", encoding="utf-8") as handle:
-            json.dump(content, handle, ensure_ascii=False, indent=2)
+        _, normalized = _resolve_json_path(path)
         frontend_path = _resolve_frontend_json_path(normalized)
         os.makedirs(os.path.dirname(frontend_path), exist_ok=True)
         with open(frontend_path, "w", encoding="utf-8") as handle:
@@ -375,10 +372,11 @@ class GameJsonReadView(BaseAPIView):
 
     def get(self, request, *args, **kwargs):
         path_value = request.query_params.get("path")
-        abs_path, normalized = _resolve_json_path(path_value or "")
-        if not os.path.exists(abs_path):
+        _, normalized = _resolve_json_path(path_value or "")
+        frontend_path = _resolve_frontend_json_path(normalized)
+        if not os.path.exists(frontend_path):
             raise ValidationError({"path": f"파일이 없습니다: {normalized}"})
-        with open(abs_path, "r", encoding="utf-8") as handle:
+        with open(frontend_path, "r", encoding="utf-8") as handle:
             content = json.load(handle)
         return self.respond(data={"path": normalized, "content": content})
 
@@ -1533,15 +1531,15 @@ class AdminJsonListView(BaseAPIView):
         denied = _require_staff(self, request)
         if denied:
             return denied
-        if not os.path.isdir(JSON_BASE_DIR):
+        if not os.path.isdir(FRONTEND_JSON_BASE_DIR):
             return self.respond(data={"files": []})
         files = []
-        for root, _, filenames in os.walk(JSON_BASE_DIR):
+        for root, _, filenames in os.walk(FRONTEND_JSON_BASE_DIR):
             for filename in filenames:
                 if not filename.endswith(".json"):
                     continue
                 full_path = os.path.join(root, filename)
-                rel_path = os.path.relpath(full_path, JSON_BASE_DIR).replace("\\", "/")
+                rel_path = os.path.relpath(full_path, FRONTEND_JSON_BASE_DIR).replace("\\", "/")
                 files.append(rel_path)
         files.sort()
         return self.respond(data={"files": files})
@@ -1555,10 +1553,11 @@ class AdminJsonDetailView(BaseAPIView):
         if denied:
             return denied
         path_value = request.query_params.get("path")
-        abs_path, normalized = _resolve_json_path(path_value or "")
-        if not os.path.exists(abs_path):
+        _, normalized = _resolve_json_path(path_value or "")
+        frontend_path = _resolve_frontend_json_path(normalized)
+        if not os.path.exists(frontend_path):
             raise ValidationError({"path": f"파일이 없습니다: {normalized}"})
-        with open(abs_path, "r", encoding="utf-8") as handle:
+        with open(frontend_path, "r", encoding="utf-8") as handle:
             content = json.load(handle)
         return self.respond(data={"path": normalized, "content": content})
 
@@ -1568,12 +1567,9 @@ class AdminJsonDetailView(BaseAPIView):
             return denied
         path_value = request.data.get("path")
         content = request.data.get("content")
-        abs_path, normalized = _resolve_json_path(path_value or "")
+        _, normalized = _resolve_json_path(path_value or "")
         if content is None:
             raise ValidationError({"content": "저장할 내용이 없습니다."})
-        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-        with open(abs_path, "w", encoding="utf-8") as handle:
-            json.dump(content, handle, ensure_ascii=False, indent=2)
         try:
             frontend_path = _resolve_frontend_json_path(normalized)
             os.makedirs(os.path.dirname(frontend_path), exist_ok=True)

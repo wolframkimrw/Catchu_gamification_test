@@ -527,7 +527,33 @@ export async function saveAdminJsonFile(path: string, content: Record<string, un
   return response;
 }
 
+const localFortuneJson = import.meta.glob("../utils/fortune/*.json", { eager: true });
+const localPsychoJson = import.meta.glob("../utils/psycho/*.json", { eager: true });
+
 export async function fetchGameJsonFile(path: string): Promise<Record<string, unknown>> {
+  const localKey = `../utils/${path}`;
+  const localModule =
+    (localFortuneJson[localKey] as { default: Record<string, unknown> } | undefined) ||
+    (localPsychoJson[localKey] as { default: Record<string, unknown> } | undefined);
+  if (localModule?.default) {
+    return localModule.default;
+  }
+  if (path.startsWith("fortune/")) {
+    const fallback = localFortuneJson["../utils/fortune/idioms.json"] as
+      | { default: Record<string, unknown> }
+      | undefined;
+    if (fallback?.default) {
+      return fallback.default;
+    }
+  }
+  if (path.startsWith("psycho/")) {
+    const fallback = localPsychoJson["../utils/psycho/major-arcana.json"] as
+      | { default: Record<string, unknown> }
+      | undefined;
+    if (fallback?.default) {
+      return fallback.default;
+    }
+  }
   const response = await requestWithMeta(
     apiClient.get<ApiResponse<{ path: string; content: Record<string, unknown> }>>("/games/json/", {
       params: { path },

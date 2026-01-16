@@ -285,18 +285,6 @@ export function WorldcupListPage() {
                 getMeta={() => ({})}
               />
             </section>
-            <div className="section-title">
-              <span className="badge badge-new">NEW</span>
-              <span>카테고리 둘러보기</span>
-            </div>
-            <div className="category-grid">
-              {categories.map((cat) => (
-                <div key={cat.label} className="category-tile">
-                  <span className="category-emoji">{cat.emoji}</span>
-                  <span>{cat.label}</span>
-                </div>
-              ))}
-            </div>
             <div ref={fortuneRef}>
               <CategorySection
                 title="운세"

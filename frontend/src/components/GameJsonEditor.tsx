@@ -724,7 +724,7 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
     if (isSajuJson) {
       const totalCount =
         idiomBuckets.high.length + idiomBuckets.mid.length + idiomBuckets.low.length;
-      if (totalCount > 0 && !window.confirm(`${totalCount}개 수정하시겠습니까?`)) {
+      if (totalCount > 0 && !window.confirm("수정하시겠습니까?")) {
         return false;
       }
       setError(null);

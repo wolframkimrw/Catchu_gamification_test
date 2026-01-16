@@ -4,6 +4,7 @@ import "./my-info.css";
 
 export function MyInfoPage() {
   const { user } = useAuthUser();
+  const providerLabel = user?.provider?.toLowerCase() === "local" ? "로컬" : user?.provider || "로컬";
 
   if (!user) {
     return (
@@ -35,12 +36,12 @@ export function MyInfoPage() {
           <span className="my-info-value">{user.email}</span>
         </div>
         <div className="my-info-row">
-          <span className="my-info-label">스태프 여부</span>
-          <span className="my-info-value">{user.is_staff ? "스태프" : "일반"}</span>
+          <span className="my-info-label">관리자 여부</span>
+          <span className="my-info-value">{user.is_staff ? "관리자" : "일반"}</span>
         </div>
         <div className="my-info-row">
           <span className="my-info-label">로그인 제공자</span>
-          <span className="my-info-value">{user.provider || "알 수 없음"}</span>
+          <span className="my-info-value">{providerLabel}</span>
         </div>
         <div className="my-info-row">
           <span className="my-info-label">비밀번호 변경</span>

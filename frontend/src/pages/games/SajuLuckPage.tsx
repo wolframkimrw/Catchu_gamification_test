@@ -198,22 +198,24 @@ export function SajuLuckPage() {
             <>
               {resultStep === 2 ? (
                 <section className="saju-card saju-result">
-                  <div className="saju-group">
-                    {/* <p className="saju-group-label">&nbsp;</p> */}
-                    <p className="saju-group-value saju-emphasis">오늘의 운세는...</p>
-                    <p className="saju-group-label">&nbsp;</p>
-                    {result.idiom ? (
-                      <>
-                        <p className="saju-group-value saju-emphasis saju-idiom-value">
-                          {result.idiom.text} ({result.idiom.reading})
-                        </p>
-                        <p className="saju-group-value">{result.idiom.meaning}</p>
-                        <p className="saju-group-label">&nbsp;</p>
-                        <p className="saju-group-value">
-                          {splitMessageByDiamond(result.idiom.message).beforeDiamond}
-                        </p>
-                      </>
-                    ) : null}
+                  <div className="saju-result-body">
+                    <div className="saju-group">
+                      {/* <p className="saju-group-label">&nbsp;</p> */}
+                      <p className="saju-group-value saju-emphasis">오늘의 운세는...</p>
+                      <p className="saju-group-label">&nbsp;</p>
+                      {result.idiom ? (
+                        <>
+                          <p className="saju-group-value saju-emphasis saju-idiom-value">
+                            {result.idiom.text} ({result.idiom.reading})
+                          </p>
+                          <p className="saju-group-value">{result.idiom.meaning}</p>
+                          <p className="saju-group-label">&nbsp;</p>
+                          <p className="saju-group-value">
+                            {splitMessageByDiamond(result.idiom.message).beforeDiamond}
+                          </p>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="saju-nav-buttons">
                     <button
@@ -237,12 +239,14 @@ export function SajuLuckPage() {
                 </section>
               ) : resultStep === 3 ? (
                 <section className="saju-card saju-result">
-                  <div className="saju-group">
-                    {result.idiom ? (
-                      <p className="saju-group-value">
-                        🔹{splitMessageByDiamond(result.idiom.message).afterDiamond}
-                      </p>
-                    ) : null}
+                  <div className="saju-result-body">
+                    <div className="saju-group">
+                      {result.idiom ? (
+                        <p className="saju-group-value">
+                          🔹{splitMessageByDiamond(result.idiom.message).afterDiamond}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="saju-nav-buttons">
                     <button
@@ -263,8 +267,10 @@ export function SajuLuckPage() {
                 </section>
               ) : resultStep === 4 ? (
                 <section className="saju-card saju-result">
-                  <div className="saju-group">
-                    <p className="saju-group-value saju-common-value">{result.message}</p>
+                  <div className="saju-result-body">
+                    <div className="saju-group">
+                      <p className="saju-group-value saju-common-value">{result.message}</p>
+                    </div>
                   </div>
                   <div className="saju-nav-buttons">
                     <button

@@ -80,6 +80,13 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  height: clamp(360px, 70vh, 640px);
+}
+
+.saju-result-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .saju-group {

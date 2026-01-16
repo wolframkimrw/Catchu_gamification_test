@@ -500,7 +500,7 @@ export function AdminGameDetailPage() {
     }
     const editCount =
       Object.keys(editingItems).length + (showNewItemForm ? 1 : 0) + (isEditingInfo ? 1 : 0);
-    if (editCount > 0 && !window.confirm(`${editCount}개 수정하시겠습니까?`)) {
+    if (editCount > 0 && !window.confirm("수정하시겠습니까?")) {
       return;
     }
     setError(null);
@@ -614,7 +614,7 @@ export function AdminGameDetailPage() {
     if (isSajuJson) {
       const totalCount =
         idiomBuckets.high.length + idiomBuckets.mid.length + idiomBuckets.low.length;
-      if (totalCount > 0 && !window.confirm(`${totalCount}개 수정하시겠습니까?`)) {
+      if (totalCount > 0 && !window.confirm("수정하시겠습니까?")) {
         return false;
       }
       setError(null);

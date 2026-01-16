@@ -298,7 +298,7 @@ export function MyGameEditRequestPage() {
       </header>
       {isJsonMode ? (
         <GameJsonEditor
-          jsonPath={jsonPath}
+          jsonPath={jsonPath!}
           gameSlug={state.data.game.slug || "major-arcana"}
           gameType={state.data.game.type}
           onCancel={() => navigate("/my/games")}

@@ -555,30 +555,6 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
     ]);
   };
 
-  const handleRemovePsychoCard = (index: number) => {
-    const removed = psychoCards[index];
-    if (removed?.previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(removed.previewUrl);
-    }
-    const removedId = removed?.id;
-    setPsychoCards((prev) => prev.filter((_, idx) => idx !== index));
-    if (removedId) {
-      setPsychoQuestions((prev) =>
-        prev.map((question) => ({
-          ...question,
-          options: question.options.map((option) => {
-            if (!(removedId in option.weights)) {
-              return option;
-            }
-            const { [removedId]: removedWeight, ...rest } = option.weights;
-            void removedWeight;
-            return { ...option, weights: rest };
-          }),
-        }))
-      );
-    }
-  };
-
   const togglePsychoCardSelection = (index: number) => {
     setSelectedPsychoCardIndexes((prev) =>
       prev.includes(index) ? prev.filter((id) => id !== index) : [...prev, index]
@@ -652,16 +628,6 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
         ],
       },
     ]);
-  };
-
-  const handleRemovePsychoQuestion = (index: number) => {
-    const removed = psychoQuestions[index];
-    removed?.options.forEach((option) => {
-      if (option.previewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(option.previewUrl);
-      }
-    });
-    setPsychoQuestions((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const togglePsychoQuestionSelection = (index: number) => {
@@ -748,17 +714,6 @@ export function GameJsonEditor({ jsonPath, gameSlug, gameType, onCancel }: GameJ
           weights: {},
         },
       ],
-    }));
-  };
-
-  const handleRemovePsychoOption = (questionIndex: number, optionIndex: number) => {
-    const removed = psychoQuestions[questionIndex]?.options[optionIndex];
-    if (removed?.previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(removed.previewUrl);
-    }
-    updatePsychoQuestion(questionIndex, (question) => ({
-      ...question,
-      options: question.options.filter((_, idx) => idx !== optionIndex),
     }));
   };
 

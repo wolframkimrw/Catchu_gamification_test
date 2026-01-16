@@ -16,7 +16,7 @@ import {
 import { AdminShell } from "../../components/AdminShell";
 import { ListBackButton } from "../../components/ListBackButton";
 import { GameJsonEditor } from "../../components/GameJsonEditor";
-import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
+import { validateImageUrl } from "../../utils/imageValidation";
 
 type IdiomEntry = {
   key: string;
@@ -129,50 +129,10 @@ export function AdminGameDetailPage() {
   const [psychoCards, setPsychoCards] = useState<PsychoCardForm[]>([]);
   const [psychoQuestions, setPsychoQuestions] = useState<PsychoQuestionForm[]>([]);
   const [psychoExtras, setPsychoExtras] = useState<Record<string, unknown>>({});
-  const [isSavingJson, setIsSavingJson] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
-  const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
   const psychoCardsRef = useRef<PsychoCardForm[]>([]);
   const psychoQuestionsRef = useRef<PsychoQuestionForm[]>([]);
   const psychoThumbnailRef = useRef("");
   const lastLoadedJsonRef = useRef<Record<string, unknown> | null>(null);
-
-  const toggleCardExpanded = (cardId: string) => {
-    setExpandedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(cardId)) {
-        newSet.delete(cardId);
-      } else {
-        newSet.add(cardId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleQuestionExpanded = (questionId: string) => {
-    setExpandedQuestions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionId)) {
-        newSet.delete(questionId);
-      } else {
-        newSet.add(questionId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleOptionExpanded = (optionId: string) => {
-    setExpandedOptions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(optionId)) {
-        newSet.delete(optionId);
-      } else {
-        newSet.add(optionId);
-      }
-      return newSet;
-    });
-  };
 
   useEffect(() => {
     psychoCardsRef.current = psychoCards;
@@ -405,10 +365,6 @@ export function AdminGameDetailPage() {
         }
       });
   }, [applyJsonContent, jsonPath]);
-
-  const handleCancelJson = () => {
-    navigate("/admin/games");
-  };
 
   const handleUpdate = async (updates: { visibility?: string; status?: string }) => {
     if (!game) {
@@ -723,186 +679,6 @@ export function AdminGameDetailPage() {
     );
   };
 
-  const handlePsychoThumbnailSelect = async (file: File | null) => {
-    if (!file) {
-      setPsychoThumbnailFile(null);
-      setPsychoThumbnailUrl("");
-      setPsychoThumbnailPreview("");
-      return;
-    }
-    const errorMessage = await validateImageFile(file);
-    if (errorMessage) {
-      setError(errorMessage);
-      return;
-    }
-    setError(null);
-    if (psychoThumbnailPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(psychoThumbnailPreview);
-    }
-    const previewUrl = URL.createObjectURL(file);
-    setPsychoThumbnailFile(file);
-    setPsychoThumbnailUrl("");
-    setPsychoThumbnailPreview(previewUrl);
-  };
-
-  const handlePsychoCardFileSelect = async (index: number, file: File | null) => {
-    if (!file) {
-      updatePsychoCard(index, (card) => ({
-        ...card,
-        imageFile: null,
-        imageUrl: "",
-        previewUrl: "",
-      }));
-      return;
-    }
-    const errorMessage = await validateImageFile(file);
-    if (errorMessage) {
-      setError(errorMessage);
-      return;
-    }
-    setError(null);
-    const previewUrl = URL.createObjectURL(file);
-    updatePsychoCard(index, (card) => ({
-      ...card,
-      imageFile: file,
-      imageUrl: "",
-      previewUrl,
-    }));
-  };
-
-  const handlePsychoOptionFileSelect = async (
-    questionIndex: number,
-    optionIndex: number,
-    file: File | null
-  ) => {
-    if (!file) {
-      updatePsychoOption(questionIndex, optionIndex, (option) => ({
-        ...option,
-        imageFile: null,
-        imageUrl: "",
-        previewUrl: "",
-      }));
-      return;
-    }
-    const errorMessage = await validateImageFile(file);
-    if (errorMessage) {
-      setError(errorMessage);
-      return;
-    }
-    setError(null);
-    const previewUrl = URL.createObjectURL(file);
-    updatePsychoOption(questionIndex, optionIndex, (option) => ({
-      ...option,
-      imageFile: file,
-      imageUrl: "",
-      previewUrl,
-    }));
-  };
-
-  const handleAddPsychoCard = () => {
-    setPsychoCards((prev) => [
-      ...prev,
-      {
-        id: makeId("card"),
-        label: "",
-        summary: "",
-        keywords: "",
-        imageFile: null,
-        imageUrl: "",
-        previewUrl: "",
-        minScore: "",
-        maxScore: "",
-      },
-    ]);
-  };
-
-  const handleRemovePsychoCard = (index: number) => {
-    const removed = psychoCards[index];
-    if (removed?.previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(removed.previewUrl);
-    }
-    const removedId = removed?.id;
-    setPsychoCards((prev) => prev.filter((_, idx) => idx !== index));
-    if (removedId) {
-      setPsychoQuestions((prev) =>
-        prev.map((question) => ({
-          ...question,
-          options: question.options.map((option) => {
-            if (!(removedId in option.weights)) {
-              return option;
-            }
-            const { [removedId]: removedWeight, ...rest } = option.weights;
-            void removedWeight;
-            return { ...option, weights: rest };
-          }),
-        }))
-      );
-    }
-  };
-
-  const handleAddPsychoQuestion = () => {
-    setPsychoQuestions((prev) => [
-      ...prev,
-      {
-        id: makeId("q"),
-        text: "",
-        helper: "",
-        options: [
-          {
-            id: makeId("opt"),
-            text: "",
-            score: "",
-            nextQuestionId: "",
-            imageFile: null,
-            imageUrl: "",
-            previewUrl: "",
-            weights: {},
-          },
-        ],
-      },
-    ]);
-  };
-
-  const handleRemovePsychoQuestion = (index: number) => {
-    const removed = psychoQuestions[index];
-    removed?.options.forEach((option) => {
-      if (option.previewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(option.previewUrl);
-      }
-    });
-    setPsychoQuestions((prev) => prev.filter((_, idx) => idx !== index));
-  };
-
-  const handleAddPsychoOption = (questionIndex: number) => {
-    updatePsychoQuestion(questionIndex, (question) => ({
-      ...question,
-      options: [
-        ...question.options,
-        {
-          id: makeId("opt"),
-          text: "",
-          score: "",
-          nextQuestionId: "",
-          imageFile: null,
-          imageUrl: "",
-          previewUrl: "",
-          weights: {},
-        },
-      ],
-    }));
-  };
-
-  const handleRemovePsychoOption = (questionIndex: number, optionIndex: number) => {
-    const removed = psychoQuestions[questionIndex]?.options[optionIndex];
-    if (removed?.previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(removed.previewUrl);
-    }
-    updatePsychoQuestion(questionIndex, (question) => ({
-      ...question,
-      options: question.options.filter((_, idx) => idx !== optionIndex),
-    }));
-  };
-
   const handleSaveJson = async (): Promise<boolean> => {
     if (!jsonPath) {
       return false;
@@ -953,7 +729,6 @@ export function AdminGameDetailPage() {
         return false;
       }
       setError(null);
-      setIsSavingJson(true);
       try {
         const urlChecks: string[] = [];
         if (!psychoThumbnailFile && psychoThumbnailUrl && !isDataUrl(psychoThumbnailUrl)) {
@@ -1075,8 +850,6 @@ export function AdminGameDetailPage() {
           setError("JSON 저장에 실패했습니다.");
         }
         return false;
-      } finally {
-        setIsSavingJson(false);
       }
     }
     if (!window.confirm("JSON을 저장하시겠습니까?")) {

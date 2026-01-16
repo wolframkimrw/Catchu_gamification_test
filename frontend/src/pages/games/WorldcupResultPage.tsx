@@ -6,7 +6,6 @@ import type { GameResultDetail } from "../../api/gamesSession";
 import placeholderImage from "../../assets/worldcup-placeholder.svg";
 import { getStoredGameSessionId } from "../../utils/gameSession";
 import { resolveMediaUrl } from "../../api/http";
-import { fetchAdminResultSummary } from "../../api/games";
 
 type ResultPayload = {
   gameId: number;
@@ -117,7 +116,6 @@ const mapResultFromApi = (data: GameResultDetail): ResultPayload | null => {
 export function WorldcupResultPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const location = useLocation();
-  const activeTab: "winner" | "all" = "winner";
   const parsedGameId = useMemo(() => {
     const idNumber = Number(gameId);
     return Number.isFinite(idNumber) ? idNumber : null;
@@ -126,10 +124,6 @@ export function WorldcupResultPage() {
     const state = location.state as LocationState;
     return state || null;
   });
-  const [adminSummary, setAdminSummary] = useState<{
-    total_results: number;
-    ranking: { id: number | null; name: string; count: number }[];
-  } | null>(null);
 
   useEffect(() => {
     if (!parsedGameId) {
@@ -147,15 +141,13 @@ export function WorldcupResultPage() {
     const sessionId = getStoredGameSessionId(parsedGameId);
     const loadSummary = async () => {
       try {
-        const [summaryResponse, resultResponse, adminSummaryResponse] = await Promise.all([
+        const [summaryResponse, resultResponse] = await Promise.all([
           fetchWorldcupPickSummary(parsedGameId),
           sessionId ? fetchGameResult(sessionId) : Promise.resolve(null),
-          fetchAdminResultSummary(parsedGameId),
         ]);
         const summary = summaryResponse.summary;
         const summaryTotalItems = Number(summary?.total_items ?? 0);
         const mapped = resultResponse?.result ? mapResultFromApi(resultResponse.result) : null;
-        setAdminSummary(adminSummaryResponse);
         setResult((prev) => {
           const base = mapped || prev;
           const championSource = base?.champion || summary?.champion || summary?.ranking[0];
@@ -220,16 +212,6 @@ export function WorldcupResultPage() {
   const video = isVideo(mediaUrl);
   const selectedRound = result.round || result.totalItems;
   const productCount = result.totalItems || result.ranking.length;
-  const adminRanking = (adminSummary?.ranking ?? []).map((entry) => {
-    const fallback = result.ranking.find((item) => item.id === entry.id);
-    return {
-      id: entry.id ?? 0,
-      name: entry.name,
-      file_name: fallback?.file_name || "",
-      wins: entry.count,
-    };
-  });
-
   return (
     <div className="worldcup-result-page">
       <div className="worldcup-dashboard">
@@ -246,79 +228,37 @@ export function WorldcupResultPage() {
             </Link>
           </div>
         </header>
-        <div
-          className={`worldcup-dashboard-grid ${activeTab === "winner" ? "no-rank" : "only-rank"}`}
-        >
-          {activeTab === "all" ? (
-            <section className="worldcup-dashboard-rank">
-              <h3>승리 랭킹</h3>
-              <div className="worldcup-rank-table">
-                {adminRanking.map((entry, index) => {
-                  const entryMedia = getMediaUrl(entry.file_name);
-                  const entryVideo = isVideo(entryMedia);
-                  return (
-                    <div key={entry.id} className="worldcup-rank-row">
-                      <div className="worldcup-rank-content">
-                        <div className="worldcup-rank-top">
-                          <div className="worldcup-rank-order">{index + 1}</div>
-                          <div className="worldcup-rank-main">
-                            <div className="worldcup-rank-media">
-                              {entryMedia ? (
-                                entryVideo ? (
-                                  <video src={entryMedia} muted playsInline />
-                                ) : (
-                                  <img src={entryMedia} alt={entry.name || entry.file_name} />
-                                )
-                              ) : (
-                                <div className="worldcup-rank-fallback">
-                                  <img src={placeholderImage} alt="NO IMAGE" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="worldcup-rank-score">{entry.wins}승</div>
-                          </div>
-                        </div>
-                        <div className="worldcup-rank-name">{entry.name || entry.file_name}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : (
-            <>
-              <section className="worldcup-dashboard-hero">
-                <p className="worldcup-winner-label">우승자는...</p>
-                <div className="result-media">
-                  {mediaUrl ? (
-                    video ? (
-                      <video src={mediaUrl} controls playsInline muted loop />
-                    ) : (
-                      <img src={mediaUrl} alt={result.champion.name || result.champion.file_name} />
-                    )
-                  ) : (
-                    <div className="arena-media-fallback">
-                      <img src={placeholderImage} alt="NO IMAGE" />
-                    </div>
-                  )}
+        <div className="worldcup-dashboard-grid no-rank">
+          <section className="worldcup-dashboard-hero">
+            <p className="worldcup-winner-label">우승자는...</p>
+            <div className="result-media">
+              {mediaUrl ? (
+                video ? (
+                  <video src={mediaUrl} controls playsInline muted loop />
+                ) : (
+                  <img src={mediaUrl} alt={result.champion.name || result.champion.file_name} />
+                )
+              ) : (
+                <div className="arena-media-fallback">
+                  <img src={placeholderImage} alt="NO IMAGE" />
                 </div>
-                <p className="worldcup-winner-name">
-                  {result.champion.name || result.champion.file_name}
-                  <span className="worldcup-winner-suffix">입니다.</span>
-                </p>
-              </section>
-              <section className="worldcup-dashboard-stats">
-                <div className="worldcup-stat-card">
-                  <span>선택 강수</span>
-                  <strong>{selectedRound}강</strong>
-                </div>
-                <div className="worldcup-stat-card">
-                  <span>상품 갯수</span>
-                  <strong>{productCount}개</strong>
-                </div>
-              </section>
-            </>
-          )}
+              )}
+            </div>
+            <p className="worldcup-winner-name">
+              {result.champion.name || result.champion.file_name}
+              <span className="worldcup-winner-suffix">입니다.</span>
+            </p>
+          </section>
+          <section className="worldcup-dashboard-stats">
+            <div className="worldcup-stat-card">
+              <span>선택 강수</span>
+              <strong>{selectedRound}강</strong>
+            </div>
+            <div className="worldcup-stat-card">
+              <span>상품 갯수</span>
+              <strong>{productCount}개</strong>
+            </div>
+          </section>
         </div>
       </div>
     </div>

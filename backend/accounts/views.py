@@ -1,7 +1,9 @@
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
 from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from config.views import BaseAPIView
 from .models import GamificationProfile
@@ -16,6 +18,7 @@ from .serializers import (
 
 class LoginView(BaseAPIView):
     api_name = "accounts.login"
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -38,10 +41,12 @@ class LoginView(BaseAPIView):
                 message="이메일 또는 비밀번호가 올바르지 않습니다.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        login(request, user)
+        refresh = RefreshToken.for_user(user)
         return self.respond(
             data={
                 "status": "OK",
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
                 "user": {
                     "id": user.id,
                     "email": user.email,
@@ -55,6 +60,7 @@ class LoginView(BaseAPIView):
 
 class CsrfTokenView(BaseAPIView):
     api_name = "accounts.csrf"
+    permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
         token = get_token(request)
@@ -63,6 +69,7 @@ class CsrfTokenView(BaseAPIView):
 
 class SignupView(BaseAPIView):
     api_name = "accounts.signup"
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = SignupSerializer(data=request.data)
@@ -100,6 +107,7 @@ class SignupView(BaseAPIView):
 
 class ResetPasswordView(BaseAPIView):
     api_name = "accounts.reset_password"
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = ResetPasswordSerializer(data=request.data)

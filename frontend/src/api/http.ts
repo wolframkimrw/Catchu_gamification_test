@@ -37,10 +37,20 @@ export class ApiError extends Error {
 export const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   timeout: 10000,
-  withCredentials: true,
-  xsrfCookieName: "csrftoken",
-  xsrfHeaderName: "X-CSRFToken",
 });
+
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common.Authorization;
+  }
+};
+
+const initialAccessToken = localStorage.getItem("access");
+if (initialAccessToken) {
+  setAuthToken(initialAccessToken);
+}
 
 export const getBackendOrigin = () => {
   const base = import.meta.env.VITE_API_BASE_URL || "/api";
@@ -57,36 +67,24 @@ export const resolveMediaUrl = (url: string) => {
   return url;
 };
 
-const CSRF_HEADER_NAME = "X-CSRFToken";
-const SAFE_METHODS = new Set(["get", "head", "options", "trace"]);
-let csrfTokenCache: string | null = null;
-
-export const setCsrfToken = (token: string | null) => {
-  csrfTokenCache = token;
+const applyAuthorizationHeader = (
+  headers: AxiosResponse["config"]["headers"],
+  token: string
+) => {
+  if (headers && typeof (headers as { set?: (key: string, value: string) => void }).set === "function") {
+    (headers as { set: (key: string, value: string) => void }).set(
+      "Authorization",
+      `Bearer ${token}`
+    );
+    return headers;
+  }
+  return { ...(headers ?? {}), Authorization: `Bearer ${token}` };
 };
 
-function getCookie(name: string): string | null {
-  if (!document.cookie) {
-    return null;
-  }
-  const cookies = document.cookie.split(";");
-  for (const cookie of cookies) {
-    const [rawName, ...valueParts] = cookie.trim().split("=");
-    if (rawName === name) {
-      return decodeURIComponent(valueParts.join("="));
-    }
-  }
-  return null;
-}
-
 apiClient.interceptors.request.use((config) => {
-  const method = config.method?.toLowerCase();
-  if (method && !SAFE_METHODS.has(method)) {
-    const csrfToken = getCookie("csrftoken") || csrfTokenCache;
-    if (csrfToken) {
-      config.headers = config.headers ?? {};
-      config.headers[CSRF_HEADER_NAME] = csrfToken;
-    }
+  const accessToken = localStorage.getItem("access");
+  if (accessToken) {
+    config.headers = applyAuthorizationHeader(config.headers, accessToken);
   }
   return config;
 });

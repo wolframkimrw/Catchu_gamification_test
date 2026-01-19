@@ -83,10 +83,6 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 CORS_ALLOWED_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = not DEBUG
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
@@ -188,5 +184,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
+  "DEFAULT_AUTHENTICATION_CLASSES": (
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
+  ),
+  "DEFAULT_PERMISSION_CLASSES": (
+    "rest_framework.permissions.AllowAny",
+  ),
 }

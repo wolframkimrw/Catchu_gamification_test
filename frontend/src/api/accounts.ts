@@ -1,4 +1,4 @@
-import { apiClient, requestWithMeta, setCsrfToken } from "./http";
+import { apiClient, requestWithMeta } from "./http";
 import type { ApiResponse } from "./http";
 
 export type AuthUser = {
@@ -9,32 +9,20 @@ export type AuthUser = {
   provider?: string;
 };
 
-export async function fetchCsrfToken() {
-  const response = await requestWithMeta(
-    apiClient.get<ApiResponse<{ token: string }>>("/accounts/csrf/")
-  );
-  if (response.token) {
-    setCsrfToken(response.token);
-    apiClient.defaults.headers.common["X-CSRFToken"] = response.token;
-  }
-  return response.token;
-}
-
 export async function loginAccount(params: {
   email: string;
   password: string;
-  csrfToken?: string | null;
 }) {
-  const { csrfToken, ...body } = params;
+  const body = params;
   const response = await requestWithMeta(
     apiClient.post<
       ApiResponse<{
         status: string;
+        access?: string;
+        refresh?: string;
         user: AuthUser;
       }>
-    >("/accounts/login/", body, {
-      headers: csrfToken ? { "X-CSRFToken": csrfToken } : undefined,
-    })
+    >("/accounts/login/", body)
   );
   return response;
 }
@@ -44,32 +32,27 @@ export async function signupAccount(params: {
   email: string;
   password: string;
   password_confirm: string;
-  csrfToken?: string | null;
 }) {
-  const { csrfToken, ...body } = params;
+  const body = params;
   const response = await requestWithMeta(
     apiClient.post<
       ApiResponse<{
         status: string;
         user: AuthUser;
       }>
-    >("/accounts/signup/", body, {
-      headers: csrfToken ? { "X-CSRFToken": csrfToken } : undefined,
-    })
+    >("/accounts/signup/", body)
   );
   return response;
 }
 
-export async function resetPassword(params: { email: string; csrfToken?: string | null }) {
-  const { csrfToken, ...body } = params;
+export async function resetPassword(params: { email: string }) {
+  const body = params;
   const response = await requestWithMeta(
     apiClient.post<
       ApiResponse<{
         status: string;
       }>
-    >("/accounts/password/reset/", body, {
-      headers: csrfToken ? { "X-CSRFToken": csrfToken } : undefined,
-    })
+    >("/accounts/password/reset/", body)
   );
   return response;
 }

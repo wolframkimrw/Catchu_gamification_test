@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./login.css";
-import { fetchCsrfToken, loginAccount, resetPassword, signupAccount } from "../api/accounts";
+import { loginAccount, resetPassword, signupAccount } from "../api/accounts";
 import { ApiError } from "../api/http";
-import { setStoredUser } from "../utils/auth";
+import { setStoredTokens, setStoredUser } from "../utils/auth";
 
 type TabKey = "login" | "signup" | "reset";
 
@@ -60,10 +60,12 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
-      const csrfToken = await fetchCsrfToken();
-      const data = await loginAccount({ ...loginState, csrfToken });
+      const data = await loginAccount({ ...loginState });
       if (data?.user) {
         setStoredUser(data.user);
+      }
+      if (data?.access || data?.refresh) {
+        setStoredTokens(data.access, data.refresh);
       }
       navigate("/");
     } catch (err) {
@@ -79,13 +81,11 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
-      const csrfToken = await fetchCsrfToken();
       await signupAccount({
         name: signupState.name,
         email: signupState.email,
         password: signupState.password,
         password_confirm: signupState.passwordConfirm,
-        csrfToken,
       });
       window.alert("회원가입이 완료되었습니다. 로그인해 주세요.");
       setActiveTab("login");
@@ -103,8 +103,7 @@ export function LoginPage() {
     event.preventDefault();
     setFormError(null);
     try {
-      const csrfToken = await fetchCsrfToken();
-      await resetPassword({ ...resetState, csrfToken });
+      await resetPassword({ ...resetState });
     } catch (err) {
       if (err instanceof ApiError) {
         setFormError(err.meta.message || "요청에 실패했습니다.");

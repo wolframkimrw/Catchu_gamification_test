@@ -60,3 +60,4 @@ staticfiles/
 *.sln
 *.sw?
 *.sh
+.history

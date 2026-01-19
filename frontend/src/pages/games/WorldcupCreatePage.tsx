@@ -514,7 +514,10 @@ export function WorldcupCreatePage() {
               </div>
               <div className="worldcup-create-url-tags">
                 {items
-                  .filter((item) => item.source === "bulk-url" && item.imageUrl)
+                  .filter(
+                    (item) =>
+                      item.imageUrl && !item.imageFile && !isMediaUrl(item.imageUrl)
+                  )
                   .map((item, index) => (
                     <span key={`url-tag-${index}`} className="worldcup-create-url-tag">
                       {formatUrlTag(item.imageUrl)}

@@ -316,11 +316,17 @@ export function AdminBannersPage() {
                     accept="image/jpeg,image/png"
                     onChange={(event) => {
                       const file = event.target.files?.[0] ?? null;
-                      setForm((prev) => ({
-                        ...prev,
-                        image_file: file,
-                        image_url: file ? URL.createObjectURL(file) : prev.image_url,
-                      }));
+                      setForm((prev) => {
+                        // 이전 blob URL 정리
+                        if (prev.image_file && prev.image_url?.startsWith("blob:")) {
+                          URL.revokeObjectURL(prev.image_url);
+                        }
+                        return {
+                          ...prev,
+                          image_file: file,
+                          image_url: file ? URL.createObjectURL(file) : (prev.image_url?.startsWith("blob:") ? "" : prev.image_url),
+                        };
+                      });
                     }}
                   />
                 </label>
@@ -340,7 +346,7 @@ export function AdminBannersPage() {
                   />
                 </label>
               </div>
-              {(form.image_file || form.image_url || editing?.image_url) && (
+              {((form.image_file || form.image_url) || (editing && editing.image_url)) && (
                 <div className="admin-banner-form-row">
                   <div className="admin-banner-preview">
                     <label>미리보기</label>
@@ -349,7 +355,7 @@ export function AdminBannersPage() {
                         src={
                           form.image_file
                             ? URL.createObjectURL(form.image_file)
-                            : form.image_url || editing?.image_url || ""
+                            : (form.image_url || editing?.image_url || "")
                         }
                         alt="배너 미리보기"
                         onError={(e) => {

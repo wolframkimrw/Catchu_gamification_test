@@ -59,13 +59,9 @@ export function WorldcupListPage() {
       .catch(() => setBanners([]));
     fetchBanners("GAME_TOP")
       .then((items) => {
-        console.log("GAME_TOP 배너:", items);
         setGameTopBanners(items);
       })
-      .catch((err) => {
-        console.error("GAME_TOP 배너 로드 실패:", err);
-        setGameTopBanners([]);
-      });
+      .catch(() => setGameTopBanners([]));
   }, []);
 
   const catalogGames = useMemo(() => apiGames, [apiGames]);
@@ -391,7 +387,7 @@ export function WorldcupListPage() {
             <div className="worldcup-gap" aria-hidden="true" />
             <div ref={worldcupRef} className="worldcup-rail">
               <CategorySection
-                title="월드컵"
+                title="🏆월드컵"
                 variant="big"
                 games={worldcupGames}
                 fallbackLabel="월드컵 준비중"
@@ -416,7 +412,6 @@ export function WorldcupListPage() {
                                 thumbnail: "",
                               })}
                               className="wc-banner"
-                              style={{ margin: 0, borderRadius: "16px" }}
                             >
                               <div className="wc-banner-media" style={{ aspectRatio: "auto", maxHeight: "120px" }}>
                                 <img src={banner.image_url} alt={banner.name} draggable={false} style={{ objectFit: "contain", maxHeight: "100%" }} />
@@ -428,9 +423,8 @@ export function WorldcupListPage() {
                               className="wc-banner"
                               target={banner.link_url?.startsWith("http") ? "_blank" : undefined}
                               rel={banner.link_url?.startsWith("http") ? "noopener noreferrer" : undefined}
-                              style={{ margin: 0, borderRadius: "16px" }}
                             >
-                              <div className="wc-banner-media" style={{ aspectRatio: "auto", maxHeight: "120px" }}>
+                              <div className="wc-banner-media" style={{ aspectRatio: "auto", maxHeight: "120px" }}>...테스트 배너입니다. 차후 수정 혹은 제거 예정입니다.
                                 <img src={banner.image_url} alt={banner.name} draggable={false} style={{ objectFit: "contain", maxHeight: "100%" }} />
                               </div>
                             </a>
@@ -452,7 +446,7 @@ export function WorldcupListPage() {
             </section>
             <section className="section">
               <CategorySection
-                title="오늘의 추천"
+                title="✨추천 컨텐츠"
                 variant="small"
                 games={todayPick}
                 fallbackLabel="추천 준비중"
@@ -462,7 +456,7 @@ export function WorldcupListPage() {
             </section>
             <div ref={fortuneRef}>
               <CategorySection
-                title="운세"
+                title="🔮운세"
                 variant="small"
                 games={fortuneGames}
                 fallbackLabel="운게임 준비중"
@@ -472,7 +466,7 @@ export function WorldcupListPage() {
             </div>
             <div ref={psychoRef} className="psy-section">
               <CategorySection
-                title="심리 테스트"
+                title="💕심리 테스트"
                 variant="small"
                 games={resolvedPsychoGames}
                 fallbackLabel="심리테스트 준비중"

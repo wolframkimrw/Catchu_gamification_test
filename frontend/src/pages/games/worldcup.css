@@ -1,10 +1,10 @@
 .worldcup-hero {
   background: linear-gradient(135deg, #f1e9ff 0%, #e7dcff 100%);
-  border-radius: 16px;
+  border-radius: 3px;
   padding: 18px 16px;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 12px;
+  /* gap: 12px; */
   align-items: center;
   box-shadow: 0 1px 5px rgba(122, 90, 248, 0.18);
 }
@@ -543,8 +543,8 @@
 }
 
 .worldcup-rail .h-rail .h-rail-item {
-  max-width: 10.8rem;
-  min-width: 10.8rem;
+  max-width: 7.2rem;
+  min-width: 7.2rem;
 }
 
 .gc-card {

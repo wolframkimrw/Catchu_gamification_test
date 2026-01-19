@@ -115,7 +115,7 @@ export function AdminBannersPage() {
       link_type: banner.link_type,
       game_id: banner.game ? String(banner.game.id) : "",
       link_url: banner.link_url || "",
-      image_url: "",
+      image_url: banner.image_url || "",
       image_file: null,
       is_active: banner.is_active,
       priority: String(banner.priority ?? 0),
@@ -250,8 +250,8 @@ export function AdminBannersPage() {
                       setForm((prev) => ({ ...prev, position: event.target.value }))
                     }
                   >
-                    <option value="TOP_GLOBAL">TOP_GLOBAL</option>
-                    <option value="GAME_TOP">GAME_TOP</option>
+                    <option value="TOP_GLOBAL">최상단 배너</option>
+                    <option value="GAME_TOP">게임 위 배너</option>
                   </select>
                 </label>
               </div>
@@ -303,7 +303,7 @@ export function AdminBannersPage() {
                           link_url: event.target.value,
                         }))
                       }
-                      placeholder="/psycho/major-arcana 또는 https://"
+                      placeholder="https://"
                     />
                   </label>
                 )}
@@ -314,12 +314,14 @@ export function AdminBannersPage() {
                   <input
                     type="file"
                     accept="image/jpeg,image/png"
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
                       setForm((prev) => ({
                         ...prev,
-                        image_file: event.target.files?.[0] ?? null,
-                      }))
-                    }
+                        image_file: file,
+                        image_url: file ? URL.createObjectURL(file) : prev.image_url,
+                      }));
+                    }}
                   />
                 </label>
                 <label>
@@ -331,12 +333,33 @@ export function AdminBannersPage() {
                       setForm((prev) => ({
                         ...prev,
                         image_url: event.target.value,
+                        image_file: null,
                       }))
                     }
-                    placeholder="https:// 또는 /media/..."
+                    placeholder="이미지 url 입력"
                   />
                 </label>
               </div>
+              {(form.image_file || form.image_url || editing?.image_url) && (
+                <div className="admin-banner-form-row">
+                  <div className="admin-banner-preview">
+                    <label>미리보기</label>
+                    <div className="admin-banner-preview-image">
+                      <img
+                        src={
+                          form.image_file
+                            ? URL.createObjectURL(form.image_file)
+                            : form.image_url || editing?.image_url || ""
+                        }
+                        alt="배너 미리보기"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="admin-banner-form-row">
                 <label>
                   활성화

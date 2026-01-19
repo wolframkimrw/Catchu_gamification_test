@@ -124,6 +124,10 @@
   will-change: transform;
 }
 
+.wc-banner-track.no-anim {
+  transition: none !important;
+}
+
 .wc-banner-slide {
   flex: 0 0 100%;
   box-sizing: border-box;
@@ -511,6 +515,7 @@
 .h-rail::-webkit-scrollbar {
   display: none;
 }
+
 
 .h-rail-track {
   display: flex;

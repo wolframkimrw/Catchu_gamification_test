@@ -1,32 +1,40 @@
 // src/pages/main/mainpage.tsx
-import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type TouchEvent,
+  // type MouseEvent,
+  type PointerEvent,
+} from "react";
 import { Link } from "react-router-dom";
 import "../games/worldcup.css";
 import type { BannerItem, Game } from "../../api/games";
 import { fetchBanners, fetchGamesList, fetchTodayPick } from "../../api/games";
 
 
-// const categories = [
-//   { label: "MBTI·유형", emoji: "🧠" },
-//   { label: "취미·궁합", emoji: "🎮" },
-//   { label: "연애", emoji: "❤️" },
-//   { label: "퀴즈·능력고사", emoji: "❓" },
-//   { label: "미궁·방탈출", emoji: "🔒" },
-//   { label: "미니게임", emoji: "🎲" },
-//   { label: "짤 뽑기", emoji: "🖼️" },
-//   { label: "짤 만들기", emoji: "✨" },
-//   { label: "운세·타로", emoji: "🔮" },
-//   { label: "스낵테스트", emoji: "🍪" },
-// ];
+
 
 export function WorldcupListPage() {
   const [apiGames, setApiGames] = useState<Game[]>([]);
   const [worldcupApiGames, setWorldcupApiGames] = useState<Game[]>([]);
   const [todayPick, setTodayPick] = useState<Game[]>([]);
   const [banners, setBanners] = useState<BannerItem[]>([]);
+  const [gameTopBanners, setGameTopBanners] = useState<BannerItem[]>([]);
   const [bannerIndex, setBannerIndex] = useState(0);
+  const bannerPointer = useRef({
+    isDown: false,
+    startX: 0,
+    lastX: 0,
+  });
   const bannerTouchStartX = useRef<number | null>(null);
   const bannerTouchLastX = useRef<number | null>(null);
+  const bannerDragDistanceRef = useRef(0);
+  const bannerBlockClickRef = useRef(false);
+  const bannerTrackRef = useRef<HTMLDivElement | null>(null);
+  const [bannerDragOffset, setBannerDragOffset] = useState(0);
   const bannerTimerRef = useRef<number | null>(null);
   const worldcupRef = useRef<HTMLDivElement | null>(null);
   const fortuneRef = useRef<HTMLDivElement | null>(null);
@@ -49,13 +57,16 @@ export function WorldcupListPage() {
     fetchBanners("TOP_GLOBAL")
       .then((items) => setBanners(items))
       .catch(() => setBanners([]));
+    fetchBanners("GAME_TOP")
+      .then((items) => {
+        console.log("GAME_TOP 배너:", items);
+        setGameTopBanners(items);
+      })
+      .catch((err) => {
+        console.error("GAME_TOP 배너 로드 실패:", err);
+        setGameTopBanners([]);
+      });
   }, []);
-
-  useEffect(() => {
-    if (bannerIndex >= banners.length) {
-      setBannerIndex(0);
-    }
-  }, [banners.length, bannerIndex]);
 
   const catalogGames = useMemo(() => apiGames, [apiGames]);
 
@@ -159,29 +170,96 @@ export function WorldcupListPage() {
       return;
     }
     bannerTimerRef.current = window.setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % bannerSlides.length);
+      setBannerIndex((prev) => {
+        const len = bannerSlides.length;
+        // 마지막에서 처음으로 순환
+        return (prev + 1) % len;
+      });
     }, 5000);
   }, [bannerSlides.length]);
 
-  const bumpBannerIndex = (direction: number) => {
-    if (bannerSlides.length === 0) {
+  useEffect(() => {
+    setBannerIndex(0);
+    resetBannerTimer();
+  }, [bannerSlides.length, resetBannerTimer]);
+
+  const bumpBannerIndexByDrag = (direction: number) => {
+    if (bannerSlides.length <= 1) {
       return;
     }
-    setBannerIndex((prev) => (prev + direction + bannerSlides.length) % bannerSlides.length);
+    setBannerIndex((prev) => {
+      const len = bannerSlides.length;
+      const next = prev + direction;
+      // 순환 처리
+      if (next < 0) return len - 1;
+      if (next >= len) return 0;
+      return next;
+    });
     resetBannerTimer();
   };
 
-  const handleBannerTouchStart = (
-    event: TouchEvent<HTMLAnchorElement | HTMLDivElement>
+  const handleBannerPointerDown = (
+    event: PointerEvent<HTMLDivElement>
   ) => {
+    if (event.pointerType === "touch") {
+      return;
+    }
+    if (event.button !== 0) {
+      return;
+    }
+    bannerPointer.current = {
+      isDown: true,
+      startX: event.clientX,
+      lastX: event.clientX,
+    };
+    bannerDragDistanceRef.current = 0;
+    setBannerDragOffset(0);
+    bannerBlockClickRef.current = false;
+  };
+
+  const handleBannerPointerMove = (
+    event: PointerEvent<HTMLDivElement>
+  ) => {
+    if (event.pointerType === "touch") {
+      return;
+    }
+    if (!bannerPointer.current.isDown) {
+      return;
+    }
+    event.preventDefault();
+    const delta = event.clientX - bannerPointer.current.startX;
+    bannerPointer.current.lastX = event.clientX;
+    bannerDragDistanceRef.current = Math.abs(delta);
+    setBannerDragOffset(delta);
+  };
+
+  const handleBannerPointerEnd = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch") {
+      return;
+    }
+    if (!bannerPointer.current.isDown) {
+      return;
+    }
+    const delta = bannerPointer.current.lastX - bannerPointer.current.startX;
+    setBannerDragOffset(0);
+    if (Math.abs(delta) > 40) {
+      bumpBannerIndexByDrag(delta > 0 ? -1 : 1);
+    }
+    bannerBlockClickRef.current = bannerDragDistanceRef.current > 10;
+    bannerPointer.current.isDown = false;
+    window.setTimeout(() => {
+      bannerBlockClickRef.current = false;
+    }, 0);
+  };
+
+  const handleBannerTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
     bannerTouchStartX.current = touch?.clientX ?? null;
     bannerTouchLastX.current = touch?.clientX ?? null;
+    bannerBlockClickRef.current = false;
   };
 
-  const handleBannerTouchMove = (
-    event: TouchEvent<HTMLAnchorElement | HTMLDivElement>
-  ) => {
+  const handleBannerTouchMove = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
     bannerTouchLastX.current = touch?.clientX ?? null;
   };
@@ -193,18 +271,18 @@ export function WorldcupListPage() {
       return;
     }
     const delta = bannerTouchLastX.current - bannerTouchStartX.current;
+    bannerBlockClickRef.current = Math.abs(delta) > 10;
     if (Math.abs(delta) > 40) {
-      bumpBannerIndex(delta > 0 ? -1 : 1);
+      bumpBannerIndexByDrag(delta > 0 ? -1 : 1);
     }
     bannerTouchStartX.current = null;
     bannerTouchLastX.current = null;
+    window.setTimeout(() => {
+      bannerBlockClickRef.current = false;
+    }, 0);
   };
 
-  useEffect(() => {
-    if (bannerIndex >= bannerSlides.length) {
-      setBannerIndex(0);
-    }
-  }, [bannerIndex, bannerSlides.length]);
+  const bannerDisplayIndex = bannerIndex;
 
   useEffect(() => {
     if (bannerSlides.length <= 1) {
@@ -225,17 +303,36 @@ export function WorldcupListPage() {
         <div className="wc-banner-slider">
           <div
             className="wc-banner-track"
-            style={{ transform: `translateX(-${bannerIndex * 100}%)` }}
+            ref={bannerTrackRef}
+            style={{
+              transform: `translateX(calc(-${bannerIndex * 100}% + ${bannerDragOffset}px))`,
+            }}
+            onPointerDown={handleBannerPointerDown}
+            onPointerMove={handleBannerPointerMove}
+            onPointerUp={handleBannerPointerEnd}
+            onPointerCancel={handleBannerPointerEnd}
             onTouchStart={handleBannerTouchStart}
             onTouchMove={handleBannerTouchMove}
             onTouchEnd={handleBannerTouchEnd}
+            onClickCapture={(event) => {
+              if (bannerBlockClickRef.current) {
+                event.preventDefault();
+                event.stopPropagation();
+                bannerBlockClickRef.current = false;
+              }
+            }}
+            onDragStart={(event) => event.preventDefault()}
           >
             {bannerSlides.map((banner, index) => {
               const bannerCard = (
                 <>
                   <div className="wc-banner-media">
                     {banner.image ? (
-                      <img src={banner.image} alt={banner.title || "banner"} />
+                      <img
+                        src={banner.image}
+                        alt={banner.title || "banner"}
+                        draggable={false}
+                      />
                     ) : (
                       <div className="wc-banner-fallback" />
                     )}
@@ -274,7 +371,7 @@ export function WorldcupListPage() {
                   <button
                     key={`banner-dot-${index}`}
                     type="button"
-                    className={`wc-banner-dot ${index === bannerIndex ? "active" : ""}`}
+                    className={`wc-banner-dot ${index === bannerDisplayIndex ? "active" : ""}`}
                     aria-label={`배너 ${index + 1}`}
                     onClick={() => {
                       setBannerIndex(index);
@@ -303,13 +400,55 @@ export function WorldcupListPage() {
               />
             </div>
             <section className="section intro">
-              <div className="worldcup-hero">
-                <div>
-                  <h2>오늘도 만나서 반가워! 추천 콘텐츠를 즐겨봐 🎵</h2>
-                  <p>월드컵 게임과 테스트로 기분 전환해 보세요.</p>
+              {gameTopBanners.length > 0 ? (
+                <div className="worldcup-hero" style={{ padding: 0, overflow: "hidden" }}>
+                  <div className="wc-banner-slider" style={{ width: "100%" }}>
+                    <div className="wc-banner-track" style={{ display: "flex", gap: "0" }}>
+                      {gameTopBanners.map((banner) => (
+                        <div key={banner.id} className="wc-banner-slide" style={{ flex: "0 0 100%" }}>
+                          {banner.link_type === "GAME" && banner.game ? (
+                            <Link
+                              to={resolveGameLink({
+                                id: banner.game.id,
+                                title: banner.game.title,
+                                slug: banner.game.slug,
+                                type: banner.game.type,
+                                thumbnail: "",
+                              })}
+                              className="wc-banner"
+                              style={{ margin: 0, borderRadius: "16px" }}
+                            >
+                              <div className="wc-banner-media" style={{ aspectRatio: "auto", maxHeight: "120px" }}>
+                                <img src={banner.image_url} alt={banner.name} draggable={false} style={{ objectFit: "contain", maxHeight: "100%" }} />
+                              </div>
+                            </Link>
+                          ) : (
+                            <a
+                              href={banner.link_url || "/"}
+                              className="wc-banner"
+                              target={banner.link_url?.startsWith("http") ? "_blank" : undefined}
+                              rel={banner.link_url?.startsWith("http") ? "noopener noreferrer" : undefined}
+                              style={{ margin: 0, borderRadius: "16px" }}
+                            >
+                              <div className="wc-banner-media" style={{ aspectRatio: "auto", maxHeight: "120px" }}>
+                                <img src={banner.image_url} alt={banner.name} draggable={false} style={{ objectFit: "contain", maxHeight: "100%" }} />
+                              </div>
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="hero-emoji">🐣</div>
-              </div>
+              ) : (
+                <div className="worldcup-hero">
+                  <div>
+                    <h2>오늘도 만나서 반가워! 추천 콘텐츠를 즐겨봐 🎵</h2>
+                    <p>월드컵 게임과 테스트로 기분 전환해 보세요.</p>
+                  </div>
+                  <div className="hero-emoji">🐣</div>
+                </div>
+              )}
             </section>
             <section className="section">
               <CategorySection
@@ -369,12 +508,66 @@ function CategorySection({
   getMeta,
 }: CategorySectionProps) {
   const hasGames = games.length > 0;
+  const dragStateRef = useRef({
+    isDown: false,
+    startX: 0,
+    scrollLeft: 0,
+  });
+  const railDragDistanceRef = useRef(0);
+  const railBlockClickRef = useRef(false);
+  const handleRailPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+    const rail = event.currentTarget;
+    dragStateRef.current = {
+      isDown: true,
+      startX: event.clientX,
+      scrollLeft: rail.scrollLeft,
+    };
+    railDragDistanceRef.current = 0;
+    railBlockClickRef.current = false;
+    rail.classList.add("is-dragging");
+  };
+  const handleRailPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current.isDown) {
+      return;
+    }
+    event.preventDefault();
+    const rail = event.currentTarget;
+    const delta = event.clientX - dragStateRef.current.startX;
+    railDragDistanceRef.current = Math.abs(delta);
+    rail.scrollLeft = dragStateRef.current.scrollLeft - delta;
+  };
+  const handleRailPointerEnd = (event: PointerEvent<HTMLDivElement>) => {
+    dragStateRef.current.isDown = false;
+    event.currentTarget.classList.remove("is-dragging");
+    railBlockClickRef.current = railDragDistanceRef.current > 10;
+    window.setTimeout(() => {
+      railBlockClickRef.current = false;
+    }, 0);
+  };
+
   return (
     <section className="cat-section">
       <div className="cat-header">
         <h3>{title}</h3>
       </div>
-      <div className={`cat-grid ${variant} h-rail`}>
+      <div
+        className={`cat-grid ${variant} h-rail`}
+        onPointerDown={handleRailPointerDown}
+        onPointerMove={handleRailPointerMove}
+        onPointerUp={handleRailPointerEnd}
+        onPointerCancel={handleRailPointerEnd}
+        onClickCapture={(event) => {
+          if (railBlockClickRef.current) {
+            event.preventDefault();
+            event.stopPropagation();
+            railBlockClickRef.current = false;
+          }
+        }}
+        onDragStart={(event) => event.preventDefault()}
+      >
         <div className="h-rail-track">
           {hasGames
             ? games.map((game) => {
@@ -383,7 +576,7 @@ function CategorySection({
                 <>
                   <div className="gc-thumb">
                     {game.thumbnail ? (
-                      <img src={game.thumbnail} alt={game.title} />
+                      <img src={game.thumbnail} alt={game.title} draggable={false} />
                     ) : (
                       <div className="gc-thumb-placeholder">준비중</div>
                     )}

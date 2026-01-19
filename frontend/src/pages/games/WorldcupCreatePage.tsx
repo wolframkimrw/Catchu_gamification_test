@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./worldcup-create.css";
 import { ApiError, resolveMediaUrl } from "../../api/http";
-import { createWorldcupGame, fetchWorldcupDraft, saveWorldcupDraft } from "../../api/games";
+import {
+  createWorldcupGame,
+  fetchWorldcupDraft,
+  fetchWorldcupDrafts,
+  saveWorldcupDraft,
+  type WorldcupDraftPayload,
+  type WorldcupDraftSummary,
+} from "../../api/games";
+import { ListBackButton } from "../../components/ListBackButton";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
@@ -48,8 +56,17 @@ const formatUrlTag = (url: string) => {
   return `${url.slice(0, 10)}...`;
 };
 
+const getDraftTitle = (title: string | undefined, index: number) => {
+  const trimmed = title?.trim();
+  if (trimmed) {
+    return trimmed;
+  }
+  return `제목이 없는 프로젝트 ${index + 1}`;
+};
+
 export function WorldcupCreatePage() {
   const navigate = useNavigate();
+  const { draftCode } = useParams<{ draftCode?: string }>();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
@@ -58,7 +75,11 @@ export function WorldcupCreatePage() {
   const [bulkUrlInput, setBulkUrlInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [draftId, setDraftId] = useState<number | null>(null);
+  const [drafts, setDrafts] = useState<WorldcupDraftSummary[]>([]);
+  const [isDraftsReady, setIsDraftsReady] = useState(false);
+  const [activeDraftCode, setActiveDraftCode] = useState<string | null>(
+    draftCode ?? null
+  );
   const { user } = useAuthUser();
   const draftTimerRef = useRef<number | null>(null);
   const bodyOverflowRef = useRef("");
@@ -66,44 +87,76 @@ export function WorldcupCreatePage() {
   const bulkInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    setActiveDraftCode(draftCode ?? null);
+  }, [draftCode]);
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setThumbnail(null);
+    setThumbnailUrl("");
+    setItems([]);
+    setBulkUrlInput("");
+  };
+
+  const applyDraft = (draft: WorldcupDraftPayload) => {
+    if (draft.title) {
+      setTitle(draft.title);
+    }
+    if (draft.description) {
+      setDescription(draft.description);
+    }
+    if (draft.thumbnail_url) {
+      setThumbnailUrl(resolveMediaUrl(draft.thumbnail_url));
+    }
+    if (draft.items && draft.items.length) {
+      setItems(
+        draft.items.map((item) => {
+          const resolved = item.image_url ? resolveMediaUrl(item.image_url) : "";
+          return {
+            name: item.name || "",
+            imageFile: null,
+            imageUrl: resolved,
+            previewUrl: "",
+          };
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
     if (!user) {
       return;
     }
-    fetchWorldcupDraft()
-      .then((draft) => {
-        if (!draft) {
-          return;
-        }
-        if (draft.id) {
-          setDraftId(draft.id);
-        }
-        if (draft.title) {
-          setTitle(draft.title);
-        }
-        if (draft.description) {
-          setDescription(draft.description);
-        }
-        if (draft.thumbnail_url) {
-          setThumbnailUrl(resolveMediaUrl(draft.thumbnail_url));
-        }
-        if (draft.items && draft.items.length) {
-          setItems(
-            draft.items.map((item) => {
-              const resolved = item.image_url ? resolveMediaUrl(item.image_url) : "";
-              return {
-                name: item.name || "",
-                imageFile: null,
-                imageUrl: resolved,
-                previewUrl: "",
-              };
-            })
-          );
-        }
+    fetchWorldcupDrafts()
+      .then((nextDrafts) => {
+        setDrafts(nextDrafts);
+        setIsDraftsReady(true);
       })
       .catch(() => {
+        setIsDraftsReady(true);
         // 드래프트 불러오기 실패는 진행을 막지 않음
       });
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !draftCode) {
+      return;
+    }
+    fetchWorldcupDraft(draftCode)
+      .then((draft) => {
+        if (!draft) {
+          setFormError("드래프트를 찾을 수 없습니다.");
+          navigate("/worldcup/create");
+          return;
+        }
+        resetForm();
+        applyDraft(draft);
+      })
+      .catch(() => {
+        setFormError("드래프트를 불러올 수 없습니다.");
+      });
+  }, [draftCode, navigate, user]);
 
   const canSubmit = useMemo(() => {
     if (!title.trim()) return false;
@@ -268,6 +321,9 @@ export function WorldcupCreatePage() {
     if (!user || isSubmitting) {
       return;
     }
+    if (!activeDraftCode) {
+      return;
+    }
     if (draftTimerRef.current) {
       window.clearTimeout(draftTimerRef.current);
     }
@@ -277,6 +333,7 @@ export function WorldcupCreatePage() {
       if (description.trim()) {
         formData.append("description", description.trim());
       }
+      formData.append("draft_code", activeDraftCode);
       if (thumbnail) {
         formData.append("thumbnail", thumbnail);
       } else if (thumbnailUrl) {
@@ -294,15 +351,22 @@ export function WorldcupCreatePage() {
       });
       saveWorldcupDraft(formData)
         .then((draft) => {
-          if (draft.id) {
-            setDraftId(draft.id);
-          }
+          setActiveDraftCode(draft.draft_code || activeDraftCode);
         })
         .catch(() => {
           // 드래프트 저장 실패는 진행을 막지 않음
         });
     }, 800);
-  }, [description, isSubmitting, items, thumbnail, thumbnailUrl, title, user]);
+  }, [
+    activeDraftCode,
+    description,
+    isSubmitting,
+    items,
+    thumbnail,
+    thumbnailUrl,
+    title,
+    user,
+  ]);
 
   useEffect(() => {
     scheduleDraftSave();
@@ -311,7 +375,28 @@ export function WorldcupCreatePage() {
         window.clearTimeout(draftTimerRef.current);
       }
     };
-  }, [description, isSubmitting, items, scheduleDraftSave, thumbnail, thumbnailUrl, title, user]);
+  }, [
+    description,
+    isSubmitting,
+    items,
+    scheduleDraftSave,
+    thumbnail,
+    thumbnailUrl,
+    title,
+    user,
+  ]);
+
+  const handleStartNewProject = async () => {
+    const formData = new FormData();
+    try {
+      const draft = await saveWorldcupDraft(formData);
+      if (draft.draft_code) {
+        navigate(`/worldcup/create/${draft.draft_code}`);
+      }
+    } catch {
+      setFormError("새 프로젝트를 만들 수 없습니다.");
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -358,8 +443,8 @@ export function WorldcupCreatePage() {
         formData.append(`items[${index}].image_url`, item.imageUrl);
       }
     });
-    if (draftId) {
-      formData.append("draft_id", String(draftId));
+    if (activeDraftCode) {
+      formData.append("draft_code", activeDraftCode);
     }
 
     try {
@@ -376,8 +461,58 @@ export function WorldcupCreatePage() {
     }
   };
 
+  if (!draftCode) {
+    return (
+      <div className="worldcup-create-page">
+        <div className="worldcup-create-actions worldcup-create-actions-top">
+          <ListBackButton to="/" />
+        </div>
+        <div className="worldcup-create-draft-list">
+          <div>
+            <h2>프로젝트 선택</h2>
+            <p>불러올 프로젝트를 선택하거나 새로 시작하세요.</p>
+          </div>
+          <div className="worldcup-create-draft-items">
+            <button
+              type="button"
+              className="worldcup-create-draft-item ghost"
+              onClick={() => void handleStartNewProject()}
+            >
+              새 프로젝트 만들기
+            </button>
+            {isDraftsReady ? (
+              drafts.length > 0 ? (
+                drafts.map((draft, index) => (
+                  <button
+                    key={`draft-${draft.draft_code}`}
+                    type="button"
+                    className="worldcup-create-draft-item"
+                    onClick={() => navigate(`/worldcup/create/${draft.draft_code}`)}
+                  >
+                    <span className="worldcup-create-draft-title">
+                      {getDraftTitle(draft.title, index)}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="worldcup-create-draft-empty">
+                  저장된 프로젝트가 없습니다.
+                </div>
+              )
+            ) : (
+              <div className="worldcup-create-draft-empty">불러오는 중...</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="worldcup-create-page">
+      <div className="worldcup-create-actions worldcup-create-actions-top">
+        <ListBackButton to="/worldcup/create" label="목록으로" />
+      </div>
       <header className="worldcup-create-header">
         <h1>월드컵 만들기</h1>
         <p>정보와 아이템을 입력하면 바로 월드컵이 만들어집니다.</p>

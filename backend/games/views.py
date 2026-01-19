@@ -586,6 +586,19 @@ class WorldcupCreateView(BaseAPIView):
                 if os.path.isdir(draft_path):
                     shutil.rmtree(draft_path, ignore_errors=True)
             WorldcupDraft.objects.filter(id=draft_id, user=request.user).delete()
+        else:
+            draft_code = request.data.get("draft_code")
+            if draft_code and request.user.is_authenticated:
+                draft = WorldcupDraft.objects.filter(
+                    draft_code=draft_code, user=request.user
+                ).first()
+                if draft and draft.draft_prefix:
+                    draft_path = os.path.join(settings.MEDIA_ROOT, draft.draft_prefix)
+                    if os.path.isdir(draft_path):
+                        shutil.rmtree(draft_path, ignore_errors=True)
+                WorldcupDraft.objects.filter(
+                    draft_code=draft_code, user=request.user
+                ).delete()
 
         return self.respond(
             data={
@@ -615,6 +628,15 @@ class WorldcupDraftView(BaseAPIView):
                 if os.path.isdir(draft_path):
                     shutil.rmtree(draft_path, ignore_errors=True)
         old_drafts.delete()
+
+    def _generate_draft_code(self):
+        return f"draft_{uuid.uuid4().hex[:12]}"
+
+    def _ensure_draft_code(self):
+        code = self._generate_draft_code()
+        while WorldcupDraft.objects.filter(draft_code=code).exists():
+            code = self._generate_draft_code()
+        return code
 
     def _save_draft_files(self, user, request):
         draft_prefix = f"worldcup/drafts/{user.id}/{uuid.uuid4().hex}/"
@@ -664,19 +686,93 @@ class WorldcupDraftView(BaseAPIView):
         draft = WorldcupDraft.objects.filter(user=user).order_by("-updated_at").first()
         if not draft:
             return self.respond(data={"draft": None})
-        return self.respond(data={"draft": {"id": draft.id, **(draft.payload or {})}})
+        return self.respond(
+            data={
+                "draft": {
+                    "id": draft.id,
+                    "draft_code": draft.draft_code,
+                    **(draft.payload or {}),
+                }
+            }
+        )
 
     def post(self, request, *args, **kwargs):
         user = self._require_user(request)
         self._cleanup_old_drafts(user)
+        draft_code = (request.data.get("draft_code") or "").strip()
+        existing = None
+        if draft_code:
+            existing = WorldcupDraft.objects.filter(
+                user=user, draft_code=draft_code
+            ).first()
         draft_prefix, payload = self._save_draft_files(user, request)
-        WorldcupDraft.objects.filter(user=user).delete()
-        draft = WorldcupDraft.objects.create(
-            user=user,
-            draft_prefix=draft_prefix,
-            payload=payload,
+        if existing:
+            if existing.draft_prefix:
+                draft_path = os.path.join(settings.MEDIA_ROOT, existing.draft_prefix)
+                if os.path.isdir(draft_path):
+                    shutil.rmtree(draft_path, ignore_errors=True)
+            existing.draft_prefix = draft_prefix
+            existing.payload = payload
+            existing.save(update_fields=["draft_prefix", "payload", "updated_at"])
+            draft = existing
+        else:
+            draft = WorldcupDraft.objects.create(
+                user=user,
+                draft_prefix=draft_prefix,
+                payload=payload,
+                draft_code=self._ensure_draft_code(),
+            )
+        return self.respond(
+            data={"draft": {"draft_code": draft.draft_code, **payload}},
+            status_code=201,
         )
-        return self.respond(data={"draft": {"id": draft.id, **payload}}, status_code=201)
+
+
+class WorldcupDraftListView(BaseAPIView):
+    api_name = "games.worldcup.drafts"
+
+    def get(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            raise ValidationError("로그인이 필요합니다.")
+        WorldcupDraftView()._cleanup_old_drafts(request.user)
+        drafts = (
+            WorldcupDraft.objects.filter(user=request.user)
+            .order_by("-updated_at")
+        )
+        return self.respond(
+            data={
+                "drafts": [
+                    {
+                        "draft_code": draft.draft_code,
+                        "title": (draft.payload or {}).get("title") or "",
+                        "updated_at": draft.updated_at.isoformat(),
+                    }
+                    for draft in drafts
+                ]
+            }
+        )
+
+
+class WorldcupDraftDetailView(BaseAPIView):
+    api_name = "games.worldcup.draft_detail"
+
+    def get(self, request, draft_code, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            raise ValidationError("로그인이 필요합니다.")
+        WorldcupDraftView()._cleanup_old_drafts(request.user)
+        draft = WorldcupDraft.objects.filter(
+            user=request.user, draft_code=draft_code
+        ).first()
+        if not draft:
+            return self.respond(data={"draft": None})
+        return self.respond(
+            data={
+                "draft": {
+                    "draft_code": draft.draft_code,
+                    **(draft.payload or {}),
+                }
+            }
+        )
 
 
 class BannerListView(BaseAPIView):

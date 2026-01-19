@@ -130,6 +130,56 @@
   font-weight: 500;
 }
 
+.worldcup-create-draft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.worldcup-create-draft-list h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.worldcup-create-draft-list p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.worldcup-create-draft-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.worldcup-create-draft-empty {
+  padding: 0.6rem 0.2rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.worldcup-create-draft-item {
+  border: 1px solid #d7dbea;
+  border-radius: 3px;
+  padding: 0.75rem 0.9rem;
+  min-height: 3.8rem;
+  font-weight: 600;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.worldcup-create-draft-item.ghost {
+  background: #f3f4f8;
+}
+
+.worldcup-create-draft-title {
+  display: block;
+  font-size: 0.95rem;
+  color: #1b1c1f;
+}
+
 .worldcup-create-items {
   display: flex;
   flex-direction: column;

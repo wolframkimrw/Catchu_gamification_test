@@ -196,6 +196,7 @@ function Layout() {
             <Route path="/worldcup/:gameId/arena" element={<WorldcupArenaPage />} />
             <Route path="/worldcup/:gameId/result" element={<WorldcupResultPage />} />
             <Route path="/worldcup/create" element={<WorldcupCreatePage />} />
+            <Route path="/worldcup/create/:draftCode" element={<WorldcupCreatePage />} />
             <Route path="/my/games" element={<MyGameEditListPage />} />
             <Route path="/my/games/:gameId/edit" element={<MyGameEditRequestPage />} />
             <Route path="/me" element={<MyInfoPage />} />

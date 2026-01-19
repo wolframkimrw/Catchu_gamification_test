@@ -653,16 +653,34 @@ export async function createWorldcupGame(formData: FormData): Promise<{
 
 export type WorldcupDraftPayload = {
   id?: number;
+  draft_code?: string;
   title?: string;
   description?: string;
   thumbnail_url?: string;
   items?: { name?: string; image_url?: string }[];
 };
 
-export async function fetchWorldcupDraft(): Promise<WorldcupDraftPayload | null> {
+export type WorldcupDraftSummary = {
+  draft_code: string;
+  title?: string;
+  updated_at?: string;
+};
+
+export async function fetchWorldcupDrafts(): Promise<WorldcupDraftSummary[]> {
+  const response = await requestWithMeta(
+    apiClient.get<ApiResponse<{ drafts: WorldcupDraftSummary[] }>>(
+      "/games/worldcup/drafts/"
+    )
+  );
+  return response.drafts || [];
+}
+
+export async function fetchWorldcupDraft(
+  draftCode: string
+): Promise<WorldcupDraftPayload | null> {
   const response = await requestWithMeta(
     apiClient.get<ApiResponse<{ draft: WorldcupDraftPayload | null }>>(
-      "/games/worldcup/draft/"
+      `/games/worldcup/draft/${draftCode}/`
     )
   );
   return response.draft || null;

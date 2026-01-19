@@ -570,6 +570,12 @@ class WorldcupDraft(models.Model):
         related_name="worldcup_drafts",
         verbose_name="유저",
     )
+    draft_code = models.CharField(
+        max_length=32,
+        unique=True,
+        db_index=True,
+        verbose_name="드래프트 코드",
+    )
     draft_prefix = models.CharField(
         max_length=255,
         verbose_name="드래프트 저장 prefix",

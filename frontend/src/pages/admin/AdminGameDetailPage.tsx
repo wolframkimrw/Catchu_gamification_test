@@ -1218,7 +1218,7 @@ export function AdminGameDetailPage() {
                     <input
                       id="new-item-image"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png"
                       onChange={(event) => {
                         const file = event.target.files?.[0] || null;
                         setNewItemImage(file);
@@ -1294,7 +1294,7 @@ export function AdminGameDetailPage() {
                         <input
                           id={`item-image-${item.id}`}
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png"
                           onClick={(event) => event.stopPropagation()}
                           onChange={(event) => {
                             const file = event.target.files?.[0] || null;

@@ -6,6 +6,14 @@ const loadImageSize = (src: string) =>
     image.src = src;
   });
 
+const allowedImageTypes = new Set(["image/jpeg", "image/png"]);
+const allowedImageExtensions = new Set(["jpg", "jpeg", "png"]);
+
+const getFileExtension = (name: string) => {
+  const match = name.toLowerCase().match(/\.([a-z0-9]+)$/);
+  return match?.[1] ?? "";
+};
+
 export const validateImageUrl = async (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -20,6 +28,16 @@ export const validateImageUrl = async (value: string) => {
 };
 
 export const validateImageFile = async (file: File) => {
+  const extension = getFileExtension(file.name);
+  if (file.type && !allowedImageTypes.has(file.type)) {
+    return "png, jpg, jpeg 파일만 업로드할 수 있습니다.";
+  }
+  if (!file.type && extension && !allowedImageExtensions.has(extension)) {
+    return "png, jpg, jpeg 파일만 업로드할 수 있습니다.";
+  }
+  if (!file.type && !extension) {
+    return "png, jpg, jpeg 파일만 업로드할 수 있습니다.";
+  }
   const objectUrl = URL.createObjectURL(file);
   try {
     await loadImageSize(objectUrl);

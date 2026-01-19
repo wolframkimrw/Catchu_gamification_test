@@ -313,7 +313,7 @@ export function AdminBannersPage() {
                   이미지 업로드
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                     onChange={(event) =>
                       setForm((prev) => ({
                         ...prev,

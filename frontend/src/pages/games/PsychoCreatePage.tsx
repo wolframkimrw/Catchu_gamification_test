@@ -470,7 +470,7 @@ export function PsychoCreatePage() {
           <label>썸네일 (선택)</label>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png"
             onChange={(event) => {
               const nextFile = event.target.files?.[0] || null;
               if (thumbnailPreviewUrl) {
@@ -576,7 +576,7 @@ export function PsychoCreatePage() {
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                     onChange={(event) => {
                       const file = event.target.files?.[0] || null;
                       const previewUrl = file ? URL.createObjectURL(file) : "";
@@ -744,7 +744,7 @@ export function PsychoCreatePage() {
                         )}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png"
                           onChange={(event) => {
                             const file = event.target.files?.[0] || null;
                             const previewUrl = file ? URL.createObjectURL(file) : "";

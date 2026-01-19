@@ -11,6 +11,7 @@ type WorldcupItemForm = {
   imageFile: File | null;
   imageUrl: string;
   previewUrl: string;
+  source?: "bulk-url";
 };
 
 const isMediaUrl = (value: string) => {
@@ -32,16 +33,29 @@ const createItemFromFile = (file: File): WorldcupItemForm => ({
   previewUrl: URL.createObjectURL(file),
 });
 
+const createItemFromUrl = (url: string): WorldcupItemForm => ({
+  name: "",
+  imageFile: null,
+  imageUrl: url,
+  previewUrl: "",
+  source: "bulk-url",
+});
+
+const formatUrlTag = (url: string) => {
+  if (url.length <= 10) {
+    return url;
+  }
+  return `${url.slice(0, 10)}...`;
+};
+
 export function WorldcupCreatePage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
-  const [items, setItems] = useState<WorldcupItemForm[]>([
-    { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
-    { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
-  ]);
+  const [items, setItems] = useState<WorldcupItemForm[]>([]);
+  const [bulkUrlInput, setBulkUrlInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<number | null>(null);
@@ -126,6 +140,7 @@ export function WorldcupCreatePage() {
         imageFile: null,
         imageUrl: "",
         previewUrl: "",
+        source: undefined,
       }));
       return;
     }
@@ -141,6 +156,7 @@ export function WorldcupCreatePage() {
       imageFile: file,
       imageUrl: "",
       previewUrl,
+      source: undefined,
     }));
   };
 
@@ -198,11 +214,19 @@ export function WorldcupCreatePage() {
     });
   };
 
-  const handleAddItem = () => {
-    setItems((prev) => [
-      ...prev,
-      { name: "", imageFile: null, imageUrl: "", previewUrl: "" },
-    ]);
+  const handleBulkItemUrlSubmit = async () => {
+    const trimmed = bulkUrlInput.trim();
+    if (!trimmed) {
+      return;
+    }
+    const error = await validateImageUrl(trimmed);
+    if (error) {
+      setFormError("유효하지 않은 URL입니다.");
+      return;
+    }
+    setFormError(null);
+    setItems((prev) => [...prev, createItemFromUrl(trimmed)]);
+    setBulkUrlInput("");
   };
 
   const handleRemoveItem = (index: number) => {
@@ -428,7 +452,24 @@ export function WorldcupCreatePage() {
         <div className="worldcup-create-items">
           <div className="worldcup-create-items-header">
             <h2>아이템</h2>
-            <div>
+          </div>
+          <div className="worldcup-create-item worldcup-create-item-bulk">
+            <div className="worldcup-create-bulk-header">
+              <h3>여러 이미지 추가</h3>
+              <p>클릭하거나 여러 이미지를 드래그하면 바로 추가됩니다.</p>
+            </div>
+            <label
+              className="worldcup-create-upload worldcup-create-upload-bulk"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                void handleBulkItemFiles(event.dataTransfer.files);
+              }}
+            >
+              <span className="worldcup-create-upload-plus">+</span>
+              <span className="worldcup-create-upload-text">
+                클릭 또는 드래그로 여러 이미지를 업로드
+              </span>
               <input
                 ref={bulkInputRef}
                 type="file"
@@ -438,17 +479,48 @@ export function WorldcupCreatePage() {
                   void handleBulkItemFiles(event.target.files);
                   event.currentTarget.value = "";
                 }}
-                style={{ display: "none" }}
               />
-              <button
-                type="button"
-                onClick={() => bulkInputRef.current?.click()}
-              >
-                여러 이미지 추가
-              </button>
-              <button type="button" onClick={handleAddItem}>
-                아이템 추가
-              </button>
+            </label>
+            <div className="worldcup-create-bulk-url">
+              <div className="worldcup-create-bulk-url-field">
+                <input
+                  type="text"
+                  className="worldcup-create-bulk-url-input"
+                  placeholder="이미지 URL을 입력하고 Enter"
+                  value={bulkUrlInput}
+                  onChange={(event) => setBulkUrlInput(event.target.value)}
+                  onPaste={(event) => {
+                    const pasted = event.clipboardData.getData("text");
+                    if (!pasted) {
+                      return;
+                    }
+                    event.preventDefault();
+                    setBulkUrlInput(pasted);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void handleBulkItemUrlSubmit();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="worldcup-create-bulk-url-button"
+                  onClick={() => void handleBulkItemUrlSubmit()}
+                >
+                  추가
+                </button>
+              </div>
+              <div className="worldcup-create-url-tags">
+                {items
+                  .filter((item) => item.source === "bulk-url" && item.imageUrl)
+                  .map((item, index) => (
+                    <span key={`url-tag-${index}`} className="worldcup-create-url-tag">
+                      {formatUrlTag(item.imageUrl)}
+                    </span>
+                  ))}
+              </div>
             </div>
           </div>
 
@@ -516,6 +588,7 @@ export function WorldcupCreatePage() {
                       imageUrl: event.target.value,
                       imageFile: null,
                       previewUrl: "",
+                      source: undefined,
                     }))
                   }
                 />
@@ -524,7 +597,6 @@ export function WorldcupCreatePage() {
                 type="button"
                 className="danger"
                 onClick={() => handleRemoveItem(index)}
-                disabled={items.length <= 2}
               >
                 삭제
               </button>

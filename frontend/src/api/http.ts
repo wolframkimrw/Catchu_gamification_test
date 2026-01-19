@@ -1,5 +1,5 @@
 // src/api/http.ts
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 import type { AxiosInstance, AxiosResponse } from "axios";
 
 export interface Pagination {
@@ -71,14 +71,9 @@ const applyAuthorizationHeader = (
   headers: AxiosResponse["config"]["headers"],
   token: string
 ) => {
-  if (headers && typeof (headers as { set?: (key: string, value: string) => void }).set === "function") {
-    (headers as { set: (key: string, value: string) => void }).set(
-      "Authorization",
-      `Bearer ${token}`
-    );
-    return headers;
-  }
-  return { ...(headers ?? {}), Authorization: `Bearer ${token}` };
+  const next = headers instanceof AxiosHeaders ? headers : AxiosHeaders.from(headers ?? {});
+  next.set("Authorization", `Bearer ${token}`);
+  return next;
 };
 
 apiClient.interceptors.request.use((config) => {
